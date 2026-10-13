@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catwalk — cat animation spec</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 40px 24px 80px;
+        background: #fff6ea;
+        color: #1b2b30;
+        font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      main { max-width: 760px; margin: 0 auto; }
+      h1 { font-size: 34px; margin: 0 0 4px; letter-spacing: -0.5px; }
+      .sub { color: #52626a; margin: 0 0 32px; }
+      h2 { margin: 40px 0 10px; font-size: 22px; }
+      h3 { margin: 26px 0 6px; font-size: 17px; }
+      p, li { color: #24343a; }
+      ul { padding-left: 22px; }
+      code, pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13.5px;
+      }
+      code { background: #ffe3cc; padding: 1px 5px; border-radius: 5px; }
+      pre {
+        background: #fff;
+        border: 1px solid #ebdcc9;
+        border-radius: 12px;
+        padding: 16px;
+        overflow-x: auto;
+      }
+      .callout {
+        background: #fff;
+        border: 1px solid #ebdcc9;
+        border-left: 5px solid #1f7a7a;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin: 18px 0;
+      }
+      .warn { border-left-color: #f69337; }
+      table { border-collapse: collapse; width: 100%; margin: 14px 0; }
+      th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #ebdcc9; }
+      th { color: #52626a; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Cat animation spec</h1>
+      <p class="sub">What to draw, and how to hand it over.</p>
+
+      <div class="callout">
+        <strong>The short version.</strong> Draw the cat facing right on a
+        transparent sheet. Keep the fur in greys, and put eyes, nose, mouth,
+        inner ears and whiskers on a second sheet. Export one PNG per action per
+        mood, list them in <code>assets/cats/manifest.json</code>, and the room
+        plays them. Anything you have not drawn keeps using the placeholder.
+      </div>
+
+      <h2>Why two sheets per action</h2>
+      <p>
+        All three cat colours come from one drawing. The <strong>fur</strong>
+        sheet is greyscale and gets multiplied by the cat's colour. The
+        <strong>details</strong> sheet is drawn on top, untouched.
+      </p>
+      <p>
+        Without the split, the eyes and nose would be tinted too, and a charcoal
+        cat would have a charcoal nose. The two sheets share exactly the same
+        frame size, frame count and frame order, so they line up frame for frame.
+      </p>
+
+      <h2>Frames and the foot anchor</h2>
+      <ul>
+        <li>One row per sheet, left to right, equal frame boxes.</li>
+        <li>Frame size is yours, but keep it the same for every sheet: <code>frameSize</code> in the manifest.</li>
+        <li>
+          The cat's feet sit at the same pixel in every frame. Report that point
+          once as <code>footAnchor</code>, measured from the frame's top-left.
+          This is what keeps her standing on the floor line instead of floating
+          when the pose changes.
+        </li>
+        <li>Draw facing right. The app flips the whole frame for the other direction.</li>
+      </ul>
+
+      <h2>Actions</h2>
+      <table>
+        <tr><th>Action</th><th>When it plays</th><th>Notes</th></tr>
+        <tr><td><code>walk</code></td><td>Walking along the floor</td><td>Loop. A side-on gait.</td></tr>
+        <tr><td><code>sit</code></td><td>Sitting, often on the rug</td><td>Loop or a short settle.</td></tr>
+        <tr><td><code>sleep</code></td><td>Sleeping in the basket</td><td>Usually a one-shot that holds.</td></tr>
+        <tr><td><code>groom</code></td><td>Washing a paw</td><td>Loop.</td></tr>
+        <tr><td><code>idle</code></td><td>Standing still, looking around</td><td>Loop.</td></tr>
+        <tr><td><code>perch</code></td><td>Sitting up high: cat tree, window sill</td><td>Loop. Drawn as seen from the room, not from above.</td></tr>
+        <tr><td><code>climbUp</code></td><td>Going up to a high spot</td><td>Loop. Travels vertically, so keep the body vertical.</td></tr>
+        <tr><td><code>climbDown</code></td><td>Coming down again</td><td>Loop.</td></tr>
+      </table>
+
+      <h2>Moods</h2>
+      <p>Each action can have three versions: <code>happy</code>, <code>neutral</code>, <code>sad</code>.</p>
+      <ul>
+        <li>Missing moods are fine. A lookup for a mood you have not drawn falls back to <code>neutral</code>, and then to the placeholder.</li>
+        <li>So start with <code>neutral</code> for an action, and add the other two whenever you like, with no app change.</li>
+        <li>Mood changes the look; the game rules already decided the mood. The room never picks a mood, it only asks for one.</li>
+        <li>If the mood changes mid-action the sheet swaps on the next frame, without restarting the action.</li>
+      </ul>
+
+      <h2>The manifest</h2>
+      <pre>
+{
+  "frameSize": [256, 256],
+  "footAnchor": [128, 236],
+  "actions": {
+    "walk": {
+      "neutral": {
+        "fur": "walk_neutral_fur.png",
+        "details": "walk_neutral_details.png",
+        "frames": 8,
+        "fps": 10,
+        "loop": true
+      },
+      "happy": {
+        "fur": "walk_happy_fur.png",
+        "details": "walk_happy_details.png",
+        "frames": 8,
+        "fps": 12
+      }
+    },
+    "sleep": {
+      "neutral": {
+        "fur": "sleep_neutral_fur.png",
+        "frames": 4,
+        "fps": 2,
+        "loop": false
+      }
+    }
+  }
+}
+      </pre>
+      <ul>
+        <li><code>details</code> and <code>loop</code> are optional. <code>loop</code> defaults to true.</li>
+        <li><code>loop: false</code> holds the last frame, which is how "lie down and stay down" works from a single short sheet.</li>
+        <li>Action and mood names are the ones in the tables above, spelled exactly.</li>
+        <li>Anything in the file the app does not recognise is ignored, so you can draft an action before it exists in the code.</li>
+      </ul>
+
+      <h2>Previewing your art</h2>
+      <p>
+        In a debug build, tap the flask button in the top-left of the room. The
+        animation lab loops one action of your choice, flips it, shows the foot
+        line, and puts cream, charcoal and ginger side by side so you can see how
+        the tint treats your shading.
+      </p>
+
+      <div class="callout warn">
+        <strong>Charcoal is the one to watch.</strong> A dark tint multiplying an
+        already dark drawing crushes the shading into a silhouette. Keep the fur
+        shading in the mid greys rather than pure white or black. The lab shows all
+        three colours at once, so check it there before drawing a whole set.
+      </div>
+
+      <h2>To do in the app</h2>
+      <ul>
+        <li>The manifest parses today, with mood fallback and frame timing tested.</li>
+        <li>Loading the PNGs into frames and drawing them is the next step, and it needs the first real sheets to be worth wiring.</li>
+        <li>Markings (stripes, socks) would need a third layer, tinted separately. Out of scope until asked for.</li>
+      </ul>
+    </main>
+  </body>
+</html>

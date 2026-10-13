@@ -1,5 +1,11 @@
 # Catwalk Slice 3 — The Room (full screen, all the cats)
 
+> **Status (implemented):** the room, the behaviour, the animation contract, the
+> debug animation lab, the sprite manifest and its docs are in. **Not** done: the
+> sprite *loader* (decoding PNG sheets into frames and drawing them) — it needs
+> real art to be worth wiring, and it is the only piece between this and your
+> sheets appearing. Also not done: a real-device pass.
+
 **Goal:** the Cats tab becomes a full-screen room where every cat you own lives and acts on its own: walking, climbing, sleeping, sitting. You will draw the animations later, so the room must run today on placeholder art and accept your sprites without code changes.
 
 **Architecture:** three layers, kept apart so each is testable.

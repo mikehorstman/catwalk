@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/widgets/placeholder_screen.dart';
-import '../features/cat/presentation/cat_screen.dart';
 import '../features/history/presentation/history_screen.dart';
 import '../features/onboarding/presentation/onboarding_controller.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
+import '../features/room/presentation/room_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/steps/presentation/home_screen.dart';
 
@@ -51,7 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/cat',
-                builder: (context, state) => const CatScreen(),
+                builder: (context, state) => const RoomScreen(),
               ),
             ],
           ),

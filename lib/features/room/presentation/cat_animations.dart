@@ -1,0 +1,100 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+
+import '../../cat/domain/cat_appearance.dart';
+import '../../cat/domain/cat_mood.dart';
+import '../../cat/presentation/widgets/cat_art.dart';
+import '../domain/cat_action.dart';
+
+/// Turns "this cat is doing this, facing that" into pixels.
+///
+/// The room knows nothing about how a cat is drawn. Swapping the placeholder
+/// for your sprite sheets means implementing this once, not touching the room.
+abstract interface class CatAnimationSet {
+  /// A frame of [action] for a [mood], [elapsed] into the action.
+  Widget frame(
+    BuildContext context, {
+    required CatAppearance appearance,
+    required CatAction action,
+    required CatMood mood,
+    required CatFacing facing,
+    required Duration elapsed,
+    required double size,
+  });
+}
+
+/// The drawn-in-code cat, posed per action. A stand-in until real art exists.
+///
+/// Every pose is a transform of the same vector cat, so it looks rough for the
+/// actions the cat was never drawn for (climbing, sleeping). That is the point:
+/// it is a placeholder, and the sprite set replaces it without touching the room.
+class PlaceholderCatAnimations implements CatAnimationSet {
+  const PlaceholderCatAnimations();
+
+  @override
+  Widget frame(
+    BuildContext context, {
+    required CatAppearance appearance,
+    required CatAction action,
+    required CatMood mood,
+    required CatFacing facing,
+    required Duration elapsed,
+    required double size,
+  }) {
+    final t = elapsed.inMilliseconds / 1000.0;
+    final cat = CatArt(appearance: appearance, mood: mood, size: size);
+    final posed = _pose(cat, action, t);
+    return facing == CatFacing.right ? posed : _mirror(posed);
+  }
+
+  Widget _pose(Widget cat, CatAction action, double t) {
+    return switch (action) {
+      // A walk bob: two small hops a second.
+      CatAction.walk => Transform.translate(
+        offset: Offset(0, -2.5 * math.sin(t * 9)),
+        child: cat,
+      ),
+      // Flattened and wider, pressed to the floor.
+      CatAction.sleep => Transform.scale(
+        scaleX: 1.25,
+        scaleY: 0.72,
+        alignment: Alignment.bottomCenter,
+        child: cat,
+      ),
+      // Nose down to a paw.
+      CatAction.groom => Transform.rotate(
+        angle: 0.16 + 0.04 * math.sin(t * 6),
+        alignment: Alignment.bottomCenter,
+        child: Transform.scale(
+          scaleY: 0.95,
+          alignment: Alignment.bottomCenter,
+          child: cat,
+        ),
+      ),
+      CatAction.perch => Transform.scale(
+        scaleX: 1.1,
+        scaleY: 0.85,
+        alignment: Alignment.bottomCenter,
+        child: cat,
+      ),
+      CatAction.climbUp => Transform.rotate(angle: -0.12, child: cat),
+      CatAction.climbDown => Transform.rotate(angle: 0.12, child: cat),
+      CatAction.sit => Transform.scale(
+        scaleY: 0.92,
+        alignment: Alignment.bottomCenter,
+        child: cat,
+      ),
+      CatAction.idle => cat,
+    };
+  }
+
+  /// Art is drawn facing right, so left is the same art flipped.
+  Widget _mirror(Widget child) {
+    return Transform(
+      alignment: Alignment.center,
+      transform: Matrix4.diagonal3Values(-1, 1, 1),
+      child: child,
+    );
+  }
+}
