@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "64019969968",
+    "project_id": "catwalk-walks-app",
+    "storage_bucket": "catwalk-walks-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:64019969968:android:20bfb317d30e81bcae0875",
+        "android_client_info": {
+          "package_name": "app.catwalk.catwalk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "64019969968-j288heikjqsgr71digk3iha1ftvlhm7e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8BomOs-7CY-0CvtcZQiYa_Mxifq5YRi0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "64019969968-j288heikjqsgr71digk3iha1ftvlhm7e.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "64019969968-u4hejagsivivft0lgjd4fcjjkb27nqgd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "app.catwalk.catwalk"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
