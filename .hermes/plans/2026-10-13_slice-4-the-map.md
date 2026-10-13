@@ -1,5 +1,7 @@
 # Catwalk Slice 4 — The Map
 
+> **Status (implemented, defaults taken):** flutter_map + OSM tiles (dev), geolocator, 30 m reach, 250–900 m band, 5 pins a day, 2 freezes max, long walk = daily goal, fourth "Map" tab. Tasks 1–12 done; the cat recovery, pickups, freezes and toys were all exercised in tests and on the iOS simulator with a faked location. **Not done / not verified:** real GPS, Android build (no JDK), a production tile host (OSM's public servers are not for shipped apps; set `MAP_TILE_URL`), pins avoiding water/roads, and a visible freeze count outside the map banner.
+
 **Goal:** a map of where you are, with pickups nearby. Walk to one and you collect it. Runaway recovery changes: a long walk first, then the cat is placed on the map, and you walk to it. Still one cat, still no account, still fully local.
 
 **Principle from the plan:** the phone's step record decides the day. The map only checks that you *reached the pin*. Nothing on the map can change mood, XP-for-the-goal or the streak, except through the rules below.

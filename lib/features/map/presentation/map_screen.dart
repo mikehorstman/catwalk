@@ -202,6 +202,12 @@ class _Banner extends StatelessWidget {
       text = n == 1 ? 'One pickup nearby.' : '$n pickups nearby.';
       icon = Icons.card_giftcard;
     }
+    final freezes = view.inventory.freezes;
+    final freezeNote = freezes == 0
+        ? null
+        : freezes == 1
+        ? 'You hold 1 streak freeze.'
+        : 'You hold $freezes streak freezes.';
     return Material(
       color: CatwalkColors.card,
       elevation: 2,
@@ -212,7 +218,21 @@ class _Banner extends StatelessWidget {
           children: [
             Icon(icon, color: CatwalkColors.teal),
             const SizedBox(width: 10),
-            Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(text, style: theme.textTheme.bodyMedium),
+                  if (freezeNote != null)
+                    Text(
+                      freezeNote,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: CatwalkColors.inkMuted,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -342,6 +362,7 @@ class _EventSheet extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Icon(icon, size: 48, color: CatwalkColors.teal),
             const SizedBox(height: 12),
@@ -349,9 +370,11 @@ class _EventSheet extends StatelessWidget {
             const SizedBox(height: 6),
             Text(body, style: theme.textTheme.bodyMedium, textAlign: TextAlign.center),
             const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Nice'),
+            Center(
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Nice'),
+              ),
             ),
           ],
         ),
