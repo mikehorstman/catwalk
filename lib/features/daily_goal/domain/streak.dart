@@ -15,8 +15,10 @@ int currentStreak({
     cursor = today.addDays(-1);
   }
   var streak = 0;
-  while (byDate[cursor]?.goalCompleted == true) {
-    streak += 1;
+  // A frozen day neither adds to the streak nor breaks it.
+  while (byDate[cursor]?.goalCompleted == true ||
+      byDate[cursor]?.frozen == true) {
+    if (byDate[cursor]!.goalCompleted) streak += 1;
     cursor = cursor.addDays(-1);
   }
   return streak;

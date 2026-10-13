@@ -48,8 +48,3 @@ CatCareState careStateForMissedDays(int missedDays) {
     consecutiveMissedDays: 0,
   );
 }
-
-/// Isolated so a future map-based recovery can replace this without touching UI.
-///
-/// V1: any steps on a new day are enough to bring a runaway cat home.
-bool canRecoverByWalking({required int stepsToday}) => stepsToday > 0;

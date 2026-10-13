@@ -13,6 +13,7 @@ import '../../daily_goal/data/history_repository.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/day_evaluation.dart';
 import '../../daily_goal/domain/streak.dart';
+import '../../map/data/inventory_repository.dart';
 import '../../onboarding/data/onboarding_repository.dart';
 import '../../settings/data/profile_repository.dart';
 import '../domain/step_reading.dart';
@@ -22,7 +23,6 @@ class HomeState {
     required this.cat,
     required this.today,
     required this.xpGainedToday,
-    required this.recoveredToday,
     required this.stepsAvailable,
     required this.stepsPermissionGranted,
     required this.currentStreak,
@@ -35,7 +35,6 @@ class HomeState {
   final int currentStreak;
   final DailyProgress today;
   final int xpGainedToday;
-  final bool recoveredToday;
 
   /// True when this device has a health store Catwalk can read.
   final bool stepsAvailable;
@@ -107,7 +106,10 @@ class HomeController extends AsyncNotifier<HomeState> {
     // No reading is not zero, but the day still has a number to show. The
     // UI says "unavailable" instead of claiming a count.
     final steps = reading.steps ?? 0;
+    final inventories = ref.read(inventoryRepositoryProvider);
+    final inventory = await inventories.read();
     final snapshot = evaluateDay(
+      freezes: inventory.freezes,
       cat: cat,
       dailyStepGoal: profile.dailyStepGoal,
       stepsToday: steps,
@@ -115,11 +117,30 @@ class HomeController extends AsyncNotifier<HomeState> {
       history: days,
       lastEvaluated: await history.readLastEvaluated(),
     );
-    await _write(history, snapshot);
+    final frozen = [
+      for (final date in snapshot.frozenDays)
+        DailyProgress(
+          date: date,
+          stepGoal: profile.dailyStepGoal,
+          steps: 0,
+          goalCompleted: false,
+          xpAwarded: false,
+          frozen: true,
+        ),
+    ];
+    await _write(history, snapshot, frozen);
+    if (frozen.isNotEmpty) {
+      await inventories.write(
+        inventory.copyWith(freezes: inventory.freezes - frozen.length),
+      );
+    }
+    final frozenDates = {for (final day in frozen) day.date};
     final streak = currentStreak(
       history: [
         for (final day in days)
-          if (day.date != snapshot.today.date) day,
+          if (day.date != snapshot.today.date && !frozenDates.contains(day.date))
+            day,
+        ...frozen,
         snapshot.today,
       ],
       today: snapshot.today.date,
@@ -129,20 +150,26 @@ class HomeController extends AsyncNotifier<HomeState> {
       cat: snapshot.cat,
       today: snapshot.today,
       xpGainedToday: snapshot.xpGainedToday,
-      recoveredToday: snapshot.recoveredToday,
       stepsAvailable: available,
       stepsPermissionGranted: granted,
       stepSource: reading.source,
     );
   }
 
-  Future<void> _write(HistoryRepository history, DaySnapshot snapshot) async {
+  Future<void> _write(
+    HistoryRepository history,
+    DaySnapshot snapshot,
+    List<DailyProgress> frozen,
+  ) async {
     await ref
         .read(localStoreProvider)
         .write(
           OnboardingRepository.catKey,
           jsonEncode(catToJson(snapshot.cat)),
         );
+    for (final day in frozen) {
+      await history.saveDay(day);
+    }
     await history.saveDay(snapshot.today);
     await history.writeLastEvaluated(snapshot.today.date);
   }

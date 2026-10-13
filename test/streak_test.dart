@@ -56,4 +56,21 @@ void main() {
     ];
     expect(bestStreak(history), 3);
   });
+
+  test('a frozen day keeps the streak alive without adding to it', () {
+    final history = [
+      _day(today.addDays(-1), completed: true),
+      DailyProgress(
+        date: today.addDays(-2),
+        stepGoal: 6000,
+        steps: 0,
+        goalCompleted: false,
+        xpAwarded: false,
+        frozen: true,
+      ),
+      _day(today.addDays(-3), completed: true),
+      _day(today.addDays(-4), completed: true),
+    ];
+    expect(currentStreak(history: history, today: today), 3);
+  });
 }

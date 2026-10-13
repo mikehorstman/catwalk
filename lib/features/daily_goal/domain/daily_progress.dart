@@ -8,6 +8,7 @@ class DailyProgress {
     required this.goalCompleted,
     required this.xpAwarded,
     this.xpEarned = 0,
+    this.frozen = false,
   });
 
   final CalendarDate date;
@@ -21,6 +22,10 @@ class DailyProgress {
   /// How much XP the completion reward was worth. Zero when not completed.
   final int xpEarned;
 
+  /// A streak freeze covered this day. It was not walked, but it did not break
+  /// the streak either.
+  final bool frozen;
+
   int get stepsRemaining {
     final remaining = stepGoal - steps;
     return remaining < 0 ? 0 : remaining;
@@ -32,6 +37,7 @@ class DailyProgress {
     bool? goalCompleted,
     bool? xpAwarded,
     int? xpEarned,
+    bool? frozen,
   }) {
     return DailyProgress(
       date: date,
@@ -40,6 +46,7 @@ class DailyProgress {
       goalCompleted: goalCompleted ?? this.goalCompleted,
       xpAwarded: xpAwarded ?? this.xpAwarded,
       xpEarned: xpEarned ?? this.xpEarned,
+      frozen: frozen ?? this.frozen,
     );
   }
 }

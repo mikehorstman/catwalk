@@ -12,9 +12,4 @@ void main() {
     expect(careStateForMissedDays(3).status, CatStatus.runaway);
     expect(careStateForMissedDays(5).status, CatStatus.runaway);
   });
-
-  test('walking recovery is isolated and does not delete the cat', () {
-    expect(canRecoverByWalking(stepsToday: 0), isFalse);
-    expect(canRecoverByWalking(stepsToday: 1), isTrue);
-  });
 }
