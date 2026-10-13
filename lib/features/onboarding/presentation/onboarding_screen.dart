@@ -37,7 +37,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final draft = ref.read(onboardingControllerProvider);
     return switch (_page) {
       2 => draft.name.trim().isNotEmpty,
-      3 => draft.dailyStepGoal >= 1000 && draft.dailyStepGoal <= 30000,
+      3 =>
+        draft.dailyStepGoal >= AppConstants.minDailyStepGoal &&
+            draft.dailyStepGoal <= AppConstants.maxDailyStepGoal,
       _ => true,
     };
   }

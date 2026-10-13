@@ -141,3 +141,17 @@ class FakeLocationService implements LocationService {
   @override
   Future<void> openSettings() async => settingsOpened++;
 }
+
+/// Whether a runaway cat can come home through the weekly walk instead of the
+/// map: true when location is switched off, denied, or cannot be read.
+///
+/// When we cannot tell, the weekly walk is allowed, so nobody is left with a
+/// cat that can never come home.
+final weeklyRecoveryAllowedProvider = FutureProvider<bool>((ref) async {
+  try {
+    final access = await ref.watch(locationServiceProvider).access();
+    return access == LocationAccess.blocked || access == LocationAccess.denied;
+  } catch (_) {
+    return true;
+  }
+});

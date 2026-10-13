@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/format.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../../history/presentation/history_controller.dart';
 import '../../onboarding/presentation/onboarding_controller.dart';
@@ -29,7 +31,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   bool get _goalValid {
     final goal = int.tryParse(_goalController.text);
-    return goal != null && goal >= 1000 && goal <= 30000;
+    return goal != null &&
+        goal >= AppConstants.minDailyStepGoal &&
+        goal <= AppConstants.maxDailyStepGoal;
   }
 
   Future<void> _saveGoal() async {
@@ -121,7 +125,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 8),
               Text(
                 'Between ${_format(1000)} and ${_format(30000)} steps. '
-                'A higher goal earns more XP each day.',
+                'A higher goal earns more XP each day, and lets you keep more '
+                    'cats. Minimum ${formatNumber(AppConstants.minDailyStepGoal)} steps.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

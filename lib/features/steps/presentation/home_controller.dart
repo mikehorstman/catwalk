@@ -4,16 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/calendar_date.dart';
 import '../../../services/health/mock_step_repository.dart';
+import '../../../services/health/step_repository.dart';
 import '../../../services/health/step_repository_provider.dart';
 import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
 import '../../cat/domain/cat.dart';
+import '../../cat/domain/cat_status.dart';
 import '../../daily_goal/data/history_repository.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/day_evaluation.dart';
 import '../../daily_goal/domain/streak.dart';
 import '../../map/data/inventory_repository.dart';
+import '../../map/data/location_service.dart';
 import '../../onboarding/data/onboarding_repository.dart';
 import '../../settings/data/profile_repository.dart';
 import '../domain/step_reading.dart';
@@ -27,6 +30,7 @@ class HomeState {
     required this.stepsPermissionGranted,
     required this.currentStreak,
     this.stepSource,
+    this.catCameHomeThisWeek = false,
   });
 
   final Cat cat;
@@ -35,6 +39,9 @@ class HomeState {
   final int currentStreak;
   final DailyProgress today;
   final int xpGainedToday;
+
+  /// The cat came home through the weekly walk, with no map to use.
+  final bool catCameHomeThisWeek;
 
   /// True when this device has a health store Catwalk can read.
   final bool stepsAvailable;
@@ -108,8 +115,16 @@ class HomeController extends AsyncNotifier<HomeState> {
     final steps = reading.steps ?? 0;
     final inventories = ref.read(inventoryRepositoryProvider);
     final inventory = await inventories.read();
+    final weeklyAllowed = await ref.read(weeklyRecoveryAllowedProvider.future);
     final snapshot = evaluateDay(
       freezes: inventory.freezes,
+      allowWeeklyRecovery: weeklyAllowed,
+      weekSteps: await _weekSteps(
+        cat: cat,
+        repository: repository,
+        saved: days,
+        weeklyAllowed: weeklyAllowed,
+      ),
       cat: cat,
       dailyStepGoal: profile.dailyStepGoal,
       stepsToday: steps,
@@ -153,7 +168,41 @@ class HomeController extends AsyncNotifier<HomeState> {
       stepsAvailable: available,
       stepsPermissionGranted: granted,
       stepSource: reading.source,
+      catCameHomeThisWeek: snapshot.recoveredByWeek,
     );
+  }
+
+  /// The last six days of steps, for the weekly walk home.
+  ///
+  /// A day the app was opened for is already saved. The rest is asked of the
+  /// phone, which is the only source that can still see them. Read only when it
+  /// can matter, so an ordinary open asks for nothing.
+  Future<Map<CalendarDate, int>> _weekSteps({
+    required Cat cat,
+    required StepRepository repository,
+    required List<DailyProgress> saved,
+    required bool weeklyAllowed,
+  }) async {
+    if (!weeklyAllowed || cat.status != CatStatus.runaway) return const {};
+    final byDate = {for (final day in saved) day.date: day.steps};
+    final today = CalendarDate.today();
+    final week = <CalendarDate, int>{};
+    for (var back = 1; back <= 6; back++) {
+      final date = today.addDays(-back);
+      final remembered = byDate[date];
+      if (remembered != null) {
+        week[date] = remembered;
+        continue;
+      }
+      StepReading reading;
+      try {
+        reading = await repository.getStepsForDate(date);
+      } catch (_) {
+        continue;
+      }
+      if (reading.steps != null) week[date] = reading.steps!;
+    }
+    return week;
   }
 
   Future<void> _write(

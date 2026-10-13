@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/calendar_date.dart';
+import '../../cat/domain/cat_care.dart';
 import 'geo.dart';
 import 'map_pin.dart';
 
@@ -82,4 +84,41 @@ Recovery placeCat({
     catPoint: pointInBand(cell.center, random),
     placedOn: today,
   );
+}
+
+/// Steps over the last seven days, today included.
+///
+/// [stepsByDate] holds past days only; today comes from [stepsToday].
+int weeklySteps({
+  required Map<CalendarDate, int> stepsByDate,
+  required CalendarDate today,
+  required int stepsToday,
+}) {
+  var total = stepsToday;
+  for (var back = 1; back <= 6; back++) {
+    total += stepsByDate[today.addDays(-back)] ?? 0;
+  }
+  return total;
+}
+
+/// The weekly target for a goal: two normal weeks of walking.
+int weeklyStepsTarget(int goal) => goal * AppConstants.weeklyGoalMultiplier;
+
+/// Whether the weekly walk brings a runaway cat home when the map cannot.
+///
+/// Needs the weekly total, and a real walk today, so a cat is never handed back
+/// on an app open without walking. The map is still the faster way home.
+bool weeklyWalkMet({
+  required Map<CalendarDate, int> stepsByDate,
+  required CalendarDate today,
+  required int stepsToday,
+  required int goal,
+}) {
+  if (!isPartialDay(stepsToday: stepsToday, goal: goal)) return false;
+  final total = weeklySteps(
+    stepsByDate: stepsByDate,
+    today: today,
+    stepsToday: stepsToday,
+  );
+  return total >= weeklyStepsTarget(goal);
 }

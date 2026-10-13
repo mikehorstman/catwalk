@@ -1,6 +1,7 @@
 import 'package:catwalk/app/app.dart';
 import 'package:catwalk/core/utils/calendar_date.dart';
 import 'package:catwalk/core/utils/format.dart';
+import 'package:catwalk/features/map/data/location_service.dart';
 import 'package:catwalk/features/onboarding/data/onboarding_repository.dart';
 import 'package:catwalk/features/steps/domain/step_reading.dart';
 import 'package:catwalk/services/health/step_repository.dart';
@@ -96,6 +97,11 @@ Future<void> _pumpHome(WidgetTester tester, StepRepository repository) async {
       overrides: [
         localStoreProvider.overrideWithValue(store),
         stepRepositoryProvider.overrideWithValue(repository),
+        // Location is switched off in these tests: it decides whether a
+        // runaway cat could come home through the weekly walk.
+        locationServiceProvider.overrideWithValue(
+          FakeLocationService(access_: LocationAccess.blocked),
+        ),
       ],
       child: const CatwalkApp(),
     ),

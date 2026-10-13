@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
@@ -21,10 +22,20 @@ class ProfileRepository {
 
   final LocalStore _store;
 
+  /// Reads the profile, raising a goal that is below the minimum.
+  ///
+  /// A saved goal from before the minimum existed is corrected on read and
+  /// written back, so nobody is left on a goal the app no longer offers.
   Future<UserProfile> read() async {
     final raw = await _store.read(OnboardingRepository.profileKey);
     final json = jsonDecode(raw!) as Map<String, dynamic>;
-    return profileFromJson(json);
+    final profile = profileFromJson(json);
+    final raised = profile.dailyStepGoal < AppConstants.minDailyStepGoal
+        ? profile.copyWith(dailyStepGoal: AppConstants.minDailyStepGoal)
+        : null;
+    if (raised == null) return profile;
+    await write(raised);
+    return raised;
   }
 
   Future<void> write(UserProfile profile) async {

@@ -71,6 +71,14 @@ class _HomeBody extends ConsumerWidget {
           ),
           textAlign: TextAlign.center,
         ),
+        if (state.catCameHomeThisWeek) ...[
+          const SizedBox(height: 12),
+          _Notice(
+            text:
+                '${cat.name} came home after your week of walking. '
+                'Keep it up today.',
+          ),
+        ],
         const SizedBox(height: 16),
         Center(
           child: ProgressRing(
