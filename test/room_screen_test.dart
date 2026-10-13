@@ -4,7 +4,9 @@ import 'package:catwalk/features/cat/domain/cat_appearance.dart';
 import 'package:catwalk/features/cat/domain/cat_mood.dart';
 import 'package:catwalk/features/cat/domain/cat_status.dart';
 import 'package:catwalk/features/cat/presentation/widgets/cat_art.dart';
+import 'package:catwalk/features/map/domain/inventory.dart';
 import 'package:catwalk/features/room/data/room_cats_provider.dart';
+import 'package:catwalk/features/room/data/room_layout_provider.dart';
 import 'package:catwalk/features/room/domain/room_cat.dart';
 import 'package:catwalk/features/room/presentation/room_screen.dart';
 import 'package:flutter/material.dart';
@@ -145,5 +147,29 @@ void main() {
     expect(find.byType(CatArt), findsWidgets);
 
     await disposeRoom(tester);
+  });
+
+  testWidgets('a toy you found lies on the floor', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          roomCatsProvider.overrideWithValue([catOf()]),
+          inventoryProvider.overrideWith(
+            (ref) async => const Inventory(toys: ['ball']),
+          ),
+        ],
+        child: const MaterialApp(home: RoomScreen()),
+      ),
+    );
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 30));
+    }
+
+    expect(find.bySemanticsLabel('A ball'), findsOneWidget);
+    expect(find.bySemanticsLabel('A mouse'), findsNothing);
+
+    await disposeRoom(tester);
+    handle.dispose();
   });
 }

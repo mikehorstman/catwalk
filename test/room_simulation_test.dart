@@ -193,4 +193,37 @@ void main() {
     sim.step(1);
     expect(sim.states, isEmpty);
   });
+
+  test('with no toys nobody ever plays', () {
+    final sim = simOf([catOf('1', mood: CatMood.happy)], seed: 4);
+    for (var i = 0; i < 4000; i++) {
+      sim.step(1 / 30);
+      expect(sim.states.single.action, isNot(CatAction.play));
+    }
+  });
+
+  test('with a toy, a happy cat plays with it', () {
+    final sim = RoomSimulation(
+      layout: RoomLayout.standard.withToys(['ball']),
+      cats: [catOf('1', mood: CatMood.happy)],
+      seed: 4,
+    );
+    var played = false;
+    for (var i = 0; i < 9000 && !played; i++) {
+      sim.step(1 / 30);
+      final state = sim.states.single;
+      if (state.action == CatAction.play) {
+        played = true;
+        expect(state.spotId, 'toy_ball');
+      }
+    }
+    expect(played, isTrue);
+  });
+
+  test('a happy cat is likelier to play than a sad one', () {
+    expect(
+      moodWeights(CatMood.happy)[CatAction.play]!,
+      greaterThan(moodWeights(CatMood.sad)[CatAction.play]!),
+    );
+  });
 }

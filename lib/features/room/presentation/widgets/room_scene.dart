@@ -81,6 +81,14 @@ class RoomScene extends StatelessWidget {
             // Basket.
             _Basket(center: at(basket.position.dx, basket.position.dy), w: w, h: h),
 
+            // Toys you have found, lying on the floor.
+            for (final spot in layout.toySpotsHere)
+              _Toy(
+                id: spot.id.substring(toySpotPrefix.length),
+                center: at(spot.position.dx, spot.position.dy),
+                size: 0.07 * w,
+              ),
+
             // Cat tree: a post with a platform on top.
             Positioned(
               left: tree.position.dx * w - 0.045 * w,
@@ -159,6 +167,53 @@ class _Basket extends StatelessWidget {
             bottom: Radius.circular(height * 0.35),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A toy on the floor. Simple shapes: the real art comes later.
+class _Toy extends StatelessWidget {
+  const _Toy({required this.id, required this.center, required this.size});
+
+  final String id;
+  final Offset center;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget shape = switch (id) {
+      'ball' => DecoratedBox(
+        decoration: const BoxDecoration(
+          color: Color(0xFFE5574B),
+          shape: BoxShape.circle,
+        ),
+        child: SizedBox(width: size, height: size),
+      ),
+      'mouse' => DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFF9AA5AA),
+          borderRadius: BorderRadius.circular(size),
+        ),
+        child: SizedBox(width: size * 1.3, height: size * 0.7),
+      ),
+      _ => Transform.rotate(
+        angle: -0.5,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: CatwalkColors.teal,
+            borderRadius: BorderRadius.circular(size),
+          ),
+          child: SizedBox(width: size * 1.6, height: size * 0.28),
+        ),
+      ),
+    };
+    return Positioned(
+      left: center.dx,
+      top: center.dy,
+      child: FractionalTranslation(
+        translation: const Offset(-0.5, -1.0),
+        child: Semantics(label: 'A $id', child: shape),
       ),
     );
   }

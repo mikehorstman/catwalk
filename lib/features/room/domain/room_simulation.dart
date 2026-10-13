@@ -89,6 +89,7 @@ Map<CatAction, double> moodWeights(CatMood mood) => switch (mood) {
     CatAction.sit: 1,
     CatAction.sleep: 1,
     CatAction.perch: 2,
+    CatAction.play: 4,
     CatAction.idle: 1,
   },
   CatMood.neutral => {
@@ -97,6 +98,7 @@ Map<CatAction, double> moodWeights(CatMood mood) => switch (mood) {
     CatAction.sleep: 2,
     CatAction.groom: 2,
     CatAction.perch: 1,
+    CatAction.play: 1.5,
     CatAction.idle: 2,
   },
   CatMood.sad => {
@@ -105,6 +107,7 @@ Map<CatAction, double> moodWeights(CatMood mood) => switch (mood) {
     CatAction.sleep: 3,
     CatAction.groom: 1,
     CatAction.perch: 0.5,
+    CatAction.play: 0.3,
     CatAction.idle: 2,
   },
 };

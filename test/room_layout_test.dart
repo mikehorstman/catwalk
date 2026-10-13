@@ -51,4 +51,48 @@ void main() {
     expect(layout.spot('rug')!.capacity, 2);
     expect(layout.spot('basket')!.capacity, 1);
   });
+
+  group('toys', () {
+    test('a room with no toys has no toy spots', () {
+      expect(layout.toySpotsHere, isEmpty);
+      expect(layout.offeredActions, isNot(contains(CatAction.play)));
+    });
+
+    test('a found toy becomes a spot to play at', () {
+      final withBall = layout.withToys(['ball']);
+
+      expect(withBall.toySpotsHere.length, 1);
+      final spot = withBall.spot('toy_ball')!;
+      expect(spot.allowsAction(CatAction.play), isTrue);
+      expect(spot.position.dy, layout.walkY);
+      expect(spot.isHigh, isFalse);
+      expect(withBall.offeredActions, contains(CatAction.play));
+      // The furniture is still there.
+      expect(withBall.spot('rug'), isNotNull);
+    });
+
+    test('a toy you do not have is not in the room', () {
+      final room = layout.withToys(['mouse', 'dragon']);
+      expect(room.spot('toy_mouse'), isNotNull);
+      expect(room.spot('toy_dragon'), isNull);
+      expect(room.spot('toy_ball'), isNull);
+    });
+
+    test('putting toys in twice does not stack them', () {
+      final once = layout.withToys(['ball']);
+      final twice = once.withToys(['ball', 'feather']);
+      expect(twice.toySpotsHere.map((s) => s.id).toSet(), {
+        'toy_ball',
+        'toy_feather',
+      });
+      expect(twice.toySpotsHere.length, 2);
+    });
+
+    test('every toy lies on the floor, inside the room', () {
+      final all = layout.withToys(['ball', 'mouse', 'feather']);
+      for (final spot in all.toySpotsHere) {
+        expect(spot.position.dx, inInclusiveRange(all.walkLeft, all.walkRight));
+      }
+    });
+  });
 }

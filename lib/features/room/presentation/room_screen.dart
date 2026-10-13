@@ -8,6 +8,7 @@ import '../../cat/presentation/widgets/cat_art.dart';
 import '../data/room_cats_provider.dart';
 import '../domain/cat_action.dart';
 import '../domain/room_cat.dart';
+import '../data/room_layout_provider.dart';
 import '../domain/room_layout.dart';
 import '../domain/room_simulation.dart';
 import 'animation_lab.dart';
@@ -21,12 +22,14 @@ import 'widgets/room_scene.dart';
 /// rules, and the room only picks what a cat does about them.
 class RoomScreen extends ConsumerStatefulWidget {
   const RoomScreen({
-    this.layout = RoomLayout.standard,
+    this.layout,
     this.animations = const PlaceholderCatAnimations(),
     super.key,
   });
 
-  final RoomLayout layout;
+  /// Overrides the room, for tests. Normally the room is built from what you
+  /// have found.
+  final RoomLayout? layout;
   final CatAnimationSet animations;
 
   @override
@@ -49,16 +52,18 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
   }
 
   /// The cats the room is built from. A change means a fresh room.
-  String _signatureOf(List<RoomCat> cats) => [
-    for (final cat in cats) '${cat.id}:${cat.mood.name}:${cat.status.name}',
-  ].join(',');
+  String _signatureOf(List<RoomCat> cats, RoomLayout layout) =>
+      [
+        for (final cat in cats) '${cat.id}:${cat.mood.name}:${cat.status.name}',
+        for (final spot in layout.spots) spot.id,
+      ].join(',');
 
   /// Creates a fresh room when the cats or the motion setting change.
-  void _syncRoom(List<RoomCat> cats, bool reducedMotion) {
-    _signature = _signatureOf(cats);
+  void _syncRoom(List<RoomCat> cats, RoomLayout layout, bool reducedMotion) {
+    _signature = _signatureOf(cats, layout);
     _reducedMotion = reducedMotion;
     final simulation = RoomSimulation(
-      layout: widget.layout,
+      layout: layout,
       cats: cats,
       reducedMotion: reducedMotion,
     );
@@ -93,8 +98,10 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
     final cats = ref.watch(roomCatsProvider);
     // Reduce Motion is a device setting, and it can change while the app runs.
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
-    if (_signatureOf(cats) != _signature || reducedMotion != _reducedMotion) {
-      _syncRoom(cats, reducedMotion);
+    final RoomLayout layout = widget.layout ?? ref.watch(roomLayoutProvider);
+    if (_signatureOf(cats, layout) != _signature ||
+        reducedMotion != _reducedMotion) {
+      _syncRoom(cats, layout, reducedMotion);
     }
 
     final home = [
@@ -111,7 +118,7 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
           return Stack(
             fit: StackFit.expand,
             children: [
-              RoomScene(layout: widget.layout),
+              RoomScene(layout: layout),
               if (runAway)
                 const Center(child: EmptyCushion(size: 200))
               else
@@ -121,7 +128,7 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
                       state: state,
                       cat: cat,
                       animations: widget.animations,
-                      layout: widget.layout,
+                      layout: layout,
                       room: size,
                       onTap: () => CatDetailsSheet.show(context, cat),
                     ),

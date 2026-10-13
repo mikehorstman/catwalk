@@ -11,6 +11,7 @@ import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
 import '../../onboarding/data/onboarding_repository.dart';
+import '../../room/data/room_layout_provider.dart';
 import '../../steps/presentation/home_controller.dart';
 import '../data/inventory_repository.dart';
 import '../data/location_service.dart';
@@ -266,6 +267,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     final inventory = await inventories.read();
     final result = collect(reward: pin.reward, inventory: inventory, cat: cat);
     await inventories.write(result.inventory);
+    ref.invalidate(inventoryProvider);
     if (result.xpGained > 0) {
       await store.write(
         OnboardingRepository.catKey,

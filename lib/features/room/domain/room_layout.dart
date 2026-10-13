@@ -35,6 +35,16 @@ class RoomSpot {
   bool allowsAction(CatAction action) => allows.contains(action);
 }
 
+/// Spot ids for toys start with this: `toy_ball`.
+const String toySpotPrefix = 'toy_';
+
+/// Where each toy lies on the floor, left to right as a fraction of the room.
+const Map<String, double> toySpots = {
+  'ball': 0.30,
+  'mouse': 0.72,
+  'feather': 0.42,
+};
+
 /// The room: where cats can walk and what they can use.
 class RoomLayout {
   const RoomLayout({
@@ -96,6 +106,36 @@ class RoomLayout {
     }
     return null;
   }
+
+  /// The same room with the toys you have found put on the floor.
+  ///
+  /// A toy is a spot a cat can play at, so cats find it the way they find the
+  /// rug. Toys you do not have are not here at all.
+  RoomLayout withToys(Iterable<String> toys) {
+    final found = {...toys};
+    return RoomLayout(
+      spots: [
+        ...spots.where((spot) => !spot.id.startsWith(toySpotPrefix)),
+        for (final entry in toySpots.entries)
+          if (found.contains(entry.key))
+            RoomSpot(
+              id: '$toySpotPrefix${entry.key}',
+              position: Offset(entry.value, walkY),
+              allows: const {CatAction.play},
+              label: 'with the ${entry.key}',
+            ),
+      ],
+      walkY: walkY,
+      walkLeft: walkLeft,
+      walkRight: walkRight,
+    );
+  }
+
+  /// Every spot that is a toy, in the room.
+  List<RoomSpot> get toySpotsHere => [
+    for (final spot in spots)
+      if (spot.id.startsWith(toySpotPrefix)) spot,
+  ];
 
   List<RoomSpot> spotsAllowing(CatAction action) {
     return [

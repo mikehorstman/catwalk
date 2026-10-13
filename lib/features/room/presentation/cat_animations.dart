@@ -85,6 +85,15 @@ class PlaceholderCatAnimations implements CatAnimationSet {
         alignment: Alignment.bottomCenter,
         child: cat,
       ),
+      // A pounce: a quick bounce and a lean towards the toy.
+      CatAction.play => Transform.translate(
+        offset: Offset(0, -6 * math.sin(t * 7).abs()),
+        child: Transform.rotate(
+          angle: 0.10 * math.sin(t * 7),
+          alignment: Alignment.bottomCenter,
+          child: cat,
+        ),
+      ),
       CatAction.idle => cat,
     };
   }

@@ -10,13 +10,14 @@ enum CatAction {
   idle,
   perch,
   climbUp,
-  climbDown;
+  climbDown,
+  play;
 
   /// Actions a cat can be seen doing without being at a spot.
   static const onFloor = {walk, sit, groom, idle};
 
   /// Actions that need a spot to happen at.
-  static const needsSpot = {sleep, perch};
+  static const needsSpot = {sleep, perch, play};
 
   /// Travel actions. The planner never picks these; they belong to a route.
   bool get isTravel => this == climbUp || this == climbDown;
@@ -40,4 +41,5 @@ String actionLabel(CatAction action) => switch (action) {
   CatAction.perch => 'perched',
   CatAction.climbUp => 'climbing up',
   CatAction.climbDown => 'climbing down',
+  CatAction.play => 'playing',
 };
