@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catwalk — palettes around the orange</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #fff;
+        color: #222;
+        font:
+          16px/1.5 ui-sans-serif,
+          system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 30px;
+      }
+      p.sub {
+        margin: 0 0 28px;
+        color: #666;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 18px;
+      }
+      .opt h2 {
+        margin: 0 0 2px;
+        font-size: 18px;
+      }
+      .opt .note {
+        margin: 0 0 10px;
+        color: #666;
+        font-size: 13px;
+        min-height: 40px;
+      }
+      .phone {
+        border-radius: 22px;
+        padding: 16px 14px 14px;
+        border: 1px solid #00000018;
+        min-height: 340px;
+      }
+      .title {
+        font-weight: 700;
+        font-size: 18px;
+        margin-bottom: 2px;
+      }
+      .mood {
+        font-size: 13px;
+        opacity: 0.8;
+        margin-bottom: 14px;
+      }
+      .cat {
+        width: 92px;
+        height: 92px;
+        border-radius: 50%;
+        margin: 6px auto 12px;
+        display: grid;
+        place-items: center;
+        font-size: 44px;
+      }
+      .steps {
+        font-size: 34px;
+        font-weight: 800;
+        text-align: center;
+        letter-spacing: -0.03em;
+      }
+      .goal {
+        text-align: center;
+        font-size: 12px;
+        opacity: 0.7;
+        margin-bottom: 10px;
+      }
+      .bar {
+        height: 10px;
+        border-radius: 99px;
+        overflow: hidden;
+        margin-bottom: 6px;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        width: 62%;
+        border-radius: 99px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        margin-bottom: 14px;
+      }
+      .btn {
+        display: block;
+        text-align: center;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 11px;
+        border-radius: 14px;
+        margin-bottom: 8px;
+      }
+      .chip {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 9px;
+        border-radius: 99px;
+      }
+      .chips {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .sw {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .sw span {
+        flex: 1;
+        height: 26px;
+        border-radius: 8px;
+        border: 1px solid #00000014;
+      }
+      .hex {
+        font:
+          11px ui-monospace,
+          Menlo,
+          monospace;
+        color: #666;
+        margin-top: 4px;
+      }
+      .fine {
+        margin-top: 32px;
+        color: #666;
+        font-size: 14px;
+        max-width: 70ch;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Palettes around your orange</h1>
+      <p class="sub">
+        All use #F69337. Same layout, different supporting colours.
+      </p>
+      <div class="grid" id="grid"></div>
+      <p class="fine">
+        Orange is only used for fills, the ring, and the cat. Text is always the
+        dark ink colour. Orange text on cream only reaches 2.2:1, so it never
+        carries words. Every ink and accent choice below passes 4.5:1 on its
+        cream, except where noted.
+      </p>
+    </main>
+    <script>
+      const O = "#F69337";
+      const opts = [
+        {
+          name: "A · Sage",
+          note: "Calm and natural. A walk outdoors. Accent only reaches 3.7:1, so use it for fills and large text.",
+          cream: "#FFF8EF",
+          ink: "#2B1D14",
+          accent: "#5E8C61",
+          soft: "#FFE3CC",
+          card: "#FFFFFF",
+          sad: "#7A8FA6",
+        },
+        {
+          name: "B · Teal",
+          note: "Fresh and modern. Strong against orange. Passes 4.8:1.",
+          cream: "#FFF6EA",
+          ink: "#1B2B30",
+          accent: "#1F7A7A",
+          soft: "#FFE3CC",
+          card: "#FFFFFF",
+          sad: "#6F8FA0",
+        },
+        {
+          name: "C · Berry",
+          note: "Warm and playful, a bit more character. Passes 6.1:1.",
+          cream: "#FFF7F0",
+          ink: "#2A1A24",
+          accent: "#9B3D6B",
+          soft: "#FFE0D0",
+          card: "#FFFFFF",
+          sad: "#8C7A99",
+        },
+        {
+          name: "D · Sky",
+          note: "Closest to your first palette, with a friendlier blue. Passes 5.0:1.",
+          cream: "#FFF8EF",
+          ink: "#1F2A3A",
+          accent: "#2F6FB0",
+          soft: "#FFE3CC",
+          card: "#FFFFFF",
+          sad: "#7C93B3",
+        },
+      ];
+      const grid = document.getElementById("grid");
+      for (const o of opts) {
+        const el = document.createElement("div");
+        el.className = "opt";
+        el.innerHTML = `
+          <h2>${o.name}</h2>
+          <p class="note">${o.note}</p>
+          <div class="phone" style="background:${o.cream};color:${o.ink}">
+            <div class="title">Mimi</div>
+            <div class="mood">Happy</div>
+            <div class="cat" style="background:${O}">🐈</div>
+            <div class="steps">3,720</div>
+            <div class="goal">of 6,000 steps</div>
+            <div class="bar" style="background:${o.soft}"><i style="background:${O}"></i></div>
+            <div class="row"><span>Level 3</span><span style="color:${o.accent};font-weight:700">5 day streak</span></div>
+            <div class="btn" style="background:${O};color:${o.ink}">Allow step access</div>
+            <div class="chips">
+              <span class="chip" style="background:${o.accent};color:#fff">Goal met</span>
+              <span class="chip" style="background:${o.sad};color:${o.ink}">Sad</span>
+            </div>
+          </div>
+          <div class="sw">
+            <span style="background:${O}"></span>
+            <span style="background:${o.accent}"></span>
+            <span style="background:${o.cream}"></span>
+            <span style="background:${o.ink}"></span>
+            <span style="background:${o.soft}"></span>
+          </div>
+          <div class="hex">${[O, o.accent, o.cream, o.ink, o.soft].join(" ")}</div>`;
+        grid.appendChild(el);
+      }
+    </script>
+  </body>
+</html>

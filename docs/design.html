@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catwalk — design plan</title>
+    <style>
+      :root {
+        --ink: #2a211c;
+        --muted: #6e625a;
+        --line: #e4dcd4;
+        --paper: #f7f3ee;
+        --card: #fffdfb;
+        --accent: #8c5a3c;
+        --bad: #9a3b2e;
+        --bad-soft: #f8e8e4;
+        --good: #2f6b4f;
+        --good-soft: #e7f3ec;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          17px/1.55 "Iowan Old Style",
+          Palatino,
+          Georgia,
+          serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 24px 96px;
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font:
+          600 12px/1.2 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 42px;
+        letter-spacing: -0.03em;
+      }
+      h2 {
+        margin: 40px 0 8px;
+        font-size: 25px;
+        letter-spacing: -0.02em;
+      }
+      h3 {
+        margin: 0 0 6px;
+        font-size: 19px;
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      ul,
+      ol {
+        margin: 0;
+        padding-left: 1.2em;
+      }
+      li + li {
+        margin-top: 6px;
+      }
+      .lede {
+        font-size: 20px;
+        max-width: 42ch;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px 18px;
+        margin: 12px 0;
+      }
+      .tag {
+        display: inline-block;
+        font:
+          600 11px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 5px 7px;
+        border-radius: 999px;
+        margin-right: 6px;
+      }
+      .bad {
+        background: var(--bad-soft);
+        color: var(--bad);
+      }
+      .good {
+        background: var(--good-soft);
+        color: var(--good);
+      }
+      .src {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      code {
+        font:
+          13px/1.4 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        background: #f3e8df;
+        padding: 1px 5px;
+        border-radius: 5px;
+      }
+      footer {
+        margin-top: 40px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Catwalk · Design</p>
+      <h1>What good looks like</h1>
+      <p class="lede">
+        The cat is the whole product. Right now it is a 72-pixel paw icon. The
+        design work is mostly about fixing that, then making every screen answer
+        one question clearly.
+      </p>
+
+      <h2>What good app design is</h2>
+      <p>
+        These come from Apple’s iOS guidelines, Material’s accessibility
+        guidance, and Duolingo’s published design write-ups. I list where each
+        comes from. Where it is my own judgment, I say so.
+      </p>
+      <div class="card">
+        <h3>1. One main thing per screen</h3>
+        <p>
+          Limit the controls on screen. Keep secondary actions available but out
+          of the way.
+        </p>
+        <p class="src">Apple: “Designing for iOS” best practices.</p>
+      </div>
+      <div class="card">
+        <h3>2. Put what people touch where thumbs reach</h3>
+        <p>
+          Controls in the middle or bottom of the screen are easier to reach
+          one-handed.
+        </p>
+        <p class="src">Apple: “Designing for iOS” best practices.</p>
+      </div>
+      <div class="card">
+        <h3>3. Adapt to the person</h3>
+        <p>
+          Support Dark Mode, larger text, and both orientations where it makes
+          sense. Use standard platform controls so assistive technology works
+          without extra effort.
+        </p>
+        <p class="src">
+          Apple: same page. Material: “Designing” accessibility.
+        </p>
+      </div>
+      <div class="card">
+        <h3>4. One clear path</h3>
+        <p>
+          Duolingo’s redesign put everything on a single path so learners never
+          wonder what to do next.
+        </p>
+        <p class="src">Duolingo: “the new learning path”.</p>
+      </div>
+      <div class="card">
+        <h3>5. Celebrate the moments that matter</h3>
+        <p>
+          Duolingo redesigned its streak milestone because the old one was
+          “cute, but not quite celebratory enough”. They also made the metaphor
+          universal, not culture-specific, and made it shareable.
+        </p>
+        <p class="src">
+          Duolingo: “how we brought the streak milestone to life”.
+        </p>
+      </div>
+      <div class="card">
+        <h3>6. A character people care about</h3>
+        <p>
+          Characters carry emotion and cheer people on. They are not decoration.
+          This one is my judgment, supported by Duolingo’s approach. It matters
+          most for an app whose whole premise is a pet.
+        </p>
+      </div>
+
+      <h2>What Catwalk looks like now</h2>
+      <p>I read the Home screen and the theme. Honest audit:</p>
+      <div class="card">
+        <p>
+          <span class="tag bad">Gap</span
+          ><strong>The cat is a paw icon.</strong>
+          <code>Icons.pets</code> tinted cream, charcoal, or ginger. Three coat
+          choices on onboarding look identical apart from colour. This is the
+          single biggest gap.
+        </p>
+        <p>
+          <span class="tag bad">Gap</span
+          ><strong>Two progress bars compete.</strong> Steps and level look the
+          same. The steps are what matters today.
+        </p>
+        <p>
+          <span class="tag bad">Gap</span
+          ><strong>The step number is small.</strong> It is a
+          <code>titleLarge</code> line of text. It should be the largest thing
+          on the screen.
+        </p>
+        <p>
+          <span class="tag bad">Gap</span
+          ><strong>No celebration.</strong> Completing the goal swaps a progress
+          bar for text that says “Goal complete”. No motion, no sound, no
+          haptic.
+        </p>
+        <p>
+          <span class="tag bad">Gap</span><strong>Streak is hidden.</strong> It
+          only appears on History. It is the main habit driver.
+        </p>
+        <p>
+          <span class="tag bad">Gap</span><strong>Generic title.</strong> The
+          app bar says “Home”.
+        </p>
+        <p><span class="tag bad">Gap</span><strong>Light mode only.</strong></p>
+        <p>
+          <span class="tag good">Good</span
+          ><strong>Warm palette, calm layout.</strong> The brown seed and paper
+          background feel right. Keep them.
+        </p>
+        <p>
+          <span class="tag good">Good</span
+          ><strong>Honest states.</strong> “Allow step access” and “not
+          available” are clear and never fake numbers.
+        </p>
+      </div>
+
+      <h2>The plan</h2>
+      <p>
+        Ordered so each step is visible on its own and builds toward the room
+        slice. Nothing here changes game rules.
+      </p>
+
+      <div class="card">
+        <h3>D1. The cat becomes the hero</h3>
+        <ul>
+          <li>Replace the paw icon with a real cat illustration.</li>
+          <li>Three coats that look different, not just recoloured.</li>
+          <li>
+            Three moods that look different: happy, content, sad. Plus a “gone”
+            state for runaway.
+          </li>
+          <li>Gentle idle motion: breathing, blinking, a tail flick.</li>
+          <li>
+            Same cat component reused on Home, Cat, and onboarding, and later in
+            the room.
+          </li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>D2. Home answers one question</h3>
+        <p><em>How far am I today?</em></p>
+        <ul>
+          <li>Big step number, the largest text on screen.</li>
+          <li>
+            A ring around or under the cat instead of a thin bar, so the cat and
+            the goal are one picture.
+          </li>
+          <li>
+            Level and XP shrink to a quiet line. Streak gets a visible spot.
+          </li>
+          <li>Settings stays top-right. Anything you tap often sits lower.</li>
+          <li>Title becomes the cat’s name, not “Home”.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>D3. Feedback and celebration</h3>
+        <ul>
+          <li>The ring animates when steps change, not just jumps.</li>
+          <li>
+            Goal reached: a short animation, a haptic tap, and “+50 XP” flying
+            to the level bar.
+          </li>
+          <li>Level up: its own bigger moment.</li>
+          <li>
+            Streak milestones (3, 7, 30 days): bigger still, and shareable
+            later.
+          </li>
+          <li>Respect the phone’s reduce-motion setting.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>D4. Accessibility and platform fit</h3>
+        <ul>
+          <li>Dark Mode with the same warm palette, not an inverted one.</li>
+          <li>
+            Text scales with the phone’s font size without breaking layouts.
+          </li>
+          <li>Contrast checked on every text and button colour.</li>
+          <li>
+            Touch targets at least 48 px. Screen-reader labels on the cat, ring,
+            and numbers.
+          </li>
+          <li>Never rely on colour alone for mood or goal state.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>D5. Words and empty states</h3>
+        <ul>
+          <li>Short, warm, cat-voiced copy. “Mimi is waiting for her walk.”</li>
+          <li>Permission and “unavailable” screens explain why in one line.</li>
+          <li>Empty History gets a friendly picture, not just text.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>D6. Fold into the room (slice 3)</h3>
+        <p>
+          Once the cat is a real character, the room is where she lives. Home
+          can eventually become that room with the ring and number overlaid. Do
+          not build both separately.
+        </p>
+      </div>
+
+      <h2>Decisions I need from you</h2>
+      <ol>
+        <li>
+          <strong>Art style.</strong> Flat vector illustration, soft 2D with
+          shading, or something hand-drawn. Flat vector is the fastest to
+          animate in Flutter and scales to every screen.
+        </li>
+        <li>
+          <strong>Who draws it.</strong> I can build a simple vector cat in code
+          to get started. A designer or purchased asset pack would look far
+          better. Code-drawn is a stand-in, not the final art.
+        </li>
+        <li>
+          <strong>Dark Mode now or later.</strong> I would do it in D4, not
+          before.
+        </li>
+        <li>
+          <strong>Sound.</strong> Haptics only, or short sounds for goal and
+          level-up too.
+        </li>
+      </ol>
+
+      <h2>What I would do first</h2>
+      <p>
+        D1 and D2 together. They change what you see the most, and everything
+        else builds on a cat that looks alive. I would start with a code-drawn
+        vector cat in three moods, so you can judge the layout before any final
+        art exists.
+      </p>
+
+      <footer>
+        Sources: Apple Human Interface Guidelines (Designing for iOS), Material
+        Design 3 (Designing, accessibility), Duolingo blog (learning path
+        redesign, streak milestone design).
+      </footer>
+    </main>
+  </body>
+</html>

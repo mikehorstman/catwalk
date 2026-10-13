@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catwalk</title>
+    <style>
+      :root {
+        --ink: #2a211c;
+        --muted: #6e625a;
+        --line: #e4dcd4;
+        --paper: #f7f3ee;
+        --card: #fffdfb;
+        --accent: #8c5a3c;
+        --done: #2f6b4f;
+        --done-soft: #e7f3ec;
+        --now: #8a5a12;
+        --now-soft: #f8efd8;
+        --later: #5c534c;
+        --later-soft: #f1ece7;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          17px/1.55 "Iowan Old Style",
+          Palatino,
+          Georgia,
+          serif;
+      }
+      main {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 24px 96px;
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font:
+          600 12px/1.2 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 46px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+      }
+      .lede {
+        margin: 0 0 8px;
+        font-size: 20px;
+        max-width: 40ch;
+      }
+      h2 {
+        margin: 36px 0 8px;
+        font-size: 26px;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      ol,
+      ul {
+        margin: 0;
+        padding-left: 1.2em;
+      }
+      li + li {
+        margin-top: 6px;
+      }
+      nav {
+        display: flex;
+        gap: 8px;
+        margin: 28px 0 8px;
+      }
+      nav button {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--muted);
+        font:
+          600 14px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        padding: 10px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+      nav button[aria-selected="true"] {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--paper);
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .open,
+      .slice {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+      }
+      .open {
+        margin-top: 14px;
+        padding: 12px 14px;
+      }
+      .open strong,
+      .tag {
+        font:
+          600 11px/1 ui-sans-serif,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .open strong {
+        color: var(--accent);
+      }
+      .slice {
+        padding: 16px 18px 14px;
+        margin: 12px 0;
+      }
+      .slice h3 {
+        margin: 0 0 6px;
+        font-size: 20px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+      }
+      .tag {
+        padding: 5px 7px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .now {
+        background: var(--now-soft);
+        color: var(--now);
+      }
+      .later {
+        background: var(--later-soft);
+        color: var(--later);
+      }
+      .why {
+        margin: 0 0 8px;
+        color: var(--muted);
+      }
+      code {
+        font:
+          13px/1.4 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        background: #f3e8df;
+        padding: 1px 5px;
+        border-radius: 5px;
+      }
+      footer {
+        margin-top: 40px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Catwalk</p>
+      <h1 id="title">Walk, or the cat leaves.</h1>
+      <p class="lede" id="lede">
+        You set a step goal. Meet it and the cat is happy. Miss it for too long
+        and the cat runs. Getting it back takes a real walk, then finding it on
+        the map.
+      </p>
+
+      <nav>
+        <button type="button" id="tab-idea" aria-selected="true">Idea</button>
+        <button type="button" id="tab-build" aria-selected="false">
+          Build
+        </button>
+      </nav>
+
+      <section id="idea" class="panel active">
+        <p>
+          The phone already counts the steps. Catwalk reads that record. It does
+          not run its own pedometer, and it does not invent numbers.
+        </p>
+
+        <h2>The day</h2>
+        <ul>
+          <li>
+            A daily goal, chosen at the start. Default 6,000, between 1,000 and
+            30,000.
+          </li>
+          <li>A progress bar for today’s steps.</li>
+          <li>Hit the goal: the cat is happy, and you get XP once that day.</li>
+          <li>
+            A higher goal pays more. More XP, better rewards, and more cat
+            slots.
+          </li>
+          <li>
+            A streak grows while the goal is met. Keeping it earns a reward. A
+            streak freeze, found on a walk, can save one missed day.
+          </li>
+          <li>
+            Miss a full day and the cat is sad. Two days, neglected. Three, it
+            runs away. Today does not count until it ends.
+          </li>
+        </ul>
+
+        <h2>The map</h2>
+        <ul>
+          <li>Candy on the map. Walk to it.</li>
+          <li>
+            A pickup can be extra XP, a streak freeze, a toy, progress toward a
+            new cat, or something to save.
+          </li>
+          <li>
+            After enough level or XP, a new cat appears somewhere on the map.
+            Walk there to unlock it.
+          </li>
+          <li>
+            Street cats can be photographed. The same cat, seen enough times,
+            may unlock.
+          </li>
+          <li>
+            The map is for going somewhere. It is not a second step counter.
+          </li>
+        </ul>
+        <div class="open">
+          <strong>Open</strong>
+          <p>
+            Whether toys and cats are only found, or can also be bought. No
+            currency until that is chosen.
+          </p>
+        </div>
+
+        <h2>Coming home</h2>
+        <ul>
+          <li>A runaway cat does not return because you took a few steps.</li>
+          <li>
+            First a long walk. Then the cat is somewhere on the map. Walk to it.
+          </li>
+          <li>Both are required.</li>
+        </ul>
+
+        <h2>The room</h2>
+        <ul>
+          <li>One room where every unlocked cat walks around.</li>
+          <li>
+            Toys, scratching posts, and the rest appear there once you have
+            them.
+          </li>
+          <li>
+            How many cats you can keep depends on your daily goal. A small goal
+            means fewer cats.
+          </li>
+        </ul>
+
+        <h2>Other people</h2>
+        <ul>
+          <li>Add friends.</li>
+          <li>Visit each other’s cat room.</li>
+          <li>Nudge a friend who has not hit their goal.</li>
+          <li>Statistics, and a leaderboard.</li>
+          <li>
+            A lot of notifications. The point is a little guilt, so you walk.
+          </li>
+        </ul>
+
+        <h2>What this needs</h2>
+        <p>
+          Friends, rooms you can visit, and a leaderboard need an account. The
+          walking, the cat, the map pickups, and the room can exist on the phone
+          first. The account syncs that. It does not decide whether the cat is
+          happy.
+        </p>
+        <p>
+          Already on the phone: onboarding, one cat, today’s goal, XP, mood, and
+          a local save. The map, the room, extra cats, photos, streaks, friends,
+          and the leaderboard are the rest of the same app.
+        </p>
+      </section>
+
+      <section id="build" class="panel">
+        <p>
+          Each slice is playable on its own. Stop after one and check it before
+          the next.
+        </p>
+        <h2>Order</h2>
+        <ol>
+          <li>Finish the day on the phone.</li>
+          <li>Read real steps.</li>
+          <li>Add the room, with one cat.</li>
+          <li>Add the map, still without other people.</li>
+          <li>Add photos, extra cats, and the goal cap.</li>
+          <li>Add an account, friends, and the leaderboard.</li>
+        </ol>
+        <p>
+          The map does not come first. A candy you cannot walk to is a picture.
+          Real steps come before the map so the walk is the phone’s walk, not a
+          fake one.
+        </p>
+
+        <article class="slice">
+          <h3>1. The day <span class="tag now">Next</span></h3>
+          <p class="why">
+            Onboarding, one cat, today’s bar, XP, and mood already exist. This
+            slice finishes that loop.
+          </p>
+          <ul>
+            <li>History of past days: steps, goal, met or not, XP.</li>
+            <li>Streak. A missed day breaks it. Today does not break it.</li>
+            <li>
+              Goal size changes the daily XP. A higher goal pays more. The exact
+              curve is a number we can tune, not a new system.
+            </li>
+            <li>
+              Cat screen: coat, level, mood, status. Settings: change the goal,
+              reset.
+            </li>
+            <li>Reset clears the local save and returns to onboarding.</li>
+            <li>
+              Coming home stays “any steps” until the map exists. Do not build a
+              fake map recovery.
+            </li>
+          </ul>
+        </article>
+
+        <article class="slice">
+          <h3>2. Real steps <span class="tag later">After 1</span></h3>
+          <p class="why">
+            Replace the debug buttons. Do not add a second counter.
+          </p>
+          <ul>
+            <li>iPhone reads Apple Health. Android reads Health Connect.</li>
+            <li>If that is denied, read the phone step sensor.</li>
+            <li>
+              If neither exists, say steps are unavailable. Show zero only when
+              the phone says zero.
+            </li>
+            <li>
+              A short background wake can sync the record. It does not count
+              steps.
+            </li>
+            <li>Mock buttons stay in debug builds.</li>
+          </ul>
+        </article>
+
+        <article class="slice">
+          <h3>3. The room <span class="tag later">After 2</span></h3>
+          <p class="why">
+            One room, the cat you already have. This is where the cat lives when
+            you are not walking. Toys come with the map.
+          </p>
+          <ul>
+            <li>The cat walks around a simple room.</li>
+            <li>Mood is visible here too. The room does not decide it.</li>
+            <li>No shop, no currency, no second cat yet.</li>
+          </ul>
+        </article>
+
+        <article class="slice">
+          <h3>4. The map <span class="tag later">After 3</span></h3>
+          <p class="why">Places to walk to. Still one cat. Still no account.</p>
+          <ul>
+            <li>
+              A map of where you are. Mapbox is the candidate. Pick it when this
+              slice starts, not before.
+            </li>
+            <li>
+              Candy near the player. Walk to it. The phone’s step record still
+              decides the day. The map only checks that you reached the pin.
+            </li>
+            <li>
+              A pickup is one of: extra XP, a streak freeze, a toy for the room,
+              or progress toward a cat. One table of rewards, not five systems.
+            </li>
+            <li>A streak freeze saves one missed day, then it is gone.</li>
+            <li>A toy, once found, appears in the room.</li>
+            <li>
+              Runaway recovery changes here. A long walk first, then the cat is
+              placed on the map. Both are required. Until this slice, any steps
+              still bring it home.
+            </li>
+          </ul>
+        </article>
+
+        <article class="slice">
+          <h3>5. More cats <span class="tag later">After 4</span></h3>
+          <ul>
+            <li>
+              After enough XP, a new cat spawns on the map. Walk there to unlock
+              it.
+            </li>
+            <li>
+              Photograph a street cat. The same cat, enough times, can unlock.
+              The camera is only for that.
+            </li>
+            <li>Unlocked cats walk in the room.</li>
+            <li>
+              The daily goal caps how many you can keep. Lowering the goal does
+              not delete a cat. It blocks new ones until you raise it or let one
+              go.
+            </li>
+            <li>
+              Buying stays out. If a shop is added later, it spends something
+              earned by walking. It does not replace finding.
+            </li>
+          </ul>
+        </article>
+
+        <article class="slice">
+          <h3>6. Other people <span class="tag later">Last</span></h3>
+          <p class="why">
+            This is the first slice that needs an account. Everything before it
+            works with the phone off the network.
+          </p>
+          <ul>
+            <li>
+              Account. The phone remains the source of the cat’s mood and XP.
+              The server stores a copy.
+            </li>
+            <li>
+              Add friends. Visit their room. Nudge someone who missed the goal.
+            </li>
+            <li>Your own statistics, then a leaderboard of friends.</li>
+            <li>
+              Notifications: goal still open, streak at risk, cat about to run,
+              a friend nudged you. Many, but each one is one of those. No spam
+              channel.
+            </li>
+          </ul>
+        </article>
+
+        <h2>Rules that do not move</h2>
+        <ul>
+          <li>Widgets show state. <code>evaluateDay</code> decides it.</li>
+          <li>XP for the daily goal is awarded once per calendar day.</li>
+          <li>Today is in progress until it ends.</li>
+          <li>Production never invents a step count.</li>
+          <li>No currency until finding things is already fun.</li>
+        </ul>
+
+        <h2>Left open on purpose</h2>
+        <ul>
+          <li>The exact XP bonus for a higher goal.</li>
+          <li>How many steps count as the long walk home.</li>
+          <li>How many photos unlock a street cat.</li>
+          <li>The goal-to-cat-slot table.</li>
+          <li>Whether a shop exists at all.</li>
+        </ul>
+        <p>Those are numbers. They can wait until the slice that needs them.</p>
+      </section>
+
+      <footer>
+        iOS and Android. Steps come from Apple Health or Health Connect, then
+        the phone sensor.
+      </footer>
+    </main>
+    <script>
+      const idea = document.getElementById("idea");
+      const build = document.getElementById("build");
+      const tabIdea = document.getElementById("tab-idea");
+      const tabBuild = document.getElementById("tab-build");
+      const title = document.getElementById("title");
+      const lede = document.getElementById("lede");
+
+      function show(which) {
+        const isBuild = which === "build";
+        idea.classList.toggle("active", !isBuild);
+        build.classList.toggle("active", isBuild);
+        tabIdea.setAttribute("aria-selected", String(!isBuild));
+        tabBuild.setAttribute("aria-selected", String(isBuild));
+        title.textContent = isBuild
+          ? "How to build it"
+          : "Walk, or the cat leaves.";
+        lede.textContent = isBuild
+          ? "The idea stays on the other tab. This is only the order."
+          : "You set a step goal. Meet it and the cat is happy. Miss it for too long and the cat runs. Getting it back takes a real walk, then finding it on the map.";
+        history.replaceState(null, "", isBuild ? "#build" : "#idea");
+      }
+
+      tabIdea.addEventListener("click", () => show("idea"));
+      tabBuild.addEventListener("click", () => show("build"));
+      if (location.hash === "#build") show("build");
+    </script>
+  </body>
+</html>

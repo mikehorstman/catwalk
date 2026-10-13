@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catwalk — screens</title>
+    <style>
+      :root {
+        --orange: #f69337;
+        --orange-soft: #ffe3cc;
+        --teal: #1f7a7a;
+        --cream: #fff6ea;
+        --ink: #1b2b30;
+        --muted: #52626a;
+        --line: #ebdcc9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #fff;
+        color: var(--ink);
+        font:
+          16px/1.55 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 24px 96px;
+      }
+      .eyebrow {
+        margin: 0 0 6px;
+        color: var(--teal);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 40px;
+        letter-spacing: -0.03em;
+      }
+      h2 {
+        margin: 48px 0 8px;
+        font-size: 26px;
+        letter-spacing: -0.02em;
+      }
+      h3 {
+        margin: 0 0 4px;
+        font-size: 20px;
+      }
+      p {
+        margin: 0 0 12px;
+      }
+      ul {
+        margin: 0 0 12px;
+        padding-left: 1.2em;
+      }
+      li + li {
+        margin-top: 4px;
+      }
+      .lede {
+        font-size: 19px;
+        max-width: 52ch;
+        color: var(--muted);
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border-radius: 99px;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      .now {
+        background: #d3ecea;
+        color: var(--teal);
+      }
+      .next {
+        background: var(--orange-soft);
+        color: #8a4a00;
+      }
+      .later {
+        background: #eceff0;
+        color: var(--muted);
+      }
+
+      .screen {
+        display: grid;
+        grid-template-columns: 210px 1fr;
+        gap: 28px;
+        padding: 22px 0;
+        border-top: 1px solid var(--line);
+      }
+      @media (max-width: 680px) {
+        .screen {
+          grid-template-columns: 1fr;
+        }
+      }
+      .q {
+        font-size: 15px;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .q b {
+        color: var(--ink);
+      }
+
+      /* wireframe phone */
+      .ph {
+        width: 190px;
+        height: 372px;
+        background: var(--cream);
+        border: 2px solid var(--ink);
+        border-radius: 26px;
+        padding: 14px 11px 40px;
+        position: relative;
+        overflow: hidden;
+        font-size: 10px;
+        line-height: 1.3;
+      }
+      .ph .top {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 700;
+        font-size: 11px;
+        margin-bottom: 8px;
+      }
+      .tb {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 36px;
+        border-top: 1px solid var(--line);
+        background: var(--cream);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+      .tb i {
+        font-style: normal;
+        font-size: 9px;
+        color: var(--muted);
+      }
+      .tb i.on {
+        color: var(--teal);
+        font-weight: 800;
+      }
+      .ring {
+        width: 118px;
+        height: 118px;
+        margin: 4px auto 6px;
+        border-radius: 50%;
+        border: 11px solid var(--orange-soft);
+        border-top-color: var(--orange);
+        border-right-color: var(--orange);
+        display: grid;
+        place-items: center;
+        font-size: 9px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .big {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+      .sub {
+        text-align: center;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .chips {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+      }
+      .chip {
+        padding: 3px 7px;
+        border-radius: 99px;
+        font-weight: 700;
+        font-size: 9px;
+        background: var(--orange-soft);
+      }
+      .chip.t {
+        background: var(--teal);
+        color: #fff;
+      }
+      .btn {
+        background: var(--orange);
+        border-radius: 10px;
+        text-align: center;
+        padding: 8px;
+        font-weight: 800;
+        margin-top: 6px;
+      }
+      .btn.o {
+        background: transparent;
+        border: 1px solid var(--line);
+      }
+      .box {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 9px;
+        padding: 6px 8px;
+        margin-bottom: 5px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+      }
+      .bar {
+        height: 7px;
+        border-radius: 9px;
+        background: var(--orange-soft);
+        overflow: hidden;
+        margin: 3px 0;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        background: var(--orange);
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+      }
+      .tile {
+        aspect-ratio: 1;
+        border-radius: 9px;
+        background: var(--orange-soft);
+        display: grid;
+        place-items: center;
+        font-size: 9px;
+      }
+      .tile.lock {
+        background: #eceff0;
+        color: var(--muted);
+      }
+      .map {
+        position: absolute;
+        inset: 40px 0 36px;
+        background: #e8efe6;
+      }
+      .pin {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 8px;
+        font-weight: 800;
+      }
+      .pin.me {
+        background: var(--teal);
+        border: 2px solid #fff;
+      }
+      .pin.candy {
+        background: var(--orange);
+      }
+      .pin.cat {
+        background: var(--ink);
+        color: #fff;
+        width: 20px;
+        height: 20px;
+      }
+      .sheet {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 36px;
+        background: var(--cream);
+        border-top: 1px solid var(--line);
+        border-radius: 14px 14px 0 0;
+        padding: 8px 10px;
+      }
+      .days {
+        display: flex;
+        gap: 4px;
+        margin: 6px 0 10px;
+      }
+      .days i {
+        flex: 1;
+        height: 22px;
+        border-radius: 6px;
+        background: var(--orange-soft);
+        font-style: normal;
+        display: grid;
+        place-items: center;
+        font-size: 8px;
+      }
+      .days i.y {
+        background: var(--teal);
+        color: #fff;
+      }
+      .days i.n {
+        background: #eceff0;
+      }
+      .dots {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        margin: 8px 0;
+      }
+      .dots i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--line);
+      }
+      .dots i.on {
+        background: var(--orange);
+      }
+
+      /* tables and notes */
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        margin: 8px 0 16px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+      }
+      .note {
+        background: var(--cream);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px 16px;
+        margin: 12px 0;
+      }
+      code {
+        font:
+          13px ui-monospace,
+          Menlo,
+          monospace;
+        background: #f3e8df;
+        padding: 1px 5px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Catwalk · Screen design</p>
+      <h1>Every screen, and what is on it</h1>
+      <p class="lede">
+        One rule for the whole app: each screen answers one question. If you
+        cannot say what question a screen answers, it is two screens.
+      </p>
+
+      <h2>The map of the app</h2>
+      <p>
+        Five tabs at most. Everything you do every day is on the first tab.
+        Everything else is one tap away, never two.
+      </p>
+      <table>
+        <tr>
+          <th>Tab</th>
+          <th>Answers</th>
+          <th>When</th>
+        </tr>
+        <tr>
+          <td><b>Home</b></td>
+          <td>How far am I today, and how is my cat?</td>
+          <td><span class="tag now">Now</span> becomes the room in slice 3</td>
+        </tr>
+        <tr>
+          <td><b>Map</b></td>
+          <td>Where can I walk to?</td>
+          <td><span class="tag next">Slice 4</span></td>
+        </tr>
+        <tr>
+          <td><b>Cats</b></td>
+          <td>Who do I have, and who is next?</td>
+          <td>
+            <span class="tag now">Now</span> one cat (the Cat tab today); a
+            collection in slice 5
+          </td>
+        </tr>
+        <tr>
+          <td><b>Friends</b></td>
+          <td>Who is walking, and who needs a nudge?</td>
+          <td><span class="tag later">Slice 6</span></td>
+        </tr>
+        <tr>
+          <td><b>Me</b></td>
+          <td>How have I been doing, and my settings</td>
+          <td>
+            <span class="tag now">Now</span> History today; Settings joins it
+          </td>
+        </tr>
+      </table>
+      <div class="note">
+        <b>Today the app has Home, Cat, History.</b> The change is small:
+        History becomes <b>Me</b> and absorbs Settings (no more gear icon), the
+        Cat tab becomes <b>Cats</b>. Map and Friends tabs only appear when their
+        slice ships, so nobody sees an empty tab.
+      </div>
+
+      <h2>Screens</h2>
+
+      <!-- ONBOARDING -->
+      <section class="screen">
+        <div>
+          <div class="ph">
+            <div class="top"><span>Step 4 of 5</span><span></span></div>
+            <p style="font-weight: 800; font-size: 15px; margin: 6px 0 4px">
+              Your daily goal
+            </p>
+            <p style="color: var(--muted)">6,000 is a steady start.</p>
+            <div class="big" style="margin: 14px 0 4px">6,000</div>
+            <div class="sub">steps a day</div>
+            <div class="bar"><i style="width: 18%"></i></div>
+            <div class="row" style="color: var(--muted)">
+              <span>1,000</span><span>30,000</span>
+            </div>
+            <div class="box" style="margin-top: 10px">
+              Earns <b>50 XP</b> a day · keeps <b>2 cats</b>
+            </div>
+            <div class="btn">Continue</div>
+          </div>
+        </div>
+        <div>
+          <h3><span class="tag now">Now</span>Onboarding</h3>
+          <p class="q">
+            <b>Question:</b> who is my cat, and what am I promising it?
+          </p>
+          <ul>
+            <li>
+              <b>1 Welcome:</b> the cat, the promise in one line, one button.
+            </li>
+            <li><b>2 Pick a coat:</b> three real cats, not three colours.</li>
+            <li>
+              <b>3 Name it:</b> keyboard opens at once. Suggest a few names.
+            </li>
+            <li>
+              <b>4 Goal:</b> a slider instead of a typed number. Shows what the
+              goal pays and how many cats it lets you keep. This is where the
+              goal-to-reward link is taught.
+            </li>
+            <li>
+              <b>5 Step access:</b> explain why, then ask. Denying never blocks
+              finishing.
+            </li>
+          </ul>
+          <p>
+            <b>Do not:</b> add an account or sign-up. Let people meet the cat
+            first.
+          </p>
+        </div>
+      </section>
+
+      <!-- HOME -->
+      <section class="screen">
+        <div>
+          <div class="ph">
+            <div class="top"><span>Mimi</span><span>⋯</span></div>
+            <div class="ring">Mimi<br />(cat art)</div>
+            <div class="big">3,720</div>
+            <div class="sub">of 6,000 steps</div>
+            <div class="chips">
+              <span class="chip t">5 day streak</span
+              ><span class="chip">Level 3</span>
+            </div>
+            <div class="bar"><i style="width: 62%"></i></div>
+            <div style="text-align: center; color: var(--muted)">
+              2,280 to go
+            </div>
+            <div class="tb"><i class="on">Home</i><i>Cats</i><i>Me</i></div>
+          </div>
+        </div>
+        <div>
+          <h3><span class="tag now">Now</span>Home</h3>
+          <p class="q">
+            <b>Question:</b> how far am I today, and is my cat happy?
+          </p>
+          <ul>
+            <li>
+              <b>The cat is the hero,</b> drawn large, with the progress ring
+              around her. The ring and the cat are one picture.
+            </li>
+            <li>
+              <b>The step number is the biggest text on screen.</b> The goal
+              sits under it, small.
+            </li>
+            <li>
+              <b>Streak</b> gets a visible chip. It is the habit driver and it
+              is currently hidden.
+            </li>
+            <li>
+              <b>Level and XP</b> shrink to one quiet line. Detail lives on the
+              Cats screen.
+            </li>
+            <li>
+              The cat's mood is shown by the cat (posture, eyes)
+              <b>and one word</b>, never colour alone.
+            </li>
+            <li>
+              <b>One action at most</b> below the number, and only when needed:
+              Allow step access, or Find Mimi.
+            </li>
+            <li>
+              Steps refresh every 30 seconds and when you return to the app. The
+              ring animates between values.
+            </li>
+          </ul>
+          <p><b>States to design:</b></p>
+          <table>
+            <tr>
+              <th>State</th>
+              <th>What changes</th>
+            </tr>
+            <tr>
+              <td>In progress</td>
+              <td>Ring partly full. Number rising.</td>
+            </tr>
+            <tr>
+              <td>Goal met</td>
+              <td>
+                Ring full, cat happy, "+50 XP" lands on the level line. One
+                small celebration, then it settles.
+              </td>
+            </tr>
+            <tr>
+              <td>Sad (missed 1)</td>
+              <td>Cat droops. One warm line: "Mimi missed you yesterday."</td>
+            </tr>
+            <tr>
+              <td>Neglected (missed 2)</td>
+              <td>Cat turns away. Line: "One more day and she goes."</td>
+            </tr>
+            <tr>
+              <td>Runaway (missed 3)</td>
+              <td>
+                Empty cushion, no cat. Home becomes the recovery screen (below).
+              </td>
+            </tr>
+            <tr>
+              <td>No step access</td>
+              <td>Cat plus one button: Allow step access. No fake numbers.</td>
+            </tr>
+            <tr>
+              <td>No health store</td>
+              <td>Cat plus one line explaining why. Nothing to tap.</td>
+            </tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- MOMENTS -->
+      <section class="screen">
+        <div>
+          <div
+            class="ph"
+            style="
+              background: var(--teal);
+              color: #fff;
+              border-color: var(--ink);
+            "
+          >
+            <div class="top" style="justify-content: center">
+              <span>Goal reached</span>
+            </div>
+            <div
+              class="ring"
+              style="
+                border-color: rgba(255, 255, 255, 0.25);
+                border-top-color: var(--orange);
+                border-right-color: var(--orange);
+                border-bottom-color: var(--orange);
+                border-left-color: var(--orange);
+                color: #fff;
+              "
+            >
+              happy<br />cat
+            </div>
+            <div class="big" style="color: #fff">+50 XP</div>
+            <div class="sub" style="color: #d3ecea">
+              Mimi is happy. 6 day streak.
+            </div>
+            <div class="btn">Nice</div>
+          </div>
+        </div>
+        <div>
+          <h3>
+            <span class="tag next">Slice 1 polish</span>Moments (not screens)
+          </h3>
+          <p class="q"><b>Question:</b> did that feel like it mattered?</p>
+          <p>
+            These are short celebrations on top of Home, never a new page. Each
+            is 2 seconds, has a haptic tap, and respects "reduce motion".
+          </p>
+          <table>
+            <tr>
+              <th>Moment</th>
+              <th>Size</th>
+            </tr>
+            <tr>
+              <td>Goal reached</td>
+              <td>Ring fills, cat perks up, +XP floats to the level line.</td>
+            </tr>
+            <tr>
+              <td>Level up</td>
+              <td>Bigger. Cat does a small trick. New level number.</td>
+            </tr>
+            <tr>
+              <td>Streak milestone (3, 7, 30, 100)</td>
+              <td>Biggest. Full-screen card, shareable later.</td>
+            </tr>
+            <tr>
+              <td>Cat comes home</td>
+              <td>
+                The emotional one. Quiet. She walks back onto the cushion.
+              </td>
+            </tr>
+            <tr>
+              <td>New cat unlocked (slice 5)</td>
+              <td>Meet her: name, coat, one line about her.</td>
+            </tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- CATS -->
+      <section class="screen">
+        <div>
+          <div class="ph">
+            <div class="top"><span>Cats</span><span>2 of 2</span></div>
+            <div class="grid3">
+              <div class="tile">Mimi<br />Lv 3</div>
+              <div class="tile">Pip<br />Lv 1</div>
+              <div class="tile lock">Locked<br />goal 9k</div>
+            </div>
+            <div class="box" style="margin-top: 8px">
+              <b>Mimi</b> · Content<br />
+              Level 3
+              <div class="bar"><i style="width: 40%"></i></div>
+              <span style="color: var(--muted)">150 XP to level 4</span>
+            </div>
+            <div class="box">Toys: ball · scratch post</div>
+            <div class="tb"><i>Home</i><i class="on">Cats</i><i>Me</i></div>
+          </div>
+        </div>
+        <div>
+          <h3>
+            <span class="tag now">Now</span> one cat,
+            <span class="tag next" style="margin-left: 6px">slice 5</span>
+            collection
+          </h3>
+          <p class="q"><b>Question:</b> who do I have, and who is next?</p>
+          <ul>
+            <li>
+              <b>Today:</b> the one cat, big. Name (tap to rename), coat, mood
+              and status, level, XP bar and "XP to next level", missed days.
+            </li>
+            <li>
+              <b>Slice 5:</b> a grid of every cat. Tap one to see her. Locked
+              slots show the daily goal needed to keep another cat.
+            </li>
+            <li>
+              Each cat shows how she was found: spawned on the map, or
+              photographed (3 of 5 sightings).
+            </li>
+            <li>
+              "Let go" is hidden inside a cat's menu, with a confirm. It is the
+              only way to free a slot without raising the goal.
+            </li>
+            <li>Toys owned are listed here. They appear in the room.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ME / HISTORY -->
+      <section class="screen">
+        <div>
+          <div class="ph">
+            <div class="top"><span>Me</span><span>⚙</span></div>
+            <div class="row">
+              <div>
+                <div class="big" style="text-align: left">5</div>
+                streak
+              </div>
+              <div>
+                <div class="big" style="text-align: left">12</div>
+                best
+              </div>
+            </div>
+            <div class="days">
+              <i class="y">M</i><i class="y">T</i><i class="n">W</i
+              ><i class="y">T</i><i class="y">F</i><i>S</i><i>S</i>
+            </div>
+            <div class="box">
+              <div class="row"><b>Fri 10 Oct</b><span>+50 XP</span></div>
+              6,420 / 6,000
+            </div>
+            <div class="box">
+              <div class="row"><b>Thu 9 Oct</b><span>+50 XP</span></div>
+              7,010 / 6,000
+            </div>
+            <div class="box">
+              <div class="row"><b>Wed 8 Oct</b><span>missed</span></div>
+              3,120 / 6,000
+            </div>
+            <div class="tb"><i>Home</i><i>Cats</i><i class="on">Me</i></div>
+          </div>
+        </div>
+        <div>
+          <h3><span class="tag now">Now</span>Me (History + Settings)</h3>
+          <p class="q"><b>Question:</b> how have I been doing?</p>
+          <ul>
+            <li><b>Header:</b> current streak and best streak, large.</li>
+            <li>
+              <b>This week strip:</b> seven days at a glance. Teal = met, grey =
+              missed, today outlined.
+            </li>
+            <li>
+              <b>Day list,</b> newest first: date, steps over goal, XP earned,
+              met or not. Never colour alone (tick or cross too).
+            </li>
+            <li>
+              <b>Totals:</b> total steps, total XP, days met. A weekly average.
+            </li>
+            <li>
+              <b>Settings</b> sit behind the gear on this tab, not on Home.
+            </li>
+            <li>
+              Empty state for a new user: a friendly picture and "Finish today's
+              goal and it shows up here."
+            </li>
+          </ul>
+          <p><b>Settings contents:</b></p>
+          <ul>
+            <li>Daily goal (applies from tomorrow, say so)</li>
+            <li>Step access: status and a button to fix it</li>
+            <li>Notifications: which ones, and quiet hours</li>
+            <li>Sound and haptics</li>
+            <li>Account (slice 6 only)</li>
+            <li>Reset Catwalk, last, in red, with a confirm</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- RUNAWAY -->
+      <section class="screen">
+        <div>
+          <div class="ph">
+            <div class="top"><span>Mimi is gone</span><span></span></div>
+            <div class="ring" style="border-style: dashed">
+              empty<br />cushion
+            </div>
+            <div class="box">
+              <div class="row"><b>1 · Walk 3,000 steps</b><span>✓</span></div>
+              <div class="bar"><i style="width: 100%"></i></div>
+            </div>
+            <div class="box">
+              <div class="row"><b>2 · Find her</b><span>→</span></div>
+              Open the map
+            </div>
+            <div class="btn">Open map</div>
+          </div>
+        </div>
+        <div>
+          <h3><span class="tag next">Slice 4</span>Runaway and coming home</h3>
+          <p class="q">
+            <b>Question:</b> what do I have to do to get her back?
+          </p>
+          <ul>
+            <li>
+              Home turns into a two-step checklist. The room is empty. The state
+              is honest and a little sad, never scolding.
+            </li>
+            <li><b>Step 1:</b> a long walk, with its own progress bar.</li>
+            <li><b>Step 2:</b> she appears as a pin on the map. Walk to it.</li>
+            <li>Both are required. A few steps do not bring her back.</li>
+            <li>
+              <b>Until the map exists</b> (now), any steps bring her back and
+              the screen is just the message.
+            </li>
+            <li>
+              When she returns: the quiet "comes home" moment, then normal Home.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- MAP -->
+      <section class="screen">
+        <div>
+          <div class="ph">
+            <div class="top" style="position: relative; z-index: 2">
+              <span>Map</span><span>⌖</span>
+            </div>
+            <div class="map">
+              <span class="pin me" style="left: 80px; top: 150px"></span>
+              <span class="pin candy" style="left: 40px; top: 60px">★</span>
+              <span class="pin candy" style="left: 130px; top: 100px">★</span>
+              <span class="pin cat" style="left: 105px; top: 215px">🐈</span>
+            </div>
+            <div class="sheet">
+              <b>Candy 240 m away</b><br /><span style="color: var(--muted)"
+                >Walk there to collect</span
+              >
+            </div>
+            <div class="tb">
+              <i>Home</i><i class="on">Map</i><i>Cats</i><i>Me</i>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3><span class="tag next">Slice 4–5</span>Map</h3>
+          <p class="q"><b>Question:</b> where can I walk to?</p>
+          <ul>
+            <li>
+              A calm map with <b>you</b>, nearby <b>candy</b>, and (later) a
+              <b>cat</b> pin. Mapbox is the candidate.
+            </li>
+            <li>
+              Tap a pin: a bottom sheet with distance and what it might give.
+            </li>
+            <li>
+              It is for going somewhere. <b>It is not a second step counter</b>,
+              and today's step total is not shown big here.
+            </li>
+            <li>
+              Reaching a pin shows the reward: extra XP, a streak freeze, a toy,
+              or progress toward a cat.
+            </li>
+            <li>
+              <b>Slice 5:</b> a camera button for street cats. Photograph the
+              same cat several times and she may join you.
+            </li>
+            <li>
+              <b>Ask for location only here,</b> at the moment it is needed,
+              with a one-line reason.
+            </li>
+            <li>No location: show a clear message, never an empty grey map.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- FRIENDS -->
+      <section class="screen">
+        <div>
+          <div class="ph">
+            <div class="top"><span>Friends</span><span>＋</span></div>
+            <div class="box">
+              <div class="row"><b>1 · Sam</b><span>8,210</span></div>
+              <span style="color: var(--teal)">goal met</span>
+            </div>
+            <div class="box">
+              <div class="row"><b>2 · You</b><span>3,720</span></div>
+              in progress
+            </div>
+            <div class="box">
+              <div class="row"><b>3 · Noor</b><span>900</span></div>
+              <div class="row">
+                <span style="color: var(--muted)">not yet</span
+                ><span class="chip">Nudge</span>
+              </div>
+            </div>
+            <div class="btn o">Visit a room</div>
+            <div class="tb">
+              <i>Home</i><i>Cats</i><i class="on">Friends</i><i>Me</i>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3><span class="tag later">Slice 6</span>Friends</h3>
+          <p class="q">
+            <b>Question:</b> who is walking, and who needs a nudge?
+          </p>
+          <ul>
+            <li>
+              Today's board: friends ranked by steps today, with met / not yet.
+            </li>
+            <li>
+              <b>Nudge</b> on someone who has not met their goal. Limited to one
+              per person per day.
+            </li>
+            <li>
+              <b>Visit a room:</b> see a friend's cat and toys. Read only.
+            </li>
+            <li>Weekly leaderboard and your own statistics.</li>
+            <li>Add by invite link or code. No public search.</li>
+            <li>
+              This is the first screen that needs an account. Before it, the app
+              works with the phone alone.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <h2>Notifications</h2>
+      <p>
+        Many, but each one is one of these, and each is switchable. A little
+        guilt is the product. A spam channel is not.
+      </p>
+      <table>
+        <tr>
+          <th>Notification</th>
+          <th>When</th>
+          <th>Example</th>
+        </tr>
+        <tr>
+          <td>Goal still open</td>
+          <td>Evening, if not met</td>
+          <td>"Mimi is waiting. 2,280 steps to go."</td>
+        </tr>
+        <tr>
+          <td>Streak at risk</td>
+          <td>Late evening, streak ≥ 3</td>
+          <td>"Your 5 day streak ends tonight."</td>
+        </tr>
+        <tr>
+          <td>Cat about to run</td>
+          <td>After the 2nd missed day</td>
+          <td>"One more day and Mimi leaves."</td>
+        </tr>
+        <tr>
+          <td>Friend nudged you</td>
+          <td>When it happens</td>
+          <td>"Sam says: get walking."</td>
+        </tr>
+      </table>
+
+      <h2>Things that apply to every screen</h2>
+      <ul>
+        <li>
+          <b>Palette:</b> orange (<code>#F69337</code>) for fills, the ring and
+          the cat. Teal (<code>#1F7A7A</code>) for accents and "done". Dark ink
+          for all text. Words never sit in orange on cream.
+        </li>
+        <li>
+          <b>Thumb zone:</b> everything you tap often is in the lower half. The
+          top is for reading.
+        </li>
+        <li><b>One main thing:</b> at most one filled button per screen.</li>
+        <li>
+          <b>Text size:</b> scales with the phone setting. Touch targets at
+          least 48 px.
+        </li>
+        <li>
+          <b>Honest numbers:</b> if the phone has not told us, we say so. We
+          never show a guess.
+        </li>
+        <li>
+          <b>Mood is never colour alone:</b> posture, an icon, and a word.
+        </li>
+        <li>
+          <b>Dark Mode</b> later, as deep teal-black with the same orange.
+        </li>
+      </ul>
+
+      <h2>Decisions for you</h2>
+      <ol>
+        <li>
+          <b>Does Home become the room?</b> I'd say yes: the cat lives where you
+          open the app. It saves a tab.
+        </li>
+        <li>
+          <b>Tab names:</b> Home, Cats, Me. Or Home, Cat, Walks. "Me" is
+          shortest.
+        </li>
+        <li>
+          <b>Language:</b> English only for now, or Dutch too? Your logo's
+          tagline is Dutch.
+        </li>
+        <li>
+          <b>Slider or typed number</b> for the goal. I'd use a slider with ±500
+          nudge buttons.
+        </li>
+        <li>
+          <b>The cat's voice:</b> does she speak? One warm line per state,
+          written as the cat, or neutral text.
+        </li>
+      </ol>
+
+      <h2>What to build first</h2>
+      <ol>
+        <li>
+          <b>The cat art</b> (a flat silhouette in your logo's style, three
+          coats, three moods). Everything above depends on it.
+        </li>
+        <li>
+          <b>Home redesign:</b> ring around the cat, big number, streak chip.
+        </li>
+        <li><b>Celebrations:</b> goal reached and level up.</li>
+        <li><b>Me tab:</b> week strip, totals, settings moved inside.</li>
+        <li><b>Slice 3, the room</b>, then the map slice.</li>
+      </ol>
+    </main>
+  </body>
+</html>
