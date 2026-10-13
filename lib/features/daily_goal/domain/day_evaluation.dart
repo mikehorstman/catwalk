@@ -15,6 +15,7 @@ class DaySnapshot {
     required this.xpGainedToday,
     this.frozenDays = const [],
     this.recoveredByWeek = false,
+    this.snackXp = 0,
   });
 
   final Cat cat;
@@ -27,6 +28,16 @@ class DaySnapshot {
 
   /// The cat came home through the weekly walk rather than the map.
   final bool recoveredByWeek;
+
+  /// XP paid out for getting halfway today, if this open crossed that line.
+  final int snackXp;
+}
+
+/// XP for getting halfway to [goal]. A tenth of the day's reward, at least 2.
+int snackForGoal(int goal) {
+  final reward = xpForGoal(goal);
+  final snack = (reward / 10).round();
+  return snack < 2 ? 2 : snack;
 }
 
 /// Applies one app open to the cat and today's progress.
@@ -102,7 +113,17 @@ DaySnapshot evaluateDay({
   }
 
   final reward = xpForGoal(goal);
-  final xp = cat.xp + (awardNow ? reward : 0);
+
+  // Getting halfway pays a little, so a walk has a moment in it before the end.
+  // Only while the goal is still ahead: completing the day pays the full
+  // reward, not the full reward plus the bonus.
+  final snackNow =
+      !completed &&
+      !(previous?.snackAwarded ?? false) &&
+      isPartialDay(stepsToday: stepsToday, goal: goal);
+  final snackXp = snackNow ? snackForGoal(goal) : 0;
+
+  final xp = cat.xp + (awardNow ? reward : 0) + snackXp;
   final updatedCat = cat.copyWith(
     xp: xp,
     level: levelForXp(xp),
@@ -117,6 +138,7 @@ DaySnapshot evaluateDay({
     goalCompleted: completed,
     xpAwarded: alreadyAwarded || awardNow,
     xpEarned: previous?.xpEarned ?? (awardNow ? reward : 0),
+    snackAwarded: (previous?.snackAwarded ?? false) || snackNow,
   );
 
   return DaySnapshot(
@@ -125,6 +147,7 @@ DaySnapshot evaluateDay({
     xpGainedToday: awardNow ? reward : 0,
     frozenDays: gap.frozen,
     recoveredByWeek: weeklyHome,
+    snackXp: snackXp,
   );
 }
 

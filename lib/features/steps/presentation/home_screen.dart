@@ -7,6 +7,7 @@ import '../../../core/widgets/progress_ring.dart';
 import '../../../services/health/step_repository_provider.dart';
 import '../../cat/domain/cat_status.dart';
 import '../../cat/domain/xp_curve.dart';
+import '../../daily_goal/domain/progress_milestones.dart';
 import '../../cat/presentation/cat_voice.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
 import 'home_controller.dart';
@@ -54,6 +55,14 @@ class _HomeBody extends ConsumerWidget {
     final levelProgress = span == 0
         ? 0.0
         : ((cat.xp - levelStart) / span).clamp(0.0, 1.0);
+    // One thing to look forward to, not a wall of progress.
+    final next = nextReward(
+      xp: cat.xp,
+      currentStreak: state.currentStreak,
+      goalsMet: state.goalsMet,
+      xpToNextLevel: xpUntilNextLevel(cat.xp),
+      nextLevel: cat.level + 1,
+    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
@@ -71,6 +80,17 @@ class _HomeBody extends ConsumerWidget {
           ),
           textAlign: TextAlign.center,
         ),
+        if (state.snackXpToday > 0) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Halfway there: +${state.snackXpToday} XP',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: CatwalkColors.teal,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
         if (state.catCameHomeThisWeek) ...[
           const SizedBox(height: 12),
           _Notice(
@@ -130,6 +150,10 @@ class _HomeBody extends ConsumerWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        if (next case final reward?) ...[
+          const SizedBox(height: 12),
+          _NextReward(reward: reward),
+        ],
         if (useMockSteps) ...[
           const SizedBox(height: 28),
           Text(
@@ -321,6 +345,38 @@ class _Retry extends StatelessWidget {
           const Text('Could not load today.'),
           const SizedBox(height: 12),
           FilledButton(onPressed: onPressed, child: const Text('Try again')),
+        ],
+      ),
+    );
+  }
+}
+
+/// The one thing worth waiting for, and how far off it is.
+class _NextReward extends StatelessWidget {
+  const _NextReward({required this.reward});
+
+  final NextReward reward;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: CatwalkColors.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: CatwalkColors.line),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.card_giftcard, size: 18, color: CatwalkColors.teal),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Next: ${reward.title} · ${reward.detail}',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
         ],
       ),
     );

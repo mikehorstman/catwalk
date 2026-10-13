@@ -9,6 +9,7 @@ class DailyProgress {
     required this.xpAwarded,
     this.xpEarned = 0,
     this.frozen = false,
+    this.snackAwarded = false,
   });
 
   final CalendarDate date;
@@ -26,6 +27,10 @@ class DailyProgress {
   /// the streak either.
   final bool frozen;
 
+  /// The halfway bonus has been paid for this day. Paid once, at half the goal,
+  /// and never taken back.
+  final bool snackAwarded;
+
   int get stepsRemaining {
     final remaining = stepGoal - steps;
     return remaining < 0 ? 0 : remaining;
@@ -38,6 +43,7 @@ class DailyProgress {
     bool? xpAwarded,
     int? xpEarned,
     bool? frozen,
+    bool? snackAwarded,
   }) {
     return DailyProgress(
       date: date,
@@ -47,6 +53,7 @@ class DailyProgress {
       xpAwarded: xpAwarded ?? this.xpAwarded,
       xpEarned: xpEarned ?? this.xpEarned,
       frozen: frozen ?? this.frozen,
+      snackAwarded: snackAwarded ?? this.snackAwarded,
     );
   }
 }

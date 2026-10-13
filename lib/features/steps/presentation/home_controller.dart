@@ -31,6 +31,8 @@ class HomeState {
     required this.currentStreak,
     this.stepSource,
     this.catCameHomeThisWeek = false,
+    this.goalsMet = 0,
+    this.snackXpToday = 0,
   });
 
   final Cat cat;
@@ -42,6 +44,12 @@ class HomeState {
 
   /// The cat came home through the weekly walk, with no map to use.
   final bool catCameHomeThisWeek;
+
+  /// Days the goal was completed, ever. Never goes down.
+  final int goalsMet;
+
+  /// The halfway bonus paid on this open, if any.
+  final int snackXpToday;
 
   /// True when this device has a health store Catwalk can read.
   final bool stepsAvailable;
@@ -150,16 +158,16 @@ class HomeController extends AsyncNotifier<HomeState> {
       );
     }
     final frozenDates = {for (final day in frozen) day.date};
-    final streak = currentStreak(
-      history: [
-        for (final day in days)
-          if (day.date != snapshot.today.date && !frozenDates.contains(day.date))
-            day,
-        ...frozen,
-        snapshot.today,
-      ],
-      today: snapshot.today.date,
-    );
+    final allDays = [
+      for (final day in days)
+        if (day.date != snapshot.today.date && !frozenDates.contains(day.date))
+          day,
+      ...frozen,
+      snapshot.today,
+    ];
+    final streak = currentStreak(history: allDays, today: snapshot.today.date);
+    // Lifetime, not this week: a missed day can never take it back.
+    final goalsMet = allDays.where((day) => day.goalCompleted).length;
     return HomeState(
       currentStreak: streak,
       cat: snapshot.cat,
@@ -169,6 +177,8 @@ class HomeController extends AsyncNotifier<HomeState> {
       stepsPermissionGranted: granted,
       stepSource: reading.source,
       catCameHomeThisWeek: snapshot.recoveredByWeek,
+      goalsMet: goalsMet,
+      snackXpToday: snapshot.snackXp,
     );
   }
 

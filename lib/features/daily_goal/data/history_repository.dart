@@ -65,6 +65,7 @@ Map<String, Object> progressToJson(DailyProgress progress) {
     'xpAwarded': progress.xpAwarded,
     'xpEarned': progress.xpEarned,
     if (progress.frozen) 'frozen': true,
+    if (progress.snackAwarded) 'snackAwarded': true,
   };
 }
 
@@ -77,5 +78,6 @@ DailyProgress progressFromJson(Map<String, dynamic> json) {
     xpAwarded: json['xpAwarded'] == true,
     xpEarned: (json['xpEarned'] as int?) ?? 0,
     frozen: json['frozen'] == true,
+    snackAwarded: json['snackAwarded'] == true,
   );
 }

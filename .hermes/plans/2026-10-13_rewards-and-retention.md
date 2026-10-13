@@ -1,5 +1,7 @@
 # Catwalk — Rewards and "come back tomorrow"
 
+> **Built so far:** R0 (weekly walk home, goal floor, half days) and R1 (lifetime counters, the next-reward line, the halfway bonus, the weekly look back) are implemented, tested and pushed. R2 is next.
+>
 > **Decisions taken (13 Oct):** A weekly-steps fallback for runaway cats (see 5b) · B a day of ≥ 50 % is not a missed day, but the cat is in a bad mood · C goal minimum 3,000 · D what triggers new cats is **still open** · E no currency for now · F anonymous opt-out analytics before outside testers · G local reminders. Section 12 has the detail.
 
 **Goal:** people hit their step goal every day, and want to open the app tomorrow.

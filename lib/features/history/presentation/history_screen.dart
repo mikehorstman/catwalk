@@ -6,6 +6,7 @@ import '../../../app/theme.dart';
 import '../../../core/utils/calendar_date.dart';
 import '../../../core/utils/format.dart';
 import '../../daily_goal/domain/daily_progress.dart';
+import '../../daily_goal/domain/progress_milestones.dart';
 import 'history_controller.dart';
 
 /// The Me tab: how have I been doing?
@@ -65,6 +66,8 @@ class _Me extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
+        _ThisWeek(week: view.week),
+        const SizedBox(height: 20),
         _WeekStrip(days: view.days),
         const SizedBox(height: 20),
         Row(
@@ -100,6 +103,64 @@ class _Me extends StatelessWidget {
             const SizedBox(height: 8),
           ],
       ],
+    );
+  }
+}
+
+/// The last seven days as a unit, so a week feels like something you can win.
+class _ThisWeek extends StatelessWidget {
+  const _ThisWeek({required this.week});
+
+  final WeekSummary week;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: CatwalkColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: CatwalkColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('This week', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _Stat(
+                  label: 'Goals met',
+                  value: '${week.goalsMet} of $weekDays',
+                ),
+              ),
+              Expanded(
+                child: _Stat(
+                  label: 'Steps',
+                  value: formatNumber(week.steps),
+                ),
+              ),
+              Expanded(
+                child: _Stat(
+                  label: 'Best day',
+                  value: formatNumber(week.bestDaySteps),
+                ),
+              ),
+            ],
+          ),
+          if (week.days < weekDays) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Based on ${week.days} recorded day${week.days == 1 ? '' : 's'}.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
