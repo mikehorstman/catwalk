@@ -12,6 +12,8 @@
 	<string>Catwalk reads your step count so your cat knows how far you walked today.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Catwalk does not write to Apple Health.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Catwalk reads your phone's step sensor when Apple Health cannot answer.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

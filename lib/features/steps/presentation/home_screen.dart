@@ -164,15 +164,21 @@ class _Steps extends ConsumerWidget {
       return _Notice(
         text:
             'This phone has no step source Catwalk can read. '
-            'It reads Apple Health or Health Connect.',
+            'It reads Apple Health or Health Connect, or the step sensor.',
       );
     }
-    if (!state.stepsPermissionGranted) {
+    // A source exists but no number arrived: say so instead of showing zero.
+    if (!state.hasStepReading) {
       return _Notice(
-        text: 'Catwalk needs your steps to know how far you walked.',
-        action: 'Allow step access',
-        onPressed: () =>
-            ref.read(homeControllerProvider.notifier).requestStepAccess(),
+        text: state.stepsPermissionGranted
+            ? 'The phone did not give a step count for today.'
+            : 'Catwalk needs your steps to know how far you walked.',
+        action: state.stepsPermissionGranted ? null : 'Allow step access',
+        onPressed: state.stepsPermissionGranted
+            ? null
+            : () => ref
+                  .read(homeControllerProvider.notifier)
+                  .requestStepAccess(),
       );
     }
     return Column(
@@ -196,6 +202,16 @@ class _Steps extends ConsumerWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+        if (state.stepsFromSensor) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Since Catwalk last anchored the step sensor.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
         if (today.goalCompleted && state.xpGainedToday > 0) ...[
           const SizedBox(height: 4),
           Text(

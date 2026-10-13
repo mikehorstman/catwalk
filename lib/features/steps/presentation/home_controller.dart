@@ -15,6 +15,7 @@ import '../../daily_goal/domain/day_evaluation.dart';
 import '../../daily_goal/domain/streak.dart';
 import '../../onboarding/data/onboarding_repository.dart';
 import '../../settings/data/profile_repository.dart';
+import '../domain/step_reading.dart';
 
 class HomeState {
   const HomeState({
@@ -25,6 +26,7 @@ class HomeState {
     required this.stepsAvailable,
     required this.stepsPermissionGranted,
     required this.currentStreak,
+    this.stepSource,
   });
 
   final Cat cat;
@@ -40,6 +42,15 @@ class HomeState {
 
   /// True when the user has allowed Catwalk to read steps.
   final bool stepsPermissionGranted;
+
+  /// Where today's number came from: health, the step sensor, or nothing.
+  final StepSource? stepSource;
+
+  /// The phone gave a number today, so [today] can be trusted as a count.
+  bool get hasStepReading => stepSource != null;
+
+  /// The number came from the step sensor, which cannot see past days.
+  bool get stepsFromSensor => stepSource == StepSource.sensor;
 }
 
 final homeControllerProvider = AsyncNotifierProvider<HomeController, HomeState>(
@@ -90,7 +101,12 @@ class HomeController extends AsyncNotifier<HomeState> {
     final repository = ref.read(stepRepositoryProvider);
     final available = await repository.isAvailable();
     final granted = available && await repository.hasPermissions();
-    final steps = granted ? await repository.getTodaySteps() : 0;
+    final reading = granted
+        ? await repository.getTodaySteps()
+        : const StepReading.unavailable();
+    // No reading is not zero, but the day still has a number to show. The
+    // UI says "unavailable" instead of claiming a count.
+    final steps = reading.steps ?? 0;
     final snapshot = evaluateDay(
       cat: cat,
       dailyStepGoal: profile.dailyStepGoal,
@@ -116,6 +132,7 @@ class HomeController extends AsyncNotifier<HomeState> {
       recoveredToday: snapshot.recoveredToday,
       stepsAvailable: available,
       stepsPermissionGranted: granted,
+      stepSource: reading.source,
     );
   }
 

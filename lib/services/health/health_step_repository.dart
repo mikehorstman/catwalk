@@ -1,4 +1,5 @@
 import '../../core/utils/calendar_date.dart';
+import '../../features/steps/domain/step_reading.dart';
 import 'health_client.dart';
 import 'step_repository.dart';
 
@@ -12,6 +13,9 @@ class HealthStepRepository implements StepRepository {
     : _client = client ?? HealthPluginClient();
 
   final HealthClient _client;
+
+  @override
+  Future<StepReading> getTodaySteps() => getStepsForDate(CalendarDate.today());
 
   @override
   Future<bool> isAvailable() => _client.isAvailable();
@@ -29,13 +33,13 @@ class HealthStepRepository implements StepRepository {
   }
 
   @override
-  Future<int> getTodaySteps() => getStepsForDate(CalendarDate.today());
-
-  @override
-  Future<int> getStepsForDate(CalendarDate date) async {
+  Future<StepReading> getStepsForDate(CalendarDate date) async {
+    if (!await _client.isAvailable()) return const StepReading.unavailable();
     final start = date.toDateTime();
     final end = start.add(const Duration(days: 1));
     final steps = await _client.stepsBetween(start, end);
-    return steps ?? 0;
+    // No data is not zero. The store either has a count or it does not.
+    if (steps == null) return const StepReading.unavailable();
+    return StepReading.health(steps);
   }
 }

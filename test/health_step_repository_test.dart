@@ -1,14 +1,11 @@
 import 'package:catwalk/core/utils/calendar_date.dart';
+import 'package:catwalk/features/steps/domain/step_reading.dart';
 import 'package:catwalk/services/health/health_client.dart';
 import 'package:catwalk/services/health/health_step_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeClient implements HealthClient {
-  _FakeClient({
-    this.available = true,
-    this.permission = true,
-    this.steps,
-  });
+  _FakeClient({this.available = true, this.permission = true, this.steps});
 
   bool available;
   bool permission;
@@ -42,7 +39,11 @@ void main() {
     final client = _FakeClient(steps: 4321);
     final repository = HealthStepRepository(client: client);
 
-    expect(await repository.getStepsForDate(CalendarDate(2026, 10, 10)), 4321);
+    final reading = await repository.getStepsForDate(
+      CalendarDate(2026, 10, 10),
+    );
+    expect(reading.steps, 4321);
+    expect(reading.source, StepSource.health);
     expect(client.lastStart, DateTime(2026, 10, 10));
     expect(client.lastEnd, DateTime(2026, 10, 11));
   });
@@ -66,10 +67,25 @@ void main() {
     expect(client.requestCount, 1);
   });
 
-  test('a store with no data returns zero, not a guess', () async {
+  test('a store with no data is unavailable, not zero', () async {
     final client = _FakeClient(steps: null);
     final repository = HealthStepRepository(client: client);
 
-    expect(await repository.getStepsForDate(CalendarDate(2026, 10, 10)), 0);
+    final reading = await repository.getStepsForDate(
+      CalendarDate(2026, 10, 10),
+    );
+    expect(reading.hasSteps, isFalse);
+    expect(reading.source, isNull);
+  });
+
+  test('a store that says zero is a real zero', () async {
+    final client = _FakeClient(steps: 0);
+    final repository = HealthStepRepository(client: client);
+
+    final reading = await repository.getStepsForDate(
+      CalendarDate(2026, 10, 10),
+    );
+    expect(reading.steps, 0);
+    expect(reading.source, StepSource.health);
   });
 }
