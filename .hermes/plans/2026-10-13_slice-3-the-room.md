@@ -53,7 +53,7 @@ CatState { catId, action, spotId?, position, facing, actionTimeLeft, route }
 ### 4. Animation contract (this is what you plug your art into)
 ```
 abstract interface class CatAnimationSet {
-  CatFrame frame(CatAction action, Duration elapsed, Facing facing);
+  CatFrame frame(CatAction action, CatMood mood, Duration elapsed, Facing facing);
   Size get frameSize;
 }
 ```
@@ -61,9 +61,17 @@ abstract interface class CatAnimationSet {
 - v2 (yours): `SpriteCatAnimations` reading one **manifest** for all cats (decided: **one neutral sheet, tinted in code**), `assets/cats/manifest.json`:
 ```
 { "frameSize": [256,256], "footAnchor": [128,236],
-  "actions": { "walk": {"fur":"walk_fur.png","details":"walk_details.png",
-                        "frames":8,"fps":10,"loop":true}, ... } }
+  "actions": {
+    "walk": {
+      "neutral": {"fur":"walk_neutral_fur.png","details":"walk_neutral_details.png",
+                  "frames":8,"fps":10,"loop":true},
+      "happy":   { ... },
+      "sad":     { ... }
+    }, ... } }
 ```
+- **Mood is part of the key (decided):** sheets are looked up by action *and* mood (`happy`, `neutral`, `sad`, matching `CatMood`). Fallback order, per lookup: exact mood → `neutral` → placeholder. So you can start with neutral sheets only and add happy/sad later, one action at a time, with no code change.
+- Mood changes the *look* of an action (a sad walk, a happy walk); the behaviour planner's mood weights still decide *which* action is picked. The two are independent.
+- A mood change mid-action (e.g. you hit your goal while the cat is sleeping) swaps the sheet at the next frame boundary without restarting the action, so the cat doesn't visibly reset.
 - **How tinting works:** each action has two sheets with identical frame layout. `fur` is drawn in white/light grey shading only; the code multiplies it by the cat's colour (cream, charcoal, ginger) with `BlendMode.modulate`. `details` holds everything that must not change colour (eyes, nose, mouth, inner ears, whiskers) and is drawn on top untinted. Without the second sheet, eyes and nose would turn the fur colour.
 - Cats with markings (stripes, socks) are out of scope; they would need a third `markings` layer tinted separately. The manifest allows adding it later.
 - Rules for you when drawing: art faces right; a shared foot anchor so cats stand on the floor consistently; keep fur shading in greys, with highlights not pure white (a pure-white pixel can't get darker than the tint, and a very dark tint like charcoal needs mid-grey shading to show form); `loop:false` for one-shots (e.g. a sit-down). Missing actions fall back to the placeholder, so you can drop art in one action at a time.
@@ -97,7 +105,7 @@ abstract interface class CatAnimationSet {
 6. **Tap a cat → details sheet.** Move name / mood / status / level / XP out of the main layout into a bottom sheet. Widget test: tap opens, tap away closes.
 7. **Wire `roomCatsProvider`** from `HomeState`; replace `cat_screen.dart`'s body; make the nav translucent; keep a runaway cushion.
 8. **Debug animation lab** (debug builds only): pick a cat appearance and an action, loop it, flip facing, toggle a foot-anchor guide line, show frame/fps. This is how you will preview your own sprites without waiting for the planner to pick them.
-9. **Sprite loader** (`SpriteCatAnimations` + manifest). Test with tiny generated fur/details sheets: frame index follows time and fps; `loop:false` holds the last frame; a missing action falls back; the fur layer takes each appearance's tint and the details layer stays untinted; the animation lab previews all three colours side by side.
+9. **Sprite loader** (`SpriteCatAnimations` + manifest). Test with tiny generated fur/details sheets: frame index follows time and fps; mood picks its own sheet and falls back to `neutral` then placeholder; a mood change mid-action keeps the frame position; `loop:false` holds the last frame; a missing action falls back; the fur layer takes each appearance's tint and the details layer stays untinted; the animation lab previews all three colours side by side.
 10. **Docs.** `docs/cat-animation-spec.html`; update `docs/plan.html` slice 3 text; mark status in this plan.
 11. **Verify on the simulator** with mocks on: push 0 / 2,500 / goal and watch moods change in the room; check reduced motion (Settings → Accessibility → Reduce Motion); a runaway state shows the cushion.
 
@@ -117,7 +125,7 @@ abstract interface class CatAnimationSet {
 ## Open questions
 **Decided:** nav bar stays visible; one neutral sheet tinted in code; Home reuses your `sit` animation later (Home keeps the placeholder breathing cat until it exists; tracked as a follow-up, not part of this slice).
 
-1. **Wander always, or mood-gated?** My default is the weighting above (sad cats mostly sit/sleep), not a hard rule.
+**Resolved:** wander behaviour is not important for now; the mood weighting in the plan stays as the default and can be tuned later. Sprite sheets will also be mood-specific (see the animation contract).
 2. **Sound:** none in this slice. (There is a `soundEnabled` setting; leaving it untouched.)
 
 ## Done when
