@@ -27,6 +27,9 @@ class _FakeClient implements HealthClient {
   }
 
   @override
+  Future<List<int>?> hourlyBetween(DateTime start, DateTime end) async => null;
+
+  @override
   Future<int?> stepsBetween(DateTime start, DateTime end) async {
     lastStart = start;
     lastEnd = end;

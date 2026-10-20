@@ -49,6 +49,9 @@ class _Steps implements StepRepository {
   Future<bool> requestPermissions() async => true;
 
   @override
+  Future<List<int>?> hourlySteps(CalendarDate date) async => null;
+
+  @override
   Future<StepReading> getStepsForDate(CalendarDate date) async =>
       StepReading.health(steps);
 

@@ -21,14 +21,31 @@ const bool useMockSteps =
 /// the simulator without tapping through Home. Ignored by release builds.
 const int mockStepsToday = int.fromEnvironment('MOCK_STEPS_TODAY');
 
+/// Hourly buckets for today in a development build, 24 comma-separated numbers,
+/// so the daily quest can be seen on the simulator. Ignored by release builds.
+const String mockHoursToday = String.fromEnvironment('MOCK_HOURS_TODAY');
+
+/// Reads 24 comma-separated buckets. Anything else is no data, not a guess.
+List<int>? parseMockHours(String raw) {
+  if (raw.isEmpty) return null;
+  final parts = raw.split(',');
+  if (parts.length != 24) return null;
+  return [for (final part in parts) int.tryParse(part.trim()) ?? 0];
+}
+
 /// The phone's steps: health store first, step sensor second, nothing third.
 StepRepository createStepRepository(Ref ref) {
   if (useMockSteps) {
-    return MockStepRepository(
+    final repository = MockStepRepository(
       stepsByDate: mockStepsToday > 0
           ? {CalendarDate.today().toIsoDate(): mockStepsToday}
           : null,
     );
+    final hours = parseMockHours(mockHoursToday);
+    if (hours != null) {
+      repository.setHours(CalendarDate.today(), hours);
+    }
+    return repository;
   }
   return CompositeStepRepository(
     health: HealthStepRepository(),

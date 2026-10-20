@@ -29,6 +29,9 @@ class _FakeSource implements StepRepository {
   }
 
   @override
+  Future<List<int>?> hourlySteps(CalendarDate date) async => null;
+
+  @override
   Future<StepReading> getStepsForDate(CalendarDate date) async => reading;
 
   @override

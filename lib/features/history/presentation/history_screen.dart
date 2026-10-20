@@ -150,10 +150,11 @@ class _ThisWeek extends StatelessWidget {
               ),
             ],
           ),
-          if (week.days < weekDays) ...[
+          if (week.days > 0) ...[
             const SizedBox(height: 8),
             Text(
-              'Based on ${week.days} recorded day${week.days == 1 ? '' : 's'}.',
+              'Average ${formatNumber(week.averageSteps)} a day'
+              '${week.days < weekDays ? ', over ${week.days} recorded day${week.days == 1 ? '' : 's'}' : ''}.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

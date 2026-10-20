@@ -11,6 +11,10 @@ abstract interface class HealthClient {
 
   /// Total steps between [start] and [end], or null when the store has none.
   Future<int?> stepsBetween(DateTime start, DateTime end);
+
+  /// Steps per hour of [start]'s day, 24 buckets, or null when the store cannot
+  /// break the day up.
+  Future<List<int>?> hourlyBetween(DateTime start, DateTime end);
 }
 
 /// The real client. Apple Health on iOS, Health Connect on Android.
@@ -50,5 +54,25 @@ class HealthPluginClient implements HealthClient {
   Future<int?> stepsBetween(DateTime start, DateTime end) async {
     await _ensureConfigured();
     return _health.getTotalStepsInInterval(start, end);
+  }
+
+  @override
+  Future<List<int>?> hourlyBetween(DateTime start, DateTime end) async {
+    await _ensureConfigured();
+    final points = await _health.getHealthDataFromTypes(
+      types: _types,
+      startTime: start,
+      endTime: end,
+    );
+    if (points.isEmpty) return null;
+    final buckets = List<int>.filled(24, 0);
+    for (final point in points) {
+      final step = point.value;
+      if (step is! NumericHealthValue) continue;
+      final count = step.numericValue.round();
+      final hour = point.dateFrom.difference(start).inHours;
+      if (hour >= 0 && hour < 24) buckets[hour] += count;
+    }
+    return buckets;
   }
 }

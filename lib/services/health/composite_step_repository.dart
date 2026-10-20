@@ -44,6 +44,15 @@ class CompositeStepRepository implements StepRepository {
   }
 
   @override
+  Future<List<int>?> hourlySteps(CalendarDate date) async {
+    if (await _health.isAvailable() && await _health.hasPermissions()) {
+      final hours = await _health.hourlySteps(date);
+      if (hours != null) return hours;
+    }
+    return _sensor.hourlySteps(date);
+  }
+
+  @override
   Future<StepReading> getStepsForDate(CalendarDate date) async {
     // A store that answers for this day is the answer, even when it says zero.
     // Only when it cannot be read at all does the sensor get a turn.

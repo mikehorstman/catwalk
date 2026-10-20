@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/format.dart';
+import '../../../services/health/step_repository_provider.dart';
 import '../../cat/domain/cat_appearance.dart';
+import '../../daily_goal/data/goal_suggestion_service.dart';
+import '../../daily_goal/domain/goal_suggestion.dart';
 import '../../settings/presentation/daily_goal_field.dart';
 import 'onboarding_controller.dart';
 
@@ -21,6 +25,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   );
   int _page = 0;
   bool _saving = false;
+  bool _suggesting = false;
   String? _permissionNote;
 
   static const _pageCount = 5;
@@ -31,6 +36,39 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _nameController.dispose();
     _goalController.dispose();
     super.dispose();
+  }
+
+  /// Asks the phone for the last week and fills the goal from it.
+  Future<void> _suggestGoal() async {
+    if (_suggesting) return;
+    setState(() => _suggesting = true);
+    final repository = ref.read(stepRepositoryProvider);
+    try {
+      await repository.requestPermissions();
+    } catch (_) {
+      // A refusal is not an error: there is just nothing to suggest from.
+    }
+    final suggestion = await ref
+        .read(goalSuggestionServiceProvider)
+        .fromPhone();
+    if (!mounted) return;
+    setState(() {
+      _suggesting = false;
+      if (suggestion != null) {
+        _goalController.text = '${suggestion.goal}';
+        ref
+            .read(onboardingControllerProvider.notifier)
+            .setDailyStepGoal(suggestion.goal);
+      }
+    });
+    final message = suggestion == null
+        ? 'Not enough step history yet. ${formatNumber(AppConstants.defaultDailyStepGoal)} is a good start.'
+        : 'You averaged about ${formatNumber(suggestion.medianSteps)} steps on '
+              '${suggestion.daysUsed} days, so ${formatNumber(suggestion.goal)} '
+              'gives you something to reach for.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool get _canContinue {
@@ -127,6 +165,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     _GoalStep(
                       controller: _goalController,
+                      goal: int.tryParse(_goalController.text) ??
+                          AppConstants.defaultDailyStepGoal,
+                      suggesting: _suggesting,
+                      onSuggest: _suggestGoal,
                       onChanged: (value) {
                         final goal = int.tryParse(value);
                         if (goal != null) {
@@ -318,9 +360,18 @@ class _NameStep extends StatelessWidget {
 }
 
 class _GoalStep extends StatelessWidget {
-  const _GoalStep({required this.controller, required this.onChanged});
+  const _GoalStep({
+    required this.controller,
+    required this.goal,
+    required this.suggesting,
+    required this.onSuggest,
+    required this.onChanged,
+  });
 
   final TextEditingController controller;
+  final int goal;
+  final bool suggesting;
+  final VoidCallback onSuggest;
   final ValueChanged<String> onChanged;
 
   @override
@@ -332,13 +383,30 @@ class _GoalStep extends StatelessWidget {
         Text('Daily step goal', style: theme.textTheme.headlineMedium),
         const SizedBox(height: 8),
         Text(
-          '6,000 is a steady default. You can change it later.',
+          'Most of the health benefit sits around '
+          '${formatNumber(AppConstants.benefitReferenceSteps)} steps a day. '
+          'You can change it later.',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 20),
         DailyGoalField(controller: controller, onChanged: onChanged),
+        const SizedBox(height: 6),
+        Text(
+          'About ${goalInMinutes(goal)} minutes of walking a day.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 14),
+        OutlinedButton.icon(
+          onPressed: suggesting ? null : onSuggest,
+          icon: const Icon(Icons.auto_awesome, size: 18),
+          label: Text(
+            suggesting ? 'Looking at your week…' : 'Not sure? Use my last week',
+          ),
+        ),
       ],
     );
   }

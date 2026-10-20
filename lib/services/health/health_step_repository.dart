@@ -33,6 +33,15 @@ class HealthStepRepository implements StepRepository {
   }
 
   @override
+  Future<List<int>?> hourlySteps(CalendarDate date) async {
+    if (!await _client.isAvailable()) return null;
+    if (!await _client.hasPermission()) return null;
+    final start = date.toDateTime();
+    final end = start.add(const Duration(days: 1));
+    return _client.hourlyBetween(start, end);
+  }
+
+  @override
   Future<StepReading> getStepsForDate(CalendarDate date) async {
     if (!await _client.isAvailable()) return const StepReading.unavailable();
     final start = date.toDateTime();

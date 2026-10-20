@@ -10,7 +10,17 @@ class MockStepRepository implements StepRepository {
   }) : _stepsByDate = Map<String, int>.from(stepsByDate ?? const {});
 
   final Map<String, int> _stepsByDate;
+  final Map<String, List<int>> _hoursByDate = {};
   bool permissionsGranted;
+
+  /// Sets hourly buckets for [date], 24 long, for tests and the simulator.
+  void setHours(CalendarDate date, List<int> hours) {
+    _hoursByDate[date.toIsoDate()] = List<int>.from(hours);
+  }
+
+  @override
+  Future<List<int>?> hourlySteps(CalendarDate date) async =>
+      _hoursByDate[date.toIsoDate()];
 
   void setSteps(CalendarDate date, int steps) {
     _stepsByDate[date.toIsoDate()] = steps;

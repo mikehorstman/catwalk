@@ -16,5 +16,12 @@ abstract interface class StepRepository {
   /// never have to treat "no reading" as zero.
   Future<StepReading> getStepsForDate(CalendarDate date);
 
+  /// Steps per hour for [date], 24 buckets, or null when this source cannot
+  /// see hours (the step sensor cannot) or has nothing for the day.
+  ///
+  /// Used for daily quests only. Nothing is stored: the buckets are read, judged
+  /// and dropped, so Catwalk keeps no trail of when someone walked.
+  Future<List<int>?> hourlySteps(CalendarDate date) async => null;
+
   Future<StepReading> getTodaySteps() => getStepsForDate(CalendarDate.today());
 }

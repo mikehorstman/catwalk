@@ -48,6 +48,10 @@ class SensorStepRepository implements StepRepository {
     return reading != null;
   }
 
+  /// The sensor counts a day, never the hours in it.
+  @override
+  Future<List<int>?> hourlySteps(CalendarDate date) async => null;
+
   @override
   Future<StepReading> getStepsForDate(CalendarDate date) async {
     // The sensor cannot look back at another day. Only today is readable.

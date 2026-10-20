@@ -10,6 +10,8 @@ class DailyProgress {
     this.xpEarned = 0,
     this.frozen = false,
     this.snackAwarded = false,
+    this.questAwarded = false,
+    this.questXp = 0,
   });
 
   final CalendarDate date;
@@ -31,6 +33,12 @@ class DailyProgress {
   /// and never taken back.
   final bool snackAwarded;
 
+  /// Today's side quest has been paid for this day. Quests pay once a day.
+  final bool questAwarded;
+
+  /// What the quest paid. Zero until it is done.
+  final int questXp;
+
   int get stepsRemaining {
     final remaining = stepGoal - steps;
     return remaining < 0 ? 0 : remaining;
@@ -44,6 +52,8 @@ class DailyProgress {
     int? xpEarned,
     bool? frozen,
     bool? snackAwarded,
+    bool? questAwarded,
+    int? questXp,
   }) {
     return DailyProgress(
       date: date,
@@ -54,6 +64,8 @@ class DailyProgress {
       xpEarned: xpEarned ?? this.xpEarned,
       frozen: frozen ?? this.frozen,
       snackAwarded: snackAwarded ?? this.snackAwarded,
+      questAwarded: questAwarded ?? this.questAwarded,
+      questXp: questXp ?? this.questXp,
     );
   }
 }

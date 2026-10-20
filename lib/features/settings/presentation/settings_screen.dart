@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/format.dart';
 import '../../../services/storage/local_store_provider.dart';
+import '../../../services/health/step_repository_provider.dart';
+import '../../daily_goal/data/goal_suggestion_service.dart';
+import '../../daily_goal/domain/goal_suggestion.dart';
 import '../../history/presentation/history_controller.dart';
 import '../../onboarding/presentation/onboarding_controller.dart';
 import '../../steps/presentation/home_controller.dart';
@@ -22,6 +25,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _goalController = TextEditingController();
   bool _loaded = false;
   bool _saving = false;
+  bool _suggesting = false;
 
   @override
   void dispose() {
@@ -34,6 +38,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return goal != null &&
         goal >= AppConstants.minDailyStepGoal &&
         goal <= AppConstants.maxDailyStepGoal;
+  }
+
+  int get _typedGoal =>
+      int.tryParse(_goalController.text) ?? AppConstants.defaultDailyStepGoal;
+
+  /// Fills the field from the last week, without saving it.
+  Future<void> _suggestGoal() async {
+    if (_suggesting) return;
+    setState(() => _suggesting = true);
+    final repository = ref.read(stepRepositoryProvider);
+    try {
+      await repository.requestPermissions();
+    } catch (_) {
+      // Nothing to read is not an error.
+    }
+    final suggestion = await ref
+        .read(goalSuggestionServiceProvider)
+        .fromPhone();
+    if (!mounted) return;
+    setState(() {
+      _suggesting = false;
+      if (suggestion != null) _goalController.text = '${suggestion.goal}';
+    });
+    final message = suggestion == null
+        ? 'Not enough step history yet. '
+              '${formatNumber(AppConstants.defaultDailyStepGoal)} is a safe goal.'
+        : 'You averaged about ${formatNumber(suggestion.medianSteps)} steps on '
+              '${suggestion.daysUsed} days. Save to keep '
+              '${formatNumber(suggestion.goal)}.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _saveGoal() async {
@@ -124,9 +160,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Text('Daily step goal', style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(
-                'Between ${_format(1000)} and ${_format(30000)} steps. '
-                'A higher goal earns more XP each day, and lets you keep more '
-                    'cats. Minimum ${formatNumber(AppConstants.minDailyStepGoal)} steps.',
+                'Between ${formatNumber(AppConstants.minDailyStepGoal)} and '
+                '${formatNumber(AppConstants.maxDailyStepGoal)} steps. Most of the '
+                'health benefit sits around '
+                '${formatNumber(AppConstants.benefitReferenceSteps)} steps, and a '
+                'higher goal lets you keep more cats.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -135,6 +173,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               DailyGoalField(
                 controller: _goalController,
                 onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'About ${goalInMinutes(_typedGoal)} minutes of walking a day.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _suggesting ? null : _suggestGoal,
+                  icon: const Icon(Icons.auto_awesome, size: 18),
+                  label: Text(
+                    _suggesting
+                        ? 'Looking at your week…'
+                        : 'Use my last week',
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               Align(
@@ -188,15 +246,4 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
     );
   }
-}
-
-String _format(int value) {
-  final text = value.toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < text.length; i++) {
-    final fromEnd = text.length - i;
-    if (i > 0 && fromEnd % 3 == 0) buffer.write(',');
-    buffer.write(text[i]);
-  }
-  return buffer.toString();
 }

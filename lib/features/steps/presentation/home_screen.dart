@@ -7,7 +7,9 @@ import '../../../core/widgets/progress_ring.dart';
 import '../../../services/health/step_repository_provider.dart';
 import '../../cat/domain/cat_status.dart';
 import '../../cat/domain/xp_curve.dart';
+import '../../daily_goal/domain/goal_suggestion.dart';
 import '../../daily_goal/domain/progress_milestones.dart';
+import '../../daily_goal/domain/side_quest.dart';
 import '../../cat/presentation/cat_voice.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
 import 'home_controller.dart';
@@ -154,6 +156,44 @@ class _HomeBody extends ConsumerWidget {
           const SizedBox(height: 12),
           _NextReward(reward: reward),
         ],
+        if (state.quest case final quest?) ...[
+          const SizedBox(height: 16),
+          _QuestLine(
+            quest: quest,
+            done: state.questDoneToday,
+            xp: state.questXpToday,
+          ),
+        ],
+        if (state.goalRaise case final raise?) ...[
+          const SizedBox(height: 16),
+          _GoalNudge(
+            title: 'Ready for a bigger goal?',
+            detail:
+                'You hit ${raise.daysHit} of the last 7 days. '
+                '${formatNumber(raise.goal)} steps would go a little further.',
+            acceptLabel: 'Use ${formatNumber(raise.goal)}',
+            onAccept: () => ref
+                .read(homeControllerProvider.notifier)
+                .acceptGoalRaise(),
+            onDecline: () => ref
+                .read(homeControllerProvider.notifier)
+                .declineGoalRaise(),
+          ),
+        ] else if (state.showGoalTune && state.suggestedGoal != null) ...[
+          const SizedBox(height: 16),
+          _GoalNudge(
+            title: 'Is this goal right for you?',
+            detail:
+                'Your last week suggests ${formatNumber(state.suggestedGoal!)} '
+                'steps a day.',
+            acceptLabel: 'Use ${formatNumber(state.suggestedGoal!)}',
+            onAccept: () => ref
+                .read(homeControllerProvider.notifier)
+                .applyGoal(state.suggestedGoal!),
+            onDecline: () =>
+                ref.read(homeControllerProvider.notifier).dismissGoalTune(),
+          ),
+        ],
         if (useMockSteps) ...[
           const SizedBox(height: 28),
           Text(
@@ -232,6 +272,13 @@ class _Steps extends ConsumerWidget {
                 ? CatwalkColors.teal
                 : theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'about ${goalInMinutes(today.stepGoal)} min of walking',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         if (state.stepsFromSensor) ...[
@@ -376,6 +423,115 @@ class _NextReward extends StatelessWidget {
               'Next: ${reward.title} · ${reward.detail}',
               style: theme.textTheme.bodyMedium,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One optional challenge for the day, never a second score.
+class _QuestLine extends StatelessWidget {
+  const _QuestLine({required this.quest, required this.done, required this.xp});
+
+  final SideQuest quest;
+  final bool done;
+  final int xp;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final info = sideQuestInfo[quest]!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            done ? Icons.check_circle : Icons.directions_walk,
+            size: 20,
+            color: done ? CatwalkColors.teal : theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  info.title,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  done && xp > 0 ? '+$xp XP' : info.detail,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: done
+                        ? CatwalkColors.teal
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A single question about the goal, with a clear way to say no.
+class _GoalNudge extends StatelessWidget {
+  const _GoalNudge({
+    required this.title,
+    required this.detail,
+    required this.acceptLabel,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  final String title;
+  final String detail;
+  final String acceptLabel;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            detail,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              TextButton(onPressed: onAccept, child: Text(acceptLabel)),
+              const Spacer(),
+              TextButton(onPressed: onDecline, child: const Text('Not now')),
+            ],
           ),
         ],
       ),

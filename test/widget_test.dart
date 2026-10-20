@@ -140,6 +140,9 @@ class _FakeStepRepository implements StepRepository {
   Future<bool> requestPermissions() async => permission;
 
   @override
+  Future<List<int>?> hourlySteps(CalendarDate date) async => null;
+
+  @override
   Future<StepReading> getStepsForDate(CalendarDate date) async => reading;
 
   @override

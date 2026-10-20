@@ -11,13 +11,20 @@ import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_status.dart';
+import '../../cat/domain/xp_curve.dart';
 import '../../daily_goal/data/history_repository.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/day_evaluation.dart';
+import '../../daily_goal/domain/goal_suggestion.dart';
+import '../../daily_goal/domain/goal_tiers.dart';
+import '../../daily_goal/domain/side_quest.dart';
+import '../../daily_goal/domain/xp_budget.dart';
+import '../../daily_goal/domain/xp_for_goal.dart';
 import '../../daily_goal/domain/streak.dart';
 import '../../map/data/inventory_repository.dart';
 import '../../map/data/location_service.dart';
 import '../../onboarding/data/onboarding_repository.dart';
+import '../../settings/data/goal_nudges.dart';
 import '../../settings/data/profile_repository.dart';
 import '../domain/step_reading.dart';
 
@@ -33,6 +40,12 @@ class HomeState {
     this.catCameHomeThisWeek = false,
     this.goalsMet = 0,
     this.snackXpToday = 0,
+    this.quest,
+    this.questDoneToday = false,
+    this.questXpToday = 0,
+    this.suggestedGoal,
+    this.showGoalTune = false,
+    this.goalRaise,
   });
 
   final Cat cat;
@@ -50,6 +63,24 @@ class HomeState {
 
   /// The halfway bonus paid on this open, if any.
   final int snackXpToday;
+
+  /// Today's optional challenge, or null when this phone cannot judge one.
+  final SideQuest? quest;
+
+  /// The quest was already met by the steps the phone counts.
+  final bool questDoneToday;
+
+  /// The quest bonus paid on this open, if any.
+  final int questXpToday;
+
+  /// A goal picked from the last week, when there is enough history.
+  final int? suggestedGoal;
+
+  /// The one-time card that offers the suggestion.
+  final bool showGoalTune;
+
+  /// An invitation to raise the goal, earned by hitting it five days of seven.
+  final GoalRaise? goalRaise;
 
   /// True when this device has a health store Catwalk can read.
   final bool stepsAvailable;
@@ -168,18 +199,149 @@ class HomeController extends AsyncNotifier<HomeState> {
     final streak = currentStreak(history: allDays, today: snapshot.today.date);
     // Lifetime, not this week: a missed day can never take it back.
     final goalsMet = allDays.where((day) => day.goalCompleted).length;
+    final todayDate = CalendarDate.today();
+
+    // A quest changes how you walk, not how much. It is judged from what the
+    // phone can see, pays once, and costs nothing when missed.
+    final hours = granted ? await _hoursOrNull(repository) : null;
+    final yesterdaySteps = granted
+        ? await _stepsOrNull(repository, todayDate.addDays(-1))
+        : null;
+    final daysWalking = allDays.where((day) => day.steps > 0).length;
+    final trace = DayTrace(
+      date: todayDate,
+      steps: steps,
+      goal: snapshot.today.stepGoal,
+      hourly: hours,
+      yesterdaySteps: yesterdaySteps,
+    );
+    final yesterdayPick = pickQuest(
+      trace: DayTrace(
+        date: todayDate.addDays(-1),
+        steps: yesterdaySteps ?? 0,
+        goal: trace.goal,
+        hourly: hours,
+      ),
+      daysWalking: daysWalking,
+    );
+    final quest = pickQuest(
+      trace: trace,
+      daysWalking: daysWalking,
+      previous: yesterdayPick,
+    );
+    final questMet = quest != null && questDone(quest, trace);
+    var grownCat = snapshot.cat;
+    var todayProgress = snapshot.today;
+    var questXpToday = 0;
+    if (questMet && !todayProgress.questAwarded) {
+      final goalXp = xpForGoal(todayProgress.stepGoal);
+      final paid = questXpFor(goalXp);
+      final already = (todayProgress.goalCompleted ? goalXp : 0) +
+          (todayProgress.snackAwarded ? snackForGoal(todayProgress.stepGoal) : 0);
+      if (withinDailyCeiling(goalXp: goalXp, paid: already + paid)) {
+        questXpToday = paid;
+        grownCat = grownCat.copyWith(
+          xp: grownCat.xp + paid,
+          level: levelForXp(grownCat.xp + paid),
+        );
+        todayProgress = todayProgress.copyWith(
+          questAwarded: true,
+          questXp: paid,
+        );
+        await history.saveDay(todayProgress);
+      }
+    }
+
+    // A goal that suits the person. The card shows once, and never in the same
+    // open as a raise: one hint at a time.
+    final stepDays = {for (final day in allDays) day.date: day.steps};
+    final suggestion = suggestGoal(stepsByDate: stepDays, today: todayDate);
+    final nudges = ref.read(goalNudgesProvider);
+    final raise = raiseOffer(
+      history: allDays,
+      today: todayDate,
+      currentGoal: todayProgress.stepGoal,
+    );
+    final raiseOk = raise != null && await nudges.raiseAllowed(todayDate);
+    final farOff = suggestion != null &&
+        todayProgress.stepGoal > 0 &&
+        (todayProgress.stepGoal - suggestion.goal).abs() /
+                todayProgress.stepGoal >
+            0.2;
+    final tuneOk = farOff && !raiseOk && !await nudges.tuneDismissed();
+
     return HomeState(
       currentStreak: streak,
-      cat: snapshot.cat,
-      today: snapshot.today,
-      xpGainedToday: snapshot.xpGainedToday,
+      cat: grownCat,
+      today: todayProgress,
+      xpGainedToday: snapshot.xpGainedToday + questXpToday,
       stepsAvailable: available,
       stepsPermissionGranted: granted,
       stepSource: reading.source,
       catCameHomeThisWeek: snapshot.recoveredByWeek,
       goalsMet: goalsMet,
       snackXpToday: snapshot.snackXp,
+      quest: quest,
+      questDoneToday: questMet,
+      questXpToday: questXpToday,
+      suggestedGoal: suggestion?.goal,
+      showGoalTune: tuneOk,
+      goalRaise: raiseOk ? raise : null,
     );
+  }
+
+  /// Sets the goal from a suggestion or a raise, and answers the card.
+  Future<void> applyGoal(int goal) async {
+    final profile = await ref.read(profileRepositoryProvider).read();
+    final next = profile.copyWith(
+      dailyStepGoal: normaliseGoal(goal),
+    );
+    await ref.read(profileRepositoryProvider).write(next);
+    await ref.read(goalNudgesProvider).clearTune();
+    await refresh();
+  }
+
+  /// Leaves the goal alone. The card does not come back.
+  Future<void> dismissGoalTune() async {
+    await ref.read(goalNudgesProvider).dismissTune();
+    await refresh();
+  }
+
+  Future<void> acceptGoalRaise() async {
+    final raise = state.value?.goalRaise;
+    if (raise == null) return;
+    await ref
+        .read(goalNudgesProvider)
+        .markRaiseOffered(CalendarDate.today());
+    await applyGoal(raise.goal);
+  }
+
+  /// Not today: the offer stays quiet for a fortnight.
+  Future<void> declineGoalRaise() async {
+    await ref
+        .read(goalNudgesProvider)
+        .markRaiseOffered(CalendarDate.today());
+    await refresh();
+  }
+
+  Future<List<int>?> _hoursOrNull(StepRepository repository) async {
+    try {
+      return await repository.hourlySteps(CalendarDate.today());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<int?> _stepsOrNull(
+    StepRepository repository,
+    CalendarDate date,
+  ) async {
+    try {
+      final reading = await repository.getStepsForDate(date);
+      return reading.steps;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// The last six days of steps, for the weekly walk home.
