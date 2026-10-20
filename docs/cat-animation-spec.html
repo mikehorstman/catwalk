@@ -58,7 +58,17 @@
         plays them. Anything you have not drawn keeps using the placeholder.
       </div>
 
-      <h2>Why two sheets per action</h2>
+      <h2>Example sheet</h2>
+        <p>
+          <code>docs/cat-spritesheet-example.png</code> shows every action and
+          frame count on a placeholder cat, with the red foot line.
+          <code>docs/cat-spritesheet-example-strips/</code> has the same cat as
+          real-format strips (one row, transparent, no guide marks), a
+          <code>fur</code> and a <code>details</code> file per action. Rebuild
+          with <code>uv run --with pillow python tools/make_example_sheet.py</code>.
+        </p>
+
+        <h2>Why two sheets per action</h2>
       <p>
         All three cat colours come from one drawing. The <strong>fur</strong>
         sheet is greyscale and gets multiplied by the cat's colour. The
