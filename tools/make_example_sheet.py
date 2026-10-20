@@ -268,6 +268,116 @@ def play(i, n=6, mood="neutral"):
     return c
 
 
+# --- front-facing poses -----------------------------------------------------
+
+
+def head_front(c, x, y, mood="neutral", eyes="open", tilt=0.0):
+    """A head seen from the front. The face carries the mood, so it matters most."""
+    fur, det = c.fur, c.det
+    drop = {"happy": 0, "neutral": 3, "sad": 14}[mood]
+    spread = {"happy": 0, "neutral": 0, "sad": 8}[mood]
+    for sign in (-1, 1):
+        ex = x + sign * 38
+        fur.poly(
+            [(x + sign * 40 + sign * spread, y - 6 + drop), (ex + sign * spread, y - 48 + drop), (x + sign * 10, y - 30)],
+            FUR_FAR if sign < 0 else FUR,
+        )
+        det.poly(
+            [(x + sign * 32 + sign * spread, y - 12 + drop), (ex - sign * 2 + sign * spread, y - 38 + drop), (x + sign * 16, y - 28)],
+            PINK,
+        )
+    fur.ell(x, y, 44, 36, FUR)
+    fur.ell(x, y + 16, 24, 17, FUR_BELLY)
+    for sign in (-1, 1):
+        ex = x + sign * 17 + tilt
+        if eyes == "closed":
+            det.line((ex - 6, y - 2), (ex + 6, y - 2), 2.6, DARK)
+        elif mood == "happy":
+            det.d.arc([(ex - 7) * S, (y - 9) * S, (ex + 7) * S, (y + 5) * S], 200, 340, fill=DARK, width=int(3 * S))
+        else:
+            det.ell(ex, y - 3, 4.6, 6.6, DARK)
+            det.ell(ex + 1.4, y - 6, 1.6, 1.6, (255, 255, 255, 255))
+            if mood == "sad":
+                det.line((ex - sign * -7, y - 14 - 2 * sign * 0), (ex + sign * 6, y - 9), 2.4, FUR_FAR)
+    det.poly([(x - 6 + tilt, y + 7), (x + 6 + tilt, y + 7), (x + tilt, y + 14)], PINK)
+    det.line((x + tilt, y + 14), (x + tilt, y + 19), 1.8, DARK)
+    det.line((x + tilt, y + 19), (x - 7 + tilt, y + 23), 1.8, DARK)
+    det.line((x + tilt, y + 19), (x + 7 + tilt, y + 23), 1.8, DARK)
+    for sign in (-1, 1):
+        for dy in (-4, 3):
+            det.line((x + sign * 22 + tilt, y + 14), (x + sign * 54 + tilt, y + 12 + dy * 2), 1.3, WHISKER)
+
+
+def sit_front(i, n=4, mood="neutral"):
+    c = Cat()
+    breath = 1.5 * math.sin(i / n * 2 * math.pi)
+    flick = 5 * math.sin(i / n * 2 * math.pi)
+    tail(c, (166, 226), (200, 236), (206, 214), (190 + flick, 196), 12)
+    c.fur.ell(128, 186 + breath, 42, 52, FUR)
+    c.fur.ell(128, 192 + breath, 24, 40, FUR_BELLY)
+    c.fur.ell(94, 216, 28, 22, FUR)
+    c.fur.ell(162, 216, 28, 22, FUR)
+    for lx in (112, 144):
+        leg(c, (lx, 180), (lx, FOOT_Y - 4), False, 15)
+        c.fur.ell(lx, FOOT_Y - 2, 11, 6, FUR)
+    head_front(c, 128, 112 + breath, mood, "closed" if i == 2 else "open")
+    return c
+
+
+def idle_front(i, n=4, mood="neutral"):
+    c = Cat()
+    p = i / n * 2 * math.pi
+    tail(c, (162, 196), (200, 196), (206, 164 + 6 * math.sin(p)), (188, 140 + 6 * math.sin(p)), 12)
+    for lx in (96, 160):
+        c.fur.ell(lx, FOOT_Y - 4, 12, 7, FUR_FAR)
+        c.fur.line((lx, 196), (lx, FOOT_Y - 4), 14, FUR_FAR)
+    c.fur.ell(128, 176, 40, 46, FUR)
+    c.fur.ell(128, 184, 22, 34, FUR_BELLY)
+    for lx in (112, 144):
+        leg(c, (lx, 190), (lx, FOOT_Y - 4), False, 15)
+        c.fur.ell(lx, FOOT_Y - 2, 11, 6, FUR)
+    head_front(c, 128, 118, mood, "closed" if i == 2 else "open", tilt=3 * math.sin(p))
+    return c
+
+
+def walk_front(i, n=8, mood="neutral"):
+    """Walking towards the viewer."""
+    c = Cat()
+    p = i / n * 2 * math.pi
+    bob = 2.5 * abs(math.sin(p))
+    sway = 3 * math.sin(p)
+    tail(c, (162, 196), (200, 192), (208, 160 + 5 * math.sin(p)), (192, 138), 12)
+    for lx, off in ((100, math.pi), (156, 0.0)):  # hind paws, a step behind
+        lift = max(0.0, 8 * math.cos(p + off))
+        c.fur.ell(lx, FOOT_Y - 4 - lift, 12, 7, FUR_FAR)
+        c.fur.line((lx, 196), (lx, FOOT_Y - 4 - lift), 14, FUR_FAR)
+    c.fur.ell(128 + sway, 176 + bob, 40, 46, FUR)
+    c.fur.ell(128 + sway, 184 + bob, 22, 34, FUR_BELLY)
+    for lx, off in ((112, 0.0), (144, math.pi)):
+        lift = max(0.0, 16 * math.cos(p + off))
+        grow = 1.0 + 0.12 * max(0.0, -math.cos(p + off))  # paws look bigger when planted
+        foot_y = FOOT_Y - 4 - lift
+        leg(c, (lx + sway / 2, 190 + bob), (lx, foot_y), False, 15)
+        c.fur.ell(lx, foot_y + 2, 11 * grow, 6 * grow, FUR)
+    head_front(c, 128 + sway, 118 + bob, mood, "open")
+    return c
+
+
+def sleep_front(i, n=4, mood="neutral"):
+    """A one-shot: sits, folds down into a loaf facing us, holds the last frame."""
+    c = Cat()
+    t = i / (n - 1)
+    breath = 3 if i == n - 1 else 0
+    body_y = 186 + 26 * t
+    c.fur.ell(128, body_y, 42 + 24 * t, 52 - 26 * t + breath, FUR)
+    c.fur.ell(128, body_y + 6, 24 + 14 * t, 40 - 22 * t, FUR_BELLY)
+    tail(c, (180 - 10 * t, 228), (212, 238), (212, 214), (188, 214), 12)
+    for lx in (108, 148):
+        c.fur.ell(lx, FOOT_Y - 2, 12 + 3 * t, 7, FUR)
+    head_front(c, 128, 112 + 78 * t, mood, "closed" if i > 0 else "open")
+    return c
+
+
 ACTIONS = [
     # name, function, frames, fps, loops, note
     ("walk", walk, 8, 10, True, "side-on gait, two steps"),
@@ -281,6 +391,12 @@ ACTIONS = [
     ("play", play, 6, 8, True, "crouch and bat; toy is drawn by the room"),
 ]
 
+FRONT_ACTIONS = [
+    ("walkFront", walk_front, 8, 10, True, "walking towards you"),
+    ("idleFront", idle_front, 4, 4, True, "standing, tail sway, one blink"),
+    ("sitFront", sit_front, 4, 3, True, "sitting facing you, one blink"),
+    ("sleepFront", sleep_front, 4, 2, False, "sits, folds into a loaf, HOLDS last frame"),
+]
 
 def compose(cat):
     img = Image.new("RGBA", (F, F), (0, 0, 0, 0))
@@ -328,25 +444,31 @@ def main():
 
     label_w = 260
     gap = 8
-    cols = max(a[2] for a in ACTIONS)
+    cols = max(a[2] for a in ACTIONS + FRONT_ACTIONS)
     sheet_w = label_w + cols * (F + gap) + gap
     top = 190
     row_h = F + 62
-    mood_rows = 1
-    height = top + len(ACTIONS) * row_h + 70 + mood_rows * (F + 90) + 40
+    section_h = 110
+    mood_h = F + 130
+    height = (
+        top + section_h + len(ACTIONS) * row_h
+        + section_h + len(FRONT_ACTIONS) * row_h
+        + 60 + mood_h * 2 + 60
+    )
 
     page = Image.new("RGBA", (sheet_w, height), (255, 246, 234, 255))
     d = ImageDraw.Draw(page)
-    d.text((24, 20), "Catwalk cat sprite sheet: the frames to draw", fill=(27, 43, 48, 255), font=font(40, True))
+    ink, soft = (27, 43, 48, 255), (82, 98, 106, 255)
+    d.text((24, 20), "Catwalk cat sprite sheet: the frames to draw", fill=ink, font=font(40, True))
     d.text(
         (24, 76),
-        f"One row per action. Every frame is {F}x{F}, the cat faces right, and the feet land on the red line (y={FOOT_Y}).",
-        fill=(82, 98, 106, 255), font=font(22),
+        f"One row per action. Every frame is {F}x{F} and the feet land on the red line (y={FOOT_Y}).",
+        fill=soft, font=font(22),
     )
     d.text(
         (24, 108),
         "Draw each action twice: a grey FUR sheet (tinted per cat colour) and a DETAILS sheet (eyes, nose, whiskers, inner ears).",
-        fill=(82, 98, 106, 255), font=font(22),
+        fill=soft, font=font(22),
     )
     d.text(
         (24, 140),
@@ -354,49 +476,74 @@ def main():
         fill=(190, 80, 40, 255), font=font(22),
     )
 
-    total = 0
-    for r, (name, fn, n, fps, loops, note) in enumerate(ACTIONS):
-        y0 = top + r * row_h
-        d.text((24, y0 + 12), name, fill=(27, 43, 48, 255), font=font(34, True))
-        d.text((24, y0 + 58), f"{n} frames @ {fps} fps", fill=(31, 122, 122, 255), font=font(22, True))
-        d.text((24, y0 + 88), "loops" if loops else "one-shot, holds", fill=(82, 98, 106, 255), font=font(20))
-        # wrap the note
-        words, line, ly = note.split(), "", y0 + 116
-        for w in words:
-            if len(line) + len(w) > 24:
-                d.text((24, ly), line.strip(), fill=(82, 98, 106, 255), font=font(18))
-                ly += 22
-                line = ""
-            line += w + " "
-        d.text((24, ly), line.strip(), fill=(82, 98, 106, 255), font=font(18))
+    state = {"y": top, "total": 0}
 
-        hint = {"climbUp": "post", "climbDown": "post", "perch": "ledge", "play": "ball"}.get(name)
-        for k in range(n):
-            x = label_w + k * (F + gap)
-            page.alpha_composite(frame_cell(fn(k, n), hint), (x, y0))
-            d.text((x + 8, y0 + F + 4), f"{name} {k + 1}/{n}", fill=(82, 98, 106, 255), font=font(18))
-        total += n
+    def section(title, sub):
+        y0 = state["y"]
+        d.text((24, y0 + 14), title, fill=ink, font=font(38, True))
+        d.text((24, y0 + 62), sub, fill=soft, font=font(22))
+        state["y"] += section_h
 
-    # mood panel
-    my = top + len(ACTIONS) * row_h + 20
-    d.text((24, my), "Moods", fill=(27, 43, 48, 255), font=font(34, True))
-    d.text(
-        (24, my + 44),
-        "Every action can also exist in happy and sad. Missing moods fall back to neutral, so start with neutral.",
-        fill=(82, 98, 106, 255), font=font(22),
+    def rows(actions):
+        for name, fn, n, fps, loops, note in actions:
+            y0 = state["y"]
+            d.text((24, y0 + 12), name, fill=ink, font=font(34, True))
+            d.text((24, y0 + 58), f"{n} frames @ {fps} fps", fill=(31, 122, 122, 255), font=font(22, True))
+            d.text((24, y0 + 88), "loops" if loops else "one-shot, holds", fill=soft, font=font(20))
+            words, line, ly = note.split(), "", y0 + 116
+            for w in words:
+                if len(line) + len(w) > 24:
+                    d.text((24, ly), line.strip(), fill=soft, font=font(18))
+                    ly += 22
+                    line = ""
+                line += w + " "
+            d.text((24, ly), line.strip(), fill=soft, font=font(18))
+            hint = {"climbUp": "post", "climbDown": "post", "perch": "ledge", "play": "ball"}.get(name)
+            for k in range(n):
+                x = label_w + k * (F + gap)
+                page.alpha_composite(frame_cell(fn(k, n), hint), (x, y0))
+                d.text((x + 8, y0 + F + 4), f"{name} {k + 1}/{n}", fill=soft, font=font(18))
+            state["y"] += row_h
+            state["total"] += n
+
+    section("Side view", "The cat faces right. The app flips the whole frame for left. Used in the room.")
+    rows(ACTIONS)
+    side_total = state["total"]
+    section(
+        "Front view",
+        "The cat faces the viewer. Good for Home, the details sheet and any moment where the face has to show the mood.",
     )
-    y = my + 90
-    pairs = [("idle", idle, 0), ("sit", sit, 0)]
-    x = 24
-    for name, fn, k in pairs:
-        for mood in ("happy", "neutral", "sad"):
-            page.alpha_composite(frame_cell(fn(k, 4, mood)), (x, y))
-            d.text((x + 8, y + F + 4), f"{name} {mood}", fill=(82, 98, 106, 255), font=font(18))
-            x += F + gap
+    rows(FRONT_ACTIONS)
+    front_total = state["total"] - side_total
+
+    def mood_panel(title, sub, pairs):
+        y0 = state["y"] + 20
+        d.text((24, y0), title, fill=ink, font=font(34, True))
+        d.text((24, y0 + 44), sub, fill=soft, font=font(22))
+        y = y0 + 90
+        x = 24
+        for name, fn in pairs:
+            for mood in ("happy", "neutral", "sad"):
+                page.alpha_composite(frame_cell(fn(0, 4, mood)), (x, y))
+                d.text((x + 8, y + F + 4), f"{name} {mood}", fill=soft, font=font(18))
+                x += F + gap
+        state["y"] += mood_h + 20
+        return x, y
+
+    x, y = mood_panel(
+        "Moods, side view",
+        "Every action can also exist in happy and sad. Missing moods fall back to neutral, so start with neutral.",
+        [("idle", idle), ("sit", sit)],
+    )
     d.text(
         (x + 20, y + 10),
         "happy: ears up, tail up,\n  smiling eyes\nneutral: relaxed\nsad: ears low, tail down,\n  droopy brows",
-        fill=(27, 43, 48, 255), font=font(20),
+        fill=ink, font=font(20),
+    )
+    x, y = mood_panel(
+        "Moods, front view",
+        "On the front view the face does most of the work, so these three matter most if you only draw a few moods.",
+        [("sitFront", sit_front), ("idleFront", idle_front)],
     )
 
     final = page.convert("RGB")
@@ -407,7 +554,7 @@ def main():
     # looks: one row, equal frames, transparent, no guide marks.
     clean_dir = out_dir / "cat-spritesheet-example-strips"
     clean_dir.mkdir(exist_ok=True)
-    for name, fn, n, fps, loops, note in ACTIONS:
+    for name, fn, n, fps, loops, note in ACTIONS + FRONT_ACTIONS:
         for kind in ("fur", "details"):
             strip = Image.new("RGBA", (F * n, F), (0, 0, 0, 0))
             for k in range(n):
@@ -416,7 +563,7 @@ def main():
                 strip.alpha_composite(layer.small(), (k * F, 0))
             strip.save(clean_dir / f"{name}_neutral_{kind}.png")
 
-    print(out, final.size, "total neutral frames:", total)
+    print(out, final.size, "side frames:", side_total, "front frames:", front_total)
 
 
 if __name__ == "__main__":
