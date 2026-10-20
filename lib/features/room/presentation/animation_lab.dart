@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../../app/theme.dart';
@@ -13,7 +14,7 @@ import 'cat_animations.dart';
 /// pick an action: change the action, flip the facing, and see all three tints
 /// side by side — which is where a tinted neutral sheet gives itself away.
 class AnimationLabSheet extends StatefulWidget {
-  const AnimationLabSheet({this.animations = const PlaceholderCatAnimations(), super.key});
+  const AnimationLabSheet({required this.animations, super.key});
 
   final CatAnimationSet animations;
 
@@ -26,7 +27,11 @@ class AnimationLabSheet extends StatefulWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => const AnimationLabSheet(),
+      builder: (context) => AnimationLabSheet(
+        animations: ProviderScope.containerOf(
+          context,
+        ).read(catAnimationsProvider),
+      ),
     );
   }
 

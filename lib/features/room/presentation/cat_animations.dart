@@ -1,11 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../cat/domain/cat_appearance.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
+import '../data/sprite_library.dart';
 import '../domain/cat_action.dart';
+import 'sprite_cat.dart';
 
 /// Turns "this cat is doing this, facing that" into pixels.
 ///
@@ -107,3 +110,58 @@ class PlaceholderCatAnimations implements CatAnimationSet {
     );
   }
 }
+
+
+/// Draws cats from the sprite sheets in `assets/cats/`.
+///
+/// An action with no sheet keeps using the placeholder, so art can arrive one
+/// action at a time and nothing in the room changes.
+class SpriteCatAnimations implements CatAnimationSet {
+  const SpriteCatAnimations(
+    this.library, {
+    this.fallback = const PlaceholderCatAnimations(),
+  });
+
+  final SpriteLibrary library;
+  final CatAnimationSet fallback;
+
+  @override
+  Widget frame(
+    BuildContext context, {
+    required CatAppearance appearance,
+    required CatAction action,
+    required CatMood mood,
+    required CatFacing facing,
+    required Duration elapsed,
+    required double size,
+  }) {
+    final sheet = library.lookup(action, mood);
+    if (sheet == null) {
+      return fallback.frame(
+        context,
+        appearance: appearance,
+        action: action,
+        mood: mood,
+        facing: facing,
+        elapsed: elapsed,
+        size: size,
+      );
+    }
+    return SpriteCatFrame(
+      sheet: sheet,
+      manifest: library.manifest,
+      tint: appearance.color,
+      facing: facing,
+      elapsed: elapsed,
+      size: size,
+    );
+  }
+}
+
+/// The animation set the app draws with: the sprite sheets once they are
+/// loaded, the placeholder before that and whenever there is no art.
+final catAnimationsProvider = Provider<CatAnimationSet>((ref) {
+  final library = ref.watch(spriteLibraryProvider).value;
+  if (library == null) return const PlaceholderCatAnimations();
+  return SpriteCatAnimations(library);
+});

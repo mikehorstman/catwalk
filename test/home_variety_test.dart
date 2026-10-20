@@ -14,10 +14,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Forty minutes of walking, split morning and evening, plus yesterday.
 class _WalkingSteps implements StepRepository {
-  _WalkingSteps({this.today = 6000, this.yesterday = 100});
+  _WalkingSteps();
 
-  final int today;
-  final int yesterday;
+  final int today = 6000;
+  final int yesterday = 100;
 
   @override
   Future<bool> isAvailable() async => true;

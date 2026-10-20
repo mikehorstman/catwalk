@@ -23,14 +23,16 @@ import 'widgets/room_scene.dart';
 class RoomScreen extends ConsumerStatefulWidget {
   const RoomScreen({
     this.layout,
-    this.animations = const PlaceholderCatAnimations(),
+    this.animations,
     super.key,
   });
 
   /// Overrides the room, for tests. Normally the room is built from what you
   /// have found.
   final RoomLayout? layout;
-  final CatAnimationSet animations;
+  /// Overrides how cats are drawn, for tests. Normally the sprite sheets are
+  /// used, with the placeholder until they load.
+  final CatAnimationSet? animations;
 
   @override
   ConsumerState<RoomScreen> createState() => _RoomScreenState();
@@ -127,7 +129,7 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
                     _CatLayer(
                       state: state,
                       cat: cat,
-                      animations: widget.animations,
+                      animations: widget.animations ?? ref.watch(catAnimationsProvider),
                       layout: layout,
                       room: size,
                       onTap: () => CatDetailsSheet.show(context, cat),
