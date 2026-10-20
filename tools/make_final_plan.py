@@ -26,7 +26,7 @@ def chart_loop():
 
     c.node("happy", 120, 250, 230, 60, "built", "The cat is happy\nXP once that day")
     c.node("streak", 120, 350, 230, 54, "built", "The streak grows")
-    c.node("reward", 120, 445, 230, 60, "plan", "Keeping a streak earns a\nreward, not paid out yet")
+    c.node("reward", 120, 445, 230, 60, "plan", "Streak prizes at 3, 7, 14, 30\nand 100 days: not paid yet")
 
     c.node("end", 800, 250, 280, 64, "chg", "The day ends without it\nHalf the goal counts as missed too")
     c.node("d2", 800, 365, 250, 88, "dec", "Streak freeze held?")
@@ -60,13 +60,13 @@ def chart_recovery():
     c = Chart(
         "2. Getting a runaway cat back",
         "A deadline now. Walk enough in time and the cat appears on the map. Miss it and the cat is gone for good. Anything marked proposed is my suggestion, not a decision.",
-        1040, 760,
+        1040, 780,
     )
     c.node("r0", 300, 40, 300, 60, "bad", "The cat has run away\n3 missed days in a row")
     c.node("win", 300, 140, 380, 60, "chg", "The window opens: 7 days (proposed)\nEvery step in it counts toward the target")
     c.node("d1", 300, 265, 300, 96, "dec", "Target reached in time?\ngoal × 10 steps (proposed)")
     c.node("d2", 300, 400, 260, 92, "dec", "Can the app use\nyour location?")
-    c.node("nomap", 85, 400, 150, 64, "good", "The cat comes\nhome, no map")
+    c.node("nomap", 72, 400, 140, 64, "good", "The cat comes\nhome, no map")
     c.node("cat", 300, 520, 310, 60, "built", "The cat appears on the map\n250 to 900 m away")
     c.node("walk", 300, 610, 260, 44, "built", "Walk to within 30 m")
     c.node("home", 300, 690, 200, 44, "good", "The cat is home")
@@ -75,13 +75,14 @@ def chart_recovery():
     c.node("d3", 790, 385, 200, 90, "dec", "Another cat?")
     c.node("other", 555, 385, 230, 60, "out", "The others stay\nThe room carries on")
     c.node("kit", 790, 510, 340, 66, "plan", "A stray kitten arrives\nlevel 1, lifetime stats kept (proposed)")
+    c.node("optb", 790, 640, 400, 66, "open", "D10 option, instead of gone forever:\nthe cat becomes a street cat you can\nwin back by photographing it")
 
     c.edge("r0", "b", "win", "t")
     c.edge("win", "b", "d1", "t")
     c.edge("d1", "b", "d2", "t", "Yes")
     c.edge("d1", "r", "gone", "l", "No, time is up", label_at=(545, 257))
     c.edge("d2", "b", "cat", "t", "Yes")
-    c.edge("d2", "l", "nomap", "r", "No", label_at=(167, 392))
+    c.edge("d2", "l", "nomap", "r", "No", label_at=(158, 392))
     c.edge("cat", "b", "walk", "t")
     c.edge("walk", "b", "home", "t")
     c.edge("gone", "b", "d3", "t")
@@ -164,6 +165,64 @@ def chart_map():
     return c
 
 
+
+def chart_first_week():
+    c = Chart(
+        "First week",
+        "Most people quit in the first days, so the first week is easy and pays early. All of it is proposed.",
+        1000, 660,
+    )
+    c.node("open", 330, 36, 220, 40, "term", "First open")
+    c.node("d1", 330, 140, 270, 92, "dec", "Start gentle?\n(on by default)")
+    c.node("own", 740, 140, 280, 60, "out", "Your chosen goal\nfrom day 1")
+    c.node("r1", 330, 270, 420, 76, "plan", "Days 1 to 3: goal 3,000\nFirst goal met: a free toy and a streak freeze\nDay 3 streak: the first streak prize")
+    c.node("r2", 330, 380, 420, 58, "plan", "Days 4 to 7: goal 4,500\nDay 7 streak: a prize and a freeze")
+    c.node("r3", 330, 480, 420, 58, "plan", "From day 8: your goal, 6,000 by default\nA freeze every 7 days after that")
+    c.node("d2", 330, 595, 330, 84, "dec", "Fewer than 3 of the last 7 days met?")
+    c.node("low", 790, 595, 330, 66, "plan", "Offer a lower goal, never forced\n1,000 less, never below 3,000")
+    c.edge("open", "b", "d1", "t")
+    c.edge("d1", "b", "r1", "t", "Yes")
+    c.edge("d1", "r", "own", "l", "No")
+    c.edge("r1", "b", "r2", "t")
+    c.edge("r2", "b", "r3", "t")
+    c.edge("r3", "b", "d2", "t")
+    c.edge("d2", "r", "low", "l", "Yes")
+    c.note("Today the goal starts at 6,000 and the first streak prize at 3 days is not paid out yet.")
+    c.note("After 5 of 7 days met the app may offer +500. It is always an offer.")
+    return c
+
+
+def chart_hooks():
+    c = Chart(
+        "Every day: reasons to open the app",
+        "Small reasons, none of them a second score. All proposed except the fresh pins, which already exist.",
+        1040, 860,
+    )
+    c.node("fresh", 300, 40, 320, 56, "built", "Morning: a fresh set of\nup to 5 map pins")
+    c.node("d1", 300, 150, 260, 88, "dec", "Goal still open?")
+    c.node("quiet", 730, 150, 300, 66, "out", "No reminder after the goal\nis met. At most 3 a day.")
+    c.node("n1", 300, 265, 340, 62, "plan", "A reminder from the cat\nat the time you usually walk")
+    c.node("walk", 300, 360, 220, 44, "built", "You walk")
+    c.node("d2", 300, 455, 250, 88, "dec", "Goal reached?")
+    c.node("miss", 730, 455, 300, 66, "out", "Chart 1: a missed day\nthe cat gets sadder")
+    c.node("draw", 300, 575, 400, 78, "plan", "Daily draw: one small surprise\nA toy or a freeze within every\n5 goal days, bad luck protected")
+    c.node("ev", 300, 700, 400, 62, "plan", "A small event in the room\na visitor, or a toy it likes (later)")
+    c.node("sun", 790, 575, 220, 40, "term", "Every Sunday")
+    c.node("recap", 790, 680, 360, 78, "plan", "Weekly recap\nsteps, days met and personal bests\nA monthly look back once a month")
+    c.edge("fresh", "b", "d1", "t")
+    c.edge("d1", "r", "quiet", "l", "No")
+    c.edge("d1", "b", "n1", "t", "Yes")
+    c.edge("n1", "b", "walk", "t")
+    c.edge("walk", "b", "d2", "t")
+    c.edge("d2", "r", "miss", "l", "No")
+    c.edge("d2", "b", "draw", "t", "Yes")
+    c.edge("draw", "b", "ev", "t")
+    c.edge("sun", "b", "recap", "t")
+    c.note("Reminders use the cat's voice, for example \"Jip is waiting by the door\". Settings has an off switch.")
+    c.note("Friends-only leaderboards and a shared weekly goal come with the account, not before.")
+    return c
+
+
 # --- page text --------------------------------------------------------------
 
 def pill(kind, text):
@@ -182,7 +241,12 @@ RULES = [
     ("New cats", "Enough level, XP or map progress and a new cat appears on the map. Walk there to unlock it. Street cats can be photographed; the same cat seen enough times may unlock."),
     ("Cats you can keep", "Your daily goal sets the cap: 3,000 one cat, 6,000 two, 9,000 three, 12,000 four, 15,000 and up five (numbers can change). Lowering the goal never deletes a cat."),
     ("The room", "One room where every unlocked cat walks about. Toys and scratching posts you find stand in it."),
-    ("Not now", "Side quests (switched off), currency and shops, accounts and friends."),
+    ("First week", "Gentle start (proposed): goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. A free toy and freeze on the first goal met."),
+    ("Rewards", "Streak prizes at 3, 7, 14, 30 and 100 days, and a freeze every 7 days. A daily draw after a goal day, with a toy or a freeze guaranteed within every 5 goal days."),
+    ("Reminders", "One reminder from the cat, at the time you usually walk, only while the goal is open. At most 3 a day, none after the goal is met, off switch in Settings."),
+    ("Progress", "A weekly recap with personal bests, and a monthly look back. After a bad week (fewer than 3 of 7 met) the app offers a lower goal. It is never forced."),
+    ("Friends, later", "Friends-only leaderboard and a shared weekly goal. No global ranking."),
+    ("Not now", "Side quests (switched off), currency and shops, money stakes, a second scoreboard, more daily tasks."),
 ]
 
 SLICES = [
@@ -191,19 +255,21 @@ SLICES = [
     ("3. The room", "built", "Cat walks, sits, sleeps, grooms, climbs, plays. Placeholder sprites in."),
     ("4. The map", "built", "Pickups, toys, freezes. Runaway recovery (changing, see chart 2)."),
     ("Rules change", "changing", "Half a goal is a miss. Side quest off. Recovery window and gone forever."),
-    ("Rewards", "planned", "Streak prizes at 3, 7, 14, 30 and 100 days. A freeze every 7 days."),
+    ("First week", "planned", "Gentle goal ramp, free first toy and freeze, a lower-goal offer after a bad week."),
+    ("Rewards", "planned", "Streak prizes at 3, 7, 14, 30 and 100 days, a freeze every 7 days, the daily draw."),
     ("5. More cats", "planned", "New cat on the map, street cat photos, the goal cap. Needs D5 and D6."),
-    ("Notifications", "planned", "Reminders and analytics opt-out, before outside testers."),
+    ("Reminders and recap", "planned", "Reminders in the cat's voice, the weekly recap, and analytics opt-out. Before outside testers."),
     ("6. Other people", "planned", "Account, friends, room visits, nudges, leaderboard."),
 ]
 
 NEXT = [
-    ("1", "Rules change", "Remove the half-day rule, switch the side quest off, build the recovery window and gone forever with a kitten. Update tests and the in-app copy. Small, and every later step builds on it."),
-    ("2", "Try it on a real phone", "Install the APK, check Health Connect, the step sensor and GPS, and move the map to a production tile host. Nothing so far has run on hardware."),
-    ("3", "Rewards", "Streak prizes and a freeze every 7 days, so a streak is worth keeping."),
-    ("4", "Notifications and analytics", "Local reminders with an off switch, and opt-out analytics, before anyone outside tests it."),
+    ("1", "Rules change", "Remove the half-day rule, switch the side quest off, build the recovery window and what happens at the end (D1, D2, D10). Update tests and in-app copy. Small, and every later step builds on it."),
+    ("2", "First week and rewards", "The gentle first week, the first free toy and freeze, streak prizes, a freeze every 7 days, the daily draw. This is the biggest retention gain for the least work."),
+    ("3", "Try it on a real phone", "Install the APK, check Health Connect, the step sensor and GPS, and move the map to a production tile host. Nothing so far has run on hardware."),
+    ("4", "Reminders and recap", "Reminders in the cat's voice with an off switch, the weekly recap and personal bests, the lower-goal offer, and opt-out analytics. Before anyone outside tests it."),
     ("5", "More cats", "After you choose what spawns a new cat (D5) and what a higher goal gives (D6)."),
-    ("6", "Other people", "Last. It is the only slice that needs an account."),
+    ("6", "Other people", "Account, friends, a friends-only leaderboard and a shared weekly goal. Last. It is the only slice that needs an account."),
+    ("Later", "Room events", "Small daily events in the room. Wait for the real cat art."),
 ]
 
 CHECK = [
@@ -245,6 +311,27 @@ DECISIONS = [
     ("D7", "How many notifications?",
      "At most 3 a day, none after the goal is met, off switch in Settings.",
      "That keeps the guilt but stays under the point where people turn all of them off."),
+    ("D10", "Is a lost cat gone forever, or can it be won back?",
+     "Not gone for good: it becomes a street cat you win back by photographing it several times.",
+     "Your rule is in chart 2 as the default. A total loss is the likeliest moment to quit the app, and the street-cat photo idea already exists, so this adds no new system."),
+    ("D11", "A gentle first week?",
+     "Yes, on by default: goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. Players who pick their own goal skip it.",
+     "The first days decide whether people stay. A 6,000 goal on day 1 is the likeliest early miss."),
+    ("D12", "What do new players get early?",
+     "A free toy and a streak freeze on the first goal met, and the first streak prize on day 3.",
+     "A reward that arrives in the first days gives the loop a reason to continue. Streak prizes are promised today and not paid."),
+    ("D13", "Daily draw rules?",
+     "One draw per goal day, from the same reward table as the pins, with a toy or a freeze guaranteed within every 5 goal days.",
+     "Unpredictable rewards hold attention, and the guarantee stops a long dry streak. One table, not a new system."),
+    ("D14", "When and how do reminders and the recap arrive?",
+     "In the cat's voice, at your usual walking time (17:00 until it learns it), only while the goal is open. A weekly recap on Sunday evening counts as one of the 3.",
+     "Timing matters more than count. Usual walking time needs hourly data, so the first week falls back to a fixed time."),
+    ("D15", "What after a bad week?",
+     "Offer a lower goal when fewer than 3 of 7 days were met: 1,000 less, never below 3,000. Never automatic.",
+     "A goal you cannot reach after one rough week makes quitting easy. It mirrors the existing +500 offer."),
+    ("D16", "What kind of social, when the account exists?",
+     "A friends-only leaderboard and a shared weekly goal. No global ranking.",
+     "A global board helps the top few and discourages the rest. A shared goal gives a reason to walk for someone else."),
     ("D8", "Currency?",
      "None until finding things is fun.",
      "As in the existing plan. A shop can come later and spend only what walking earned."),
@@ -255,6 +342,18 @@ DECISIONS = [
 
 
 # --- page -------------------------------------------------------------------
+
+RETENTION = [
+    ("R1", "A softer loss than gone forever", "Judgment, backed by the forgiveness findings", "D10"),
+    ("R2", "A gentle first week with early rewards", "Judgment", "D11, D12"),
+    ("R3", "Pay out the streak prizes and a freeze every 7 days", "Research: forgiveness and freezes reduce quitting", "in plan"),
+    ("R4", "A daily draw, and fresh map pins every morning", "Judgment", "D13"),
+    ("R5", "Reminders in the cat's voice, at your usual time, capped", "Judgment", "D7, D14"),
+    ("R6", "A weekly recap, personal bests and a monthly look back", "Judgment", "D14"),
+    ("R7", "A lower goal offered after a bad week", "Research: a goal that is too hard means fewer wins", "D15"),
+    ("R8", "Friends-only leaderboard and a shared weekly goal", "Judgment", "D16"),
+    ("R9", "Small daily events in the room", "Judgment", "later"),
+]
 
 PAGE_CSS = """
 body { padding: 24px 28px 60px; max-width: 1100px; margin: 0 auto; background: #fff; color: #1b2b30; }
@@ -309,13 +408,15 @@ def table(headers, rows, cls=None):
 
 
 def main():
-    charts = [chart_loop(), chart_recovery(), chart_goal(), chart_map(), chart_order()]
-    charts[-1].title = "5. The order, and the people part"
+    charts = [chart_loop(), chart_recovery(), chart_goal(), chart_first_week(), chart_hooks(), chart_map(), chart_order()]
+    charts[-1].title = "The order, and the people part"
+    for i, c in enumerate(charts, 1):
+        c.title = f"{i}. " + (c.title.split(". ", 1)[1] if c.title[:1].isdigit() else c.title)
     flow_html = "".join(c.html() for c in charts)
 
     overview = f"""
 <p class="lead"><b>Walk enough each day to keep your cat.</b> Reach the step goal and the cat is happy. Miss it and the cat gets sadder, then runs away. Getting it back takes a lot of walking in time, and then finding it on the map. Take too long and it is gone for good.</p>
-<div class="callout"><b>Changed since the last plan:</b> half a goal now counts as a miss; the side quest is off; a runaway cat has a deadline and can be lost forever. Anything marked proposed is my suggestion, not a decision: see <a href="#decisions" data-go="decisions">Decisions</a>.</div>
+<div class="callout"><b>Changed since the last plan:</b> half a goal now counts as a miss; the side quest is off; a runaway cat has a deadline and can be lost forever. <b>Added:</b> a retention layer (a gentle first week, early rewards, a daily draw, smarter reminders, a weekly recap, a lower-goal offer). Anything marked proposed is my suggestion, not a decision: see <a href="#decisions" data-go="decisions">Decisions</a>. One of them, D10, is a warning about my own rule: losing a cat for good may be the moment people quit.</div>
 <h2>The final rules</h2>
 {table(["Area", "Rule"], [(escape(a), escape(b)) for a, b in RULES], ["k", ""])}
 """
@@ -325,6 +426,16 @@ def main():
 {table(["Slice", "Status", "What it covers"], [(escape(a), pill(k, {"built": "built", "changing": "changing now", "planned": "planned"}[k]), escape(t)) for a, k, t in SLICES], ["k", "", ""])}
 <h2>What to build next, in order</h2>
 {table(["#", "Step", "Why and what"], [(n, escape(a), escape(b)) for n, a, b in NEXT], ["k", "k", ""])}
+<h2>The retention layer</h2>
+<p>What was added to keep people walking. "Research" means the earlier study in docs/research-daily-motivation.md. "Judgment" means my own reasoning, not a result I can show for this game.</p>
+{table(["", "What", "Basis", "Decision"], [(a, escape(b), escape(c), d) for a, b, c, d in RETENTION], ["k", "k", "", ""])}
+<h2>What I would not add</h2>
+<ul>
+  <li>Money stakes. They put pressure on the wrong people and hurt trust.</li>
+  <li>A second scoreboard or a second goal. Steps stay the only one.</li>
+  <li>More daily tasks. Optional quests are switched off for now.</li>
+  <li>A global leaderboard as the fix for retention.</li>
+</ul>
 <h2>Rules that do not move</h2>
 <ul>
   <li>The phone's step record decides the day. The app never invents a step count.</li>
@@ -346,7 +457,7 @@ def main():
 """
 
     decisions = f"""
-<p class="lead">Nothing here is decided. The green text is what I recommend. Answer with the ID and a change, for example "D1: 10 days".</p>
+<p class="lead">Nothing here is decided. The green text is what I recommend. Answer with the ID and a change, for example "D1: 10 days". D1 to D9 are the rules; D10 to D16 are the retention layer.</p>
 {table(["ID", "Question", "Recommendation", "Why"], [(a, escape(q), f'<span class="rec">{escape(r)}</span>', escape(w)) for a, q, r, w in DECISIONS], ["k", "", "", ""])}
 """
 
