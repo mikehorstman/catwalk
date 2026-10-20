@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catwalk gameplay flowcharts</title>
+<style>
+:root { --fg: var(--foreground, #1b2b30); --mut: var(--muted-foreground, #52626a);
+        --panel: var(--card, #ffffff); --line: var(--border, #cdbfae); }
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--fg); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.4px; }
+h2 { font-size: 19px; margin: 36px 0 2px; }
+p.sub { margin: 0 0 10px; color: var(--mut); max-width: 780px; }
+svg { width: 100%; max-width: 1020px; height: auto; display: block; }
+svg text { fill: var(--fg); font-size: 15px; }
+svg text.strong { font-weight: 700; }
+svg text.lbl { fill: var(--mut); font-size: 13px; font-weight: 700; }
+.box { fill: var(--panel); stroke: var(--line); stroke-width: 1.6; }
+.out { fill: rgba(128,128,128,.10); stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.dec { fill: rgba(31,122,122,.16); stroke: #1f7a7a; stroke-width: 1.8; }
+.term { fill: rgba(246,147,55,.20); stroke: #f69337; stroke-width: 1.8; }
+.good { fill: rgba(31,122,122,.22); stroke: #1f7a7a; stroke-width: 1.8; }
+.bad { fill: rgba(214,84,58,.18); stroke: #d6543a; stroke-width: 1.8; }
+.edge { fill: none; stroke: var(--mut); stroke-width: 1.7; }
+.head { fill: var(--mut); }
+ul.notes { margin: 8px 0 0; padding-left: 20px; color: var(--mut); max-width: 780px; }
+.key { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 0; color: var(--mut); font-size: 13px; }
+.key i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 6px; vertical-align: -2px; }
+</style>
+</head>
+<body>
+<h1>Catwalk gameplay rules</h1>
+<p class="sub">What the code does today. Read from the implemented rules, not from the plan.</p>
+<div class="key">
+  <span><i style="background:rgba(246,147,55,.4)"></i>start / end</span>
+  <span><i style="background:rgba(31,122,122,.3)"></i>question or good outcome</span>
+  <span><i style="background:rgba(214,84,58,.35)"></i>bad outcome</span>
+  <span><i style="border:1.5px dashed var(--line)"></i>dead end for this flow</span>
+</div>
+
+<section>
+  <h2>1. Opening the app</h2>
+  <p class="sub">Each open reads the phone, judges every finished day since the last open, then sets the cat&#x27;s state.</p>
+  <svg viewBox="0 0 900 990" role="img" aria-label="1. Opening the app">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="head"/>
+      </marker>
+    </defs>
+    <rect class="term" x="200.0" y="16.0" width="200" height="40" rx="20.0"/>
+<text x="300" y="41.0" text-anchor="middle">Open the app</text>
+<rect class="box" x="145.0" y="85.0" width="310" height="54" rx="12"/>
+<text x="300" y="107.5" text-anchor="middle">Ask the phone for today&#x27;s steps</text>
+<text x="300" y="126.5" text-anchor="middle">Health store, then step sensor</text>
+<polygon class="dec" points="300,171.0 415.0,215 300,259.0 185.0,215"/>
+<text x="300" y="220.0" text-anchor="middle">Got a number?</text>
+<rect class="out" x="550.0" y="185.0" width="300" height="60" rx="12"/>
+<text x="700" y="210.5" text-anchor="middle">Home says &quot;unavailable&quot;</text>
+<text x="700" y="229.5" text-anchor="middle">Nothing is awarded</text>
+<rect class="box" x="145.0" y="295.0" width="310" height="54" rx="12"/>
+<text x="300" y="317.5" text-anchor="middle">Look at each finished day</text>
+<text x="300" y="336.5" text-anchor="middle">since the last open</text>
+<polygon class="dec" points="300,381.0 420.0,425 300,469.0 180.0,425"/>
+<text x="300" y="430.0" text-anchor="middle">Goal met that day?</text>
+<rect class="out" x="550.0" y="395.0" width="300" height="60" rx="12"/>
+<text x="700" y="420.5" text-anchor="middle">Counted: the streak grows</text>
+<text x="700" y="439.5" text-anchor="middle">Missed days go back to 0</text>
+<polygon class="dec" points="300,491.0 430.0,535 300,579.0 170.0,535"/>
+<text x="300" y="540.0" text-anchor="middle">At least 50% of the goal?</text>
+<rect class="out" x="550.0" y="505.0" width="300" height="60" rx="12"/>
+<text x="700" y="530.5" text-anchor="middle">Not missed, but no streak credit</text>
+<text x="700" y="549.5" text-anchor="middle">The cat is sad the next day</text>
+<polygon class="dec" points="300,601.0 420.0,645 300,689.0 180.0,645"/>
+<text x="300" y="650.0" text-anchor="middle">Streak freeze held?</text>
+<rect class="out" x="550.0" y="615.0" width="300" height="60" rx="12"/>
+<text x="700" y="640.5" text-anchor="middle">Freeze used up</text>
+<text x="700" y="659.5" text-anchor="middle">Streak kept, day not missed</text>
+<rect class="box" x="175.0" y="723.0" width="250" height="44" rx="12"/>
+<text x="300" y="750.0" text-anchor="middle">Missed days +1</text>
+<rect class="box" x="135.0" y="803.0" width="330" height="44" rx="12"/>
+<text x="300" y="830.0" text-anchor="middle">The cat&#x27;s state follows missed days</text>
+<rect class="good" x="15.0" y="893.0" width="190" height="64" rx="14"/>
+<text x="110" y="920.5" text-anchor="middle" class="strong">0 missed</text>
+<text x="110" y="939.5" text-anchor="middle">neutral, active</text>
+<rect class="box" x="225.0" y="893.0" width="190" height="64" rx="12"/>
+<text x="320" y="920.5" text-anchor="middle">1 missed</text>
+<text x="320" y="939.5" text-anchor="middle">sad, active</text>
+<rect class="box" x="435.0" y="893.0" width="190" height="64" rx="12"/>
+<text x="530" y="920.5" text-anchor="middle">2 missed</text>
+<text x="530" y="939.5" text-anchor="middle">sad, NEGLECTED</text>
+<rect class="bad" x="650.0" y="893.0" width="200" height="64" rx="14"/>
+<text x="750" y="920.5" text-anchor="middle" class="strong">3 or more</text>
+<text x="750" y="939.5" text-anchor="middle">RUNAWAY</text>
+<path class="edge" d="M 300,56.0 L 300,85.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 300,139.0 L 300,171.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 415.0,215 L 550.0,215" marker-end="url(#arrow)"/>
+<text class="lbl" x="482.5" y="207.0" text-anchor="middle">No</text>
+<path class="edge" d="M 300,259.0 L 300,295.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="310.0" y="277.0" text-anchor="start">Yes</text>
+<path class="edge" d="M 300,349.0 L 300,381.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 420.0,425 L 550.0,425" marker-end="url(#arrow)"/>
+<text class="lbl" x="485.0" y="417.0" text-anchor="middle">Yes</text>
+<path class="edge" d="M 300,469.0 L 300,491.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="310.0" y="480.0" text-anchor="start">No</text>
+<path class="edge" d="M 430.0,535 L 550.0,535" marker-end="url(#arrow)"/>
+<text class="lbl" x="490.0" y="527.0" text-anchor="middle">Yes</text>
+<path class="edge" d="M 300,579.0 L 300,601.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="310.0" y="590.0" text-anchor="start">No</text>
+<path class="edge" d="M 420.0,645 L 550.0,645" marker-end="url(#arrow)"/>
+<text class="lbl" x="485.0" y="637.0" text-anchor="middle">Yes</text>
+<path class="edge" d="M 300,689.0 L 300,723.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="310.0" y="706.0" text-anchor="start">No</text>
+<path class="edge" d="M 300,767.0 L 300,803.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 300,847.0 L 300,872 L 110,872 L 110,893.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 300,847.0 L 300,872 L 320,872 L 320,893.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 300,847.0 L 300,872 L 530,872 L 530,893.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 300,847.0 L 300,872 L 750,872 L 750,893.0" marker-end="url(#arrow)"/>
+  </svg>
+  <ul class='notes'><li>Today does not count as missed until it ends.</li><li>A freeze cannot rescue a cat that has already run away.</li></ul>
+</section>
+<section>
+  <h2>2. What today&#x27;s steps do</h2>
+  <p class="sub">These pay once a day. Opening the app again cannot pay them twice.</p>
+  <svg viewBox="0 0 900 800" role="img" aria-label="2. What today&#x27;s steps do">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="head"/>
+      </marker>
+    </defs>
+    <rect class="term" x="190.0" y="16.0" width="220" height="40" rx="20.0"/>
+<text x="300" y="41.0" text-anchor="middle">Steps so far today</text>
+<polygon class="dec" points="300,91.0 435.0,135 300,179.0 165.0,135"/>
+<text x="300" y="140.0" text-anchor="middle">50% of the goal reached?</text>
+<rect class="out" x="540.0" y="105.0" width="320" height="60" rx="12"/>
+<text x="700" y="130.5" text-anchor="middle">Keep walking</text>
+<text x="700" y="149.5" text-anchor="middle">Mood comes from the last finished day</text>
+<rect class="box" x="155.0" y="218.0" width="290" height="54" rx="12"/>
+<text x="300" y="240.5" text-anchor="middle">Halfway bonus</text>
+<text x="300" y="259.5" text-anchor="middle">10% of the goal XP, once</text>
+<polygon class="dec" points="300,306.0 415.0,350 300,394.0 185.0,350"/>
+<text x="300" y="355.0" text-anchor="middle">Goal reached?</text>
+<rect class="out" x="550.0" y="320.0" width="300" height="60" rx="12"/>
+<text x="700" y="345.5" text-anchor="middle">Keep walking</text>
+<text x="700" y="364.5" text-anchor="middle">Home shows &quot;N to go&quot;</text>
+<rect class="good" x="150.0" y="433.0" width="300" height="54" rx="14"/>
+<text x="300" y="455.5" text-anchor="middle" class="strong">Goal reached</text>
+<text x="300" y="474.5" text-anchor="middle">Full goal XP once, cat happy, streak +1</text>
+<polygon class="dec" points="300,521.0 430.0,565 300,609.0 170.0,565"/>
+<text x="300" y="570.0" text-anchor="middle">Today&#x27;s side quest met?</text>
+<rect class="out" x="550.0" y="535.0" width="300" height="60" rx="12"/>
+<text x="700" y="560.5" text-anchor="middle">No penalty</text>
+<text x="700" y="579.5" text-anchor="middle">Nothing is lost, mood and streak stay</text>
+<rect class="box" x="155.0" y="648.0" width="290" height="54" rx="12"/>
+<text x="300" y="670.5" text-anchor="middle">Quest bonus</text>
+<text x="300" y="689.5" text-anchor="middle">5% of the goal XP, once</text>
+<rect class="term" x="80.0" y="745.0" width="440" height="40" rx="20.0"/>
+<text x="300" y="770.0" text-anchor="middle">A day pays at most 120% of its goal XP</text>
+<path class="edge" d="M 300,56.0 L 300,91.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 435.0,135 L 540.0,135" marker-end="url(#arrow)"/>
+<text class="lbl" x="487.5" y="127.0" text-anchor="middle">No</text>
+<path class="edge" d="M 300,179.0 L 300,218.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="310.0" y="198.5" text-anchor="start">Yes</text>
+<path class="edge" d="M 300,272.0 L 300,306.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 415.0,350 L 550.0,350" marker-end="url(#arrow)"/>
+<text class="lbl" x="482.5" y="342.0" text-anchor="middle">No</text>
+<path class="edge" d="M 300,394.0 L 300,433.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="310.0" y="413.5" text-anchor="start">Yes</text>
+<path class="edge" d="M 300,487.0 L 300,521.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 430.0,565 L 550.0,565" marker-end="url(#arrow)"/>
+<text class="lbl" x="490.0" y="557.0" text-anchor="middle">No</text>
+<path class="edge" d="M 300,609.0 L 300,648.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="310.0" y="628.5" text-anchor="start">Yes</text>
+<path class="edge" d="M 300,702.0 L 300,745.0" marker-end="url(#arrow)"/>
+  </svg>
+  <ul class='notes'><li>XP is proportional to the goal: 50 at 6,000 steps, 25 at 3,000, 100 at 12,000 (between 20 and 250).</li><li>The quest needs hourly step data, so a sensor-only phone only gets &quot;beat yesterday&quot;.</li></ul>
+</section>
+<section>
+  <h2>3. Bringing a runaway cat home</h2>
+  <p class="sub">Two routes. The map is the normal one; the weekly walk is the fallback when location is not usable.</p>
+  <svg viewBox="0 0 1020 640" role="img" aria-label="3. Bringing a runaway cat home">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="head"/>
+      </marker>
+    </defs>
+    <rect class="bad" x="120.0" y="8.0" width="280" height="64" rx="14"/>
+<text x="260" y="35.5" text-anchor="middle" class="strong">The cat has run away</text>
+<text x="260" y="54.5" text-anchor="middle">3 finished days missed</text>
+<polygon class="dec" points="260,115.0 395.0,160 260,205.0 125.0,160"/>
+<text x="260" y="155.5" text-anchor="middle">Can the app use</text>
+<text x="260" y="174.5" text-anchor="middle">your location?</text>
+<rect class="box" x="125.0" y="253.0" width="270" height="54" rx="12"/>
+<text x="260" y="275.5" text-anchor="middle">Walk at least your goal today</text>
+<text x="260" y="294.5" text-anchor="middle">(the long walk comes first)</text>
+<rect class="box" x="115.0" y="345.0" width="290" height="54" rx="12"/>
+<text x="260" y="367.5" text-anchor="middle">The cat shows up on the map</text>
+<text x="260" y="386.5" text-anchor="middle">250 to 900 m away</text>
+<rect class="box" x="125.0" y="440.0" width="270" height="48" rx="12"/>
+<text x="260" y="469.0" text-anchor="middle">Walk to within 30 m of the cat</text>
+<rect class="good" x="160.0" y="526.0" width="200" height="48" rx="14"/>
+<text x="260" y="555.0" text-anchor="middle">Jip is home</text>
+<polygon class="dec" points="640,115.0 775.0,160 640,205.0 505.0,160"/>
+<text x="640" y="155.5" text-anchor="middle">Last 7 days of steps</text>
+<text x="640" y="174.5" text-anchor="middle">≥ goal × 14?</text>
+<polygon class="dec" points="640,250.0 750.0,290 640,330.0 530.0,290"/>
+<text x="640" y="295.0" text-anchor="middle">Walked today?</text>
+<rect class="good" x="520.0" y="373.0" width="240" height="54" rx="14"/>
+<text x="640" y="395.5" text-anchor="middle" class="strong">The cat comes home</text>
+<text x="640" y="414.5" text-anchor="middle">No map needed</text>
+<rect class="out" x="810.0" y="188.0" width="190" height="74" rx="12"/>
+<text x="905" y="220.5" text-anchor="middle">Keep walking</text>
+<text x="905" y="239.5" text-anchor="middle">The cat stays away</text>
+<path class="edge" d="M 260,72.0 L 260,115.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 260,205.0 L 260,253.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="270.0" y="229.0" text-anchor="start">Yes</text>
+<path class="edge" d="M 260,307.0 L 260,345.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 260,399.0 L 260,440.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 260,488.0 L 260,526.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 395.0,160 L 505.0,160" marker-end="url(#arrow)"/>
+<text class="lbl" x="445" y="150" text-anchor="middle">No</text>
+<path class="edge" d="M 640,205.0 L 640,250.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="650.0" y="227.5" text-anchor="start">Yes</text>
+<path class="edge" d="M 640,330.0 L 640,373.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="650.0" y="351.5" text-anchor="start">Yes</text>
+<path class="edge" d="M 775.0,160 L 905,160 L 905,188.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="800" y="150" text-anchor="middle">No</text>
+<path class="edge" d="M 750.0,290 L 905,290 L 905,262.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="800" y="280" text-anchor="middle">No</text>
+  </svg>
+  <ul class='notes'><li>&quot;No&quot; on location means it is off, denied or unreadable.</li><li>84,000 steps in 7 days at a 6,000 goal. The goal is read at the moment, so a higher goal asks for more.</li><li>A streak freeze never rescues a cat that has already run away.</li></ul>
+</section>
+<section>
+  <h2>4. Map pickups</h2>
+  <p class="sub">Pickups are fixed per area and date, so reopening the map does not reroll them.</p>
+  <svg viewBox="0 0 1000 560" role="img" aria-label="4. Map pickups">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" class="head"/>
+      </marker>
+    </defs>
+    <rect class="term" x="390.0" y="16.0" width="220" height="40" rx="20.0"/>
+<text x="500" y="41.0" text-anchor="middle">Open the Map tab</text>
+<rect class="box" x="335.0" y="85.0" width="330" height="54" rx="12"/>
+<text x="500" y="107.5" text-anchor="middle">Up to 5 pickups today</text>
+<text x="500" y="126.5" text-anchor="middle">250 to 900 m from where you are</text>
+<polygon class="dec" points="500,177.0 670.0,225 500,273.0 330.0,225"/>
+<text x="500" y="220.5" text-anchor="middle">Within 30 m, and GPS</text>
+<text x="500" y="239.5" text-anchor="middle">accuracy 50 m or better?</text>
+<rect class="out" x="30.0" y="198.0" width="220" height="54" rx="12"/>
+<text x="140" y="220.5" text-anchor="middle">Keep walking</text>
+<text x="140" y="239.5" text-anchor="middle">The pin stays put</text>
+<rect class="box" x="380.0" y="318.0" width="240" height="44" rx="12"/>
+<text x="500" y="345.0" text-anchor="middle">Roll a reward</text>
+<rect class="box" x="35.0" y="413.0" width="270" height="74" rx="12"/>
+<text x="170" y="445.5" text-anchor="middle">XP, 60%</text>
+<text x="170" y="464.5" text-anchor="middle">15 or 25 XP to the cat</text>
+<rect class="box" x="365.0" y="413.0" width="270" height="74" rx="12"/>
+<text x="500" y="436.0" text-anchor="middle">Toy, 25%</text>
+<text x="500" y="455.0" text-anchor="middle">ball, mouse or feather</text>
+<text x="500" y="474.0" text-anchor="middle">Already own it: 15 XP</text>
+<rect class="box" x="695.0" y="413.0" width="270" height="74" rx="12"/>
+<text x="830" y="436.0" text-anchor="middle">Streak freeze, 15%</text>
+<text x="830" y="455.0" text-anchor="middle">You can hold 2</text>
+<text x="830" y="474.0" text-anchor="middle">Already holding 2: 15 XP</text>
+<path class="edge" d="M 500,56.0 L 500,85.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 500,139.0 L 500,177.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 330.0,225 L 250.0,225" marker-end="url(#arrow)"/>
+<text class="lbl" x="290.0" y="217.0" text-anchor="middle">No</text>
+<path class="edge" d="M 500,273.0 L 500,318.0" marker-end="url(#arrow)"/>
+<text class="lbl" x="510.0" y="295.5" text-anchor="start">Yes</text>
+<path class="edge" d="M 500,362.0 L 500,395 L 170,395 L 170,413.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 500,362.0 L 500,395 L 500,395 L 500,413.0" marker-end="url(#arrow)"/>
+<path class="edge" d="M 500,362.0 L 500,395 L 830,395 L 830,413.0" marker-end="url(#arrow)"/>
+  </svg>
+  <ul class='notes'><li>A found toy lies on the room floor and the cat plays with it. A freeze covers one missed day.</li><li>Cat progress is in the reward table with weight 0: it has nowhere to go until there is more than one cat.</li></ul>
+</section>
+</body>
+</html>
