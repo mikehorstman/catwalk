@@ -1,3 +1,4 @@
+import '../../../core/utils/calendar_date.dart';
 import 'cat_appearance.dart';
 import 'cat_mood.dart';
 import 'cat_status.dart';
@@ -13,6 +14,7 @@ class Cat {
     required this.status,
     required this.consecutiveMissedDays,
     required this.createdAt,
+    this.ranAwayOn,
   });
 
   final String id;
@@ -25,6 +27,10 @@ class Cat {
   final int consecutiveMissedDays;
   final DateTime createdAt;
 
+  /// The day the cat ran away, which starts its recovery window. Null while the
+  /// cat is home.
+  final CalendarDate? ranAwayOn;
+
   Cat copyWith({
     String? name,
     int? level,
@@ -32,6 +38,8 @@ class Cat {
     CatMood? mood,
     CatStatus? status,
     int? consecutiveMissedDays,
+    CalendarDate? ranAwayOn,
+    bool clearRanAwayOn = false,
   }) {
     return Cat(
       id: id,
@@ -44,6 +52,7 @@ class Cat {
       consecutiveMissedDays:
           consecutiveMissedDays ?? this.consecutiveMissedDays,
       createdAt: createdAt,
+      ranAwayOn: clearRanAwayOn ? null : (ranAwayOn ?? this.ranAwayOn),
     );
   }
 }

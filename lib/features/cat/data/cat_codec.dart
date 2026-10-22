@@ -1,3 +1,4 @@
+import '../../../core/utils/calendar_date.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_appearance.dart';
 import '../../cat/domain/cat_mood.dart';
@@ -31,6 +32,7 @@ Map<String, Object> catToJson(Cat cat) {
     'status': cat.status.name,
     'consecutiveMissedDays': cat.consecutiveMissedDays,
     'createdAt': cat.createdAt.toIso8601String(),
+    if (cat.ranAwayOn != null) 'ranAwayOn': cat.ranAwayOn!.toIsoDate(),
   };
 }
 
@@ -45,5 +47,8 @@ Cat catFromJson(Map<String, dynamic> json) {
     status: CatStatus.values.byName(json['status'] as String),
     consecutiveMissedDays: json['consecutiveMissedDays'] as int,
     createdAt: DateTime.parse(json['createdAt'] as String),
+    ranAwayOn: json['ranAwayOn'] is String
+        ? CalendarDate.parse(json['ranAwayOn'] as String)
+        : null,
   );
 }

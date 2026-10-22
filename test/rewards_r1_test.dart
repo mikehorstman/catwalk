@@ -111,17 +111,14 @@ void main() {
   });
 
   group('the next reward', () {
-    NextReward? next({
-      int xp = 0,
-      int streak = 0,
-      int goalsMet = 0,
-    }) => nextReward(
-      xp: xp,
-      currentStreak: streak,
-      goalsMet: goalsMet,
-      xpToNextLevel: xpForGoal(6000) - xp % 50,
-      nextLevel: 2,
-    );
+    NextReward? next({int xp = 0, int streak = 0, int goalsMet = 0}) =>
+        nextReward(
+          xp: xp,
+          currentStreak: streak,
+          goalsMet: goalsMet,
+          xpToNextLevel: xpForGoal(6000) - xp % 50,
+          nextLevel: 2,
+        );
 
     test('a streak prize two days away beats a level 45 XP away', () {
       final reward = next(streak: 1, xp: 5);

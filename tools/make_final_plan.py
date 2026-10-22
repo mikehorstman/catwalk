@@ -28,14 +28,14 @@ def chart_loop():
     c.node("streak", 120, 350, 230, 54, "built", "The streak grows")
     c.node("reward", 120, 445, 230, 60, "plan", "Streak prizes at 3, 7, 14, 30\nand 100 days: not paid yet")
 
-    c.node("end", 800, 250, 280, 64, "chg", "The day ends without it\nHalf the goal counts as missed too")
+    c.node("end", 800, 250, 280, 64, "built", "The day ends without it\nHalf the goal counts as missed too")
     c.node("d2", 800, 365, 250, 88, "dec", "Streak freeze held?")
     c.node("frz", 480, 365, 240, 60, "built", "Freeze used\nOne missed day saved")
-    c.node("miss", 800, 470, 230, 48, "chg", "Missed days +1")
+    c.node("miss", 800, 470, 230, 48, "built", "Missed days +1")
     c.node("s1", 640, 575, 140, 60, "box", "1 day\nsad")
     c.node("s2", 800, 575, 140, 60, "box", "2 days\nneglected")
     c.node("s3", 960, 575, 140, 60, "bad", "3 days\nruns away")
-    c.node("rec", 920, 690, 230, 64, "chg", "The recovery window opens\nsee chart 2")
+    c.node("rec", 920, 690, 230, 64, "built", "The recovery window opens\nsee chart 2")
 
     c.edge("phone", "b", "goal", "t")
     c.edge("goal", "b", "d1", "t")
@@ -63,7 +63,7 @@ def chart_recovery():
         1040, 780,
     )
     c.node("r0", 300, 40, 300, 60, "bad", "The cat has run away\n3 missed days in a row")
-    c.node("win", 300, 140, 380, 60, "chg", "The window opens: 7 days\nEvery step in it counts toward the target")
+    c.node("win", 300, 140, 380, 60, "built", "The window opens: 7 days\nEvery step in it counts toward the target")
     c.node("d1", 300, 265, 300, 96, "dec", "Target reached in time?\ngoal × 10 steps")
     c.node("d2", 300, 400, 260, 92, "dec", "Can the app use\nyour location?")
     c.node("nomap", 72, 400, 140, 64, "good", "The cat comes\nhome, no map")
@@ -108,7 +108,7 @@ def chart_goal():
     c.node("w1", 650, 135, 260, 54, "out", "Keep walking")
     c.node("b1", 300, 245, 270, 54, "built", "Halfway snack\na little XP, once")
     c.node("d2", 300, 350, 230, 88, "dec", "Goal reached?")
-    c.node("w2", 640, 350, 300, 66, "chg", "Not the goal\nHalf a goal is still a missed day")
+    c.node("w2", 640, 350, 300, 66, "built", "Not the goal\nHalf a goal is still a missed day")
     c.node("b2", 300, 465, 320, 60, "good", "Goal reached\nFull XP once, cat happy, streak +1")
     c.edge("s", "b", "d1", "t")
     c.edge("d1", "r", "w1", "l", "No")
@@ -256,8 +256,8 @@ SLICES = [
     ("1. The day", "built", "Goal, XP, mood, streak, history, Me tab."),
     ("2. Real steps", "built", "Apple Health and Health Connect, then the sensor. Untested on a real phone."),
     ("3. The room", "built", "Cat walks, sits, sleeps, grooms, climbs, plays. Placeholder sprites in."),
-    ("4. The map", "built", "Pickups, toys, freezes. Runaway recovery (changing, see chart 2)."),
-    ("Rules change", "changing", "Half a goal is a miss. Side quest off. Recovery window and gone forever."),
+    ("4. The map", "built", "Pickups, toys, freezes. Runaway recovery by step target, then the map."),
+    ("Rules change", "built", "Half a goal is a miss. Side quest off. 7-day recovery window, lost cat leaves, stray kitten arrives. The lost cat is remembered with its random return day; the return on the map is not built yet (needs more than one cat in the room)."),
     ("First week", "planned", "Gentle goal ramp, free first toy and freeze, a lower-goal offer after a bad week."),
     ("Rewards", "planned", "Streak prizes at 3, 7, 14, 30 and 100 days, a freeze every 7 days, the daily draw."),
     ("5. More cats", "planned", "New cat on the map, street cat photos, the goal cap. Needs D5 and D6."),
@@ -266,7 +266,7 @@ SLICES = [
 ]
 
 NEXT = [
-    ("1", "Rules change", "Remove the half-day rule, switch the side quest off, build the recovery window and what happens at the end (D1, D2, D10). Update tests and in-app copy. Small, and every later step builds on it."),
+    ("1", "Rules change (done, except the return)", "Built and tested: half a goal is a miss, side quest off, 7-day window with a 10 × goal target, lost cat and stray kitten. Still to build: the lost cat coming back on the map, which needs more than one cat in the room, so it goes with Slice 5."),
     ("2", "First week and rewards", "The gentle first week, the first free toy and freeze, streak prizes, a freeze every 7 days, the daily draw. This is the biggest retention gain for the least work."),
     ("3", "Try it on a real phone", "Install the APK, check Health Connect, the step sensor and GPS, and move the map to a production tile host. Nothing so far has run on hardware."),
     ("4", "Reminders and recap", "Reminders in the cat's voice with an off switch, the weekly recap and personal bests, the lower-goal offer, and opt-out analytics. Before anyone outside tests it."),

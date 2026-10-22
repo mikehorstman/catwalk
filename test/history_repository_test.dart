@@ -53,7 +53,7 @@ void main() {
     await store.write(
       HistoryRepository.historyKey,
       '[{"date":"2026-10-09","stepGoal":6000,"steps":6000,'
-          '"goalCompleted":true,"xpAwarded":true}]',
+      '"goalCompleted":true,"xpAwarded":true}]',
     );
     final days = await HistoryRepository(store).readAll();
     expect(days.single.xpEarned, 0);

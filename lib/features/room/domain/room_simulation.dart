@@ -144,9 +144,8 @@ class RoomSimulation {
   List<CatState> get states => List.unmodifiable(_states);
 
   /// Who is on a spot right now, including cats on their way there.
-  Set<String> occupantsOf(String spotId) => Set.unmodifiable(
-    _occupants[spotId] ?? const <String>{},
-  );
+  Set<String> occupantsOf(String spotId) =>
+      Set.unmodifiable(_occupants[spotId] ?? const <String>{});
 
   bool _hasRoomFor(RoomSpot spot, String catId) {
     final taken = _occupants[spot.id] ?? const <String>{};
@@ -202,7 +201,8 @@ class RoomSimulation {
           catId: cat.id,
           mood: cat.mood,
           status: cat.status,
-          position: spot?.position ?? Offset(_staticX(states.length), layout.walkY),
+          position:
+              spot?.position ?? Offset(_staticX(states.length), layout.walkY),
           facing: CatFacing.right,
           action: action,
           actionSecondsLeft: double.infinity,
@@ -225,7 +225,8 @@ class RoomSimulation {
   }
 
   double _nextDuration() =>
-      minActionSeconds + _random.nextDouble() * (maxActionSeconds - minActionSeconds);
+      minActionSeconds +
+      _random.nextDouble() * (maxActionSeconds - minActionSeconds);
 
   /// One tick. [seconds] of room time.
   void step(double seconds) {

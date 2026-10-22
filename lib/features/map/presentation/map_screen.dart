@@ -64,7 +64,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return Scaffold(
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => const Center(child: Text('Could not load the map.')),
+        error: (error, stack) =>
+            const Center(child: Text('Could not load the map.')),
         data: (view) => _body(context, view),
       ),
     );
@@ -191,8 +192,11 @@ class _Banner extends StatelessWidget {
       icon = Icons.pets;
     } else if (view.runaway) {
       text =
-          '${view.catName} ran away. Walk ${formatNumber(view.stepsToCatLocated)} '
-          'more steps today, then look for them here.';
+          '${view.catName} ran away. Walk '
+          '${formatNumber(view.recoveryStepsToGo)} more steps within '
+          '${view.recoveryDaysLeft} '
+          '${view.recoveryDaysLeft == 1 ? 'day' : 'days'}, '
+          'then look for them here.';
       icon = Icons.directions_walk;
     } else if (view.pins.isEmpty) {
       text = 'Nothing left nearby today. New pickups tomorrow.';
@@ -257,10 +261,16 @@ class _AccessCard extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.map_outlined, size: 56, color: CatwalkColors.teal),
+              const Icon(
+                Icons.map_outlined,
+                size: 56,
+                color: CatwalkColors.teal,
+              ),
               const SizedBox(height: 16),
               Text(
-                blocked ? 'Location is switched off' : 'Catwalk needs your location',
+                blocked
+                    ? 'Location is switched off'
+                    : 'Catwalk needs your location',
                 style: theme.textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
@@ -276,7 +286,9 @@ class _AccessCard extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               FilledButton(
-                onPressed: blocked ? controller.openSettings : controller.requestAccess,
+                onPressed: blocked
+                    ? controller.openSettings
+                    : controller.requestAccess,
                 child: Text(blocked ? 'Open Settings' : 'Allow location'),
               ),
             ],
@@ -317,7 +329,11 @@ class _PinMarker extends StatelessWidget {
         border: Border.all(color: Colors.white, width: 3),
         boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)],
       ),
-      child: const Icon(Icons.card_giftcard, color: CatwalkColors.ink, size: 22),
+      child: const Icon(
+        Icons.card_giftcard,
+        color: CatwalkColors.ink,
+        size: 22,
+      ),
     ),
   );
 }
@@ -366,9 +382,17 @@ class _EventSheet extends StatelessWidget {
           children: [
             Icon(icon, size: 48, color: CatwalkColors.teal),
             const SizedBox(height: 12),
-            Text(title, style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+            Text(
+              title,
+              style: theme.textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 6),
-            Text(body, style: theme.textTheme.bodyMedium, textAlign: TextAlign.center),
+            Text(
+              body,
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 20),
             Center(
               child: FilledButton(

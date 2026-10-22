@@ -93,12 +93,33 @@ class _HomeBody extends ConsumerWidget {
             ),
           ),
         ],
-        if (state.catCameHomeThisWeek) ...[
+        if (state.catWalkedHome) ...[
           const SizedBox(height: 12),
           _Notice(
             text:
-                '${cat.name} came home after your week of walking. '
+                '${cat.name} came home. You walked enough. '
                 'Keep it up today.',
+          ),
+        ],
+        if (state.lostCatName case final lost?) ...[
+          const SizedBox(height: 12),
+          _Notice(
+            text:
+                '$lost did not make it home in time and is gone for now. '
+                'A stray kitten, ${state.kittenName}, is at the door. '
+                '$lost may turn up on the map again someday.',
+          ),
+        ],
+        if (state.recovery case final recovery? when gone) ...[
+          const SizedBox(height: 12),
+          _Notice(
+            text: recovery.targetMet
+                ? '${cat.name} is waiting to be found. Open the map.'
+                : '${cat.name} ran away. Walk '
+                      '${formatNumber(recovery.stepsToGo)} more steps '
+                      'within ${recovery.daysLeft} '
+                      '${recovery.daysLeft == 1 ? 'day' : 'days'} to find '
+                      'them, or they are gone.',
           ),
         ],
         const SizedBox(height: 16),
@@ -172,12 +193,10 @@ class _HomeBody extends ConsumerWidget {
                 'You hit ${raise.daysHit} of the last 7 days. '
                 '${formatNumber(raise.goal)} steps would go a little further.',
             acceptLabel: 'Use ${formatNumber(raise.goal)}',
-            onAccept: () => ref
-                .read(homeControllerProvider.notifier)
-                .acceptGoalRaise(),
-            onDecline: () => ref
-                .read(homeControllerProvider.notifier)
-                .declineGoalRaise(),
+            onAccept: () =>
+                ref.read(homeControllerProvider.notifier).acceptGoalRaise(),
+            onDecline: () =>
+                ref.read(homeControllerProvider.notifier).declineGoalRaise(),
           ),
         ] else if (state.showGoalTune && state.suggestedGoal != null) ...[
           const SizedBox(height: 16),
@@ -248,9 +267,8 @@ class _Steps extends ConsumerWidget {
         action: state.stepsPermissionGranted ? null : 'Allow step access',
         onPressed: state.stepsPermissionGranted
             ? null
-            : () => ref
-                  .read(homeControllerProvider.notifier)
-                  .requestStepAccess(),
+            : () =>
+                  ref.read(homeControllerProvider.notifier).requestStepAccess(),
       );
     }
     return Column(
@@ -453,7 +471,9 @@ class _QuestLine extends StatelessWidget {
           Icon(
             done ? Icons.check_circle : Icons.directions_walk,
             size: 20,
-            color: done ? CatwalkColors.teal : theme.colorScheme.onSurfaceVariant,
+            color: done
+                ? CatwalkColors.teal
+                : theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 12),
           Expanded(

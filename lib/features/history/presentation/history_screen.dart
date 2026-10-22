@@ -137,10 +137,7 @@ class _ThisWeek extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: _Stat(
-                  label: 'Steps',
-                  value: formatNumber(week.steps),
-                ),
+                child: _Stat(label: 'Steps', value: formatNumber(week.steps)),
               ),
               Expanded(
                 child: _Stat(

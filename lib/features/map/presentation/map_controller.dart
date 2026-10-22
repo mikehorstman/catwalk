@@ -45,8 +45,9 @@ class MapViewState {
     required this.recovery,
     required this.runaway,
     required this.catName,
-    required this.stepsToday,
-    required this.dailyGoal,
+    required this.recoveryTargetMet,
+    required this.recoveryStepsToGo,
+    required this.recoveryDaysLeft,
     required this.inventory,
     this.fix,
     this.event,
@@ -61,8 +62,11 @@ class MapViewState {
   final Recovery recovery;
   final bool runaway;
   final String catName;
-  final int stepsToday;
-  final int dailyGoal;
+
+  /// The runaway cat's step target is met, so it can be found on the map.
+  final bool recoveryTargetMet;
+  final int recoveryStepsToGo;
+  final int recoveryDaysLeft;
   final Inventory inventory;
 
   /// Shown once, then cleared by [CatMapController.dismissEvent].
@@ -71,9 +75,6 @@ class MapViewState {
   bool get hasLocation => access == LocationAccess.granted && fix != null;
 
   /// Steps still to walk before the cat shows up on the map.
-  int get stepsToCatLocated =>
-      (dailyGoal - stepsToday).clamp(0, dailyGoal).toInt();
-
   MapViewState copyWith({
     LocationAccess? access,
     GeoFix? fix,
@@ -81,8 +82,9 @@ class MapViewState {
     Recovery? recovery,
     bool? runaway,
     String? catName,
-    int? stepsToday,
-    int? dailyGoal,
+    bool? recoveryTargetMet,
+    int? recoveryStepsToGo,
+    int? recoveryDaysLeft,
     Inventory? inventory,
     MapNotice? event,
     bool clearEvent = false,
@@ -93,8 +95,9 @@ class MapViewState {
     recovery: recovery ?? this.recovery,
     runaway: runaway ?? this.runaway,
     catName: catName ?? this.catName,
-    stepsToday: stepsToday ?? this.stepsToday,
-    dailyGoal: dailyGoal ?? this.dailyGoal,
+    recoveryTargetMet: recoveryTargetMet ?? this.recoveryTargetMet,
+    recoveryStepsToGo: recoveryStepsToGo ?? this.recoveryStepsToGo,
+    recoveryDaysLeft: recoveryDaysLeft ?? this.recoveryDaysLeft,
     inventory: inventory ?? this.inventory,
     event: clearEvent ? null : (event ?? this.event),
   );
@@ -126,8 +129,9 @@ class CatMapController extends AsyncNotifier<MapViewState> {
       recovery: mapState.recovery,
       runaway: home.cat.status == CatStatus.runaway,
       catName: home.cat.name,
-      stepsToday: home.today.steps,
-      dailyGoal: home.today.stepGoal,
+      recoveryTargetMet: home.recovery?.targetMet ?? false,
+      recoveryStepsToGo: home.recovery?.stepsToGo ?? 0,
+      recoveryDaysLeft: home.recovery?.daysLeft ?? 0,
       inventory: inventory,
     );
 
@@ -152,7 +156,8 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     state = AsyncData(view);
   }
 
-  Future<void> openSettings() => ref.read(locationServiceProvider).openSettings();
+  Future<void> openSettings() =>
+      ref.read(locationServiceProvider).openSettings();
 
   void dismissEvent() {
     final view = state.value;
@@ -227,8 +232,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
       recovery = placeCat(
         current: recovery,
         runaway: runaway,
-        stepsToday: next.stepsToday,
-        dailyGoal: next.dailyGoal,
+        targetMet: next.recoveryTargetMet,
         from: fix.point,
         today: today,
       );

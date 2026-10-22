@@ -1,3 +1,4 @@
+import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/calendar_date.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_care.dart';
@@ -14,8 +15,10 @@ class DaySnapshot {
     required this.today,
     required this.xpGainedToday,
     this.frozenDays = const [],
-    this.recoveredByWeek = false,
+    this.walkedHome = false,
     this.snackXp = 0,
+    this.recovery,
+    this.windowClosed = false,
   });
 
   final Cat cat;
@@ -26,8 +29,17 @@ class DaySnapshot {
   /// them as frozen days and takes one freeze from the inventory for each.
   final List<CalendarDate> frozenDays;
 
-  /// The cat came home through the weekly walk rather than the map.
-  final bool recoveredByWeek;
+  /// The cat came home because the step target was met and there is no map to
+  /// find it on.
+  final bool walkedHome;
+
+  /// Where a runaway cat's recovery window stands. Null while the cat is home.
+  final RecoveryWindow? recovery;
+
+  /// The window closed without the target: the cat is lost. The caller swaps it
+  /// for a stray kitten and remembers the lost cat. [cat] is still the cat that
+  /// ran away.
+  final bool windowClosed;
 
   /// XP paid out for getting halfway today, if this open crossed that line.
   final int snackXp;
@@ -42,9 +54,14 @@ int snackForGoal(int goal) {
 
 /// Applies one app open to the cat and today's progress.
 ///
-/// [weekSteps] is how the phone answered for the last six days, used only by
-/// the weekly walk home. The caller reads it, because only the caller can ask
-/// the phone. Without it the weekly rule simply cannot fire.
+/// [windowSteps] is how the phone answered for the days of a runaway cat's
+/// recovery window before today. The caller reads it, because only the caller
+/// can ask the phone. Without it only today's steps count towards the target.
+/// [homeWithoutMap] says the map cannot be used, so meeting the target brings
+/// the cat straight home.
+///
+/// A day counts only when the whole goal is reached. Half a goal is a missed
+/// day.
 ///
 /// Calling this again on the same day cannot award the completion XP twice.
 /// Days before [today] that have no completed record count as misses. Today
@@ -57,8 +74,8 @@ DaySnapshot evaluateDay({
   required List<DailyProgress> history,
   CalendarDate? lastEvaluated,
   int freezes = 0,
-  bool allowWeeklyRecovery = false,
-  Map<CalendarDate, int> weekSteps = const {},
+  bool homeWithoutMap = false,
+  Map<CalendarDate, int> windowSteps = const {},
 }) {
   final byDate = {for (final day in history) day.date: day};
   final previous = byDate[today];
@@ -76,27 +93,32 @@ DaySnapshot evaluateDay({
   );
   final missed = gap.missed;
 
-  // A runaway cat stays away however far you walk one day. Finding it on the
-  // map brings it home (outside this function), and the weekly walk brings it
-  // home when there is no map to use.
+  // A runaway cat stays away however far you walk one day. It has a window of
+  // days to be walked home: enough steps in it, then finding the cat on the map
+  // (outside this function), or straight home when there is no map to use.
   final care = careStateForMissedDays(missed);
-  final weeklyHome =
-      cat.status == CatStatus.runaway &&
-      allowWeeklyRecovery &&
-      weeklyWalkMet(
-        stepsByDate: weekSteps,
-        today: today,
-        stepsToday: stepsToday,
-        goal: goal,
-      );
+  final runaway = care.status == CatStatus.runaway;
+  final ranAwayOn = runaway ? (cat.ranAwayOn ?? gap.ranAwayOn ?? today) : null;
+  final window = ranAwayOn == null
+      ? null
+      : recoveryWindow(
+          ranAwayOn: ranAwayOn,
+          today: today,
+          stepsByDate: windowSteps,
+          stepsToday: stepsToday,
+          goal: goal,
+        );
+  final walkedHome = window != null && window.targetMet && homeWithoutMap;
+  final windowClosed = window != null && !window.open && !window.targetMet;
+
   late final CatMood mood;
   late final CatStatus status;
   late final int missedDays;
-  if (weeklyHome) {
+  if (walkedHome) {
     mood = CatMood.neutral;
     status = CatStatus.active;
     missedDays = 0;
-  } else if (care.status == CatStatus.runaway) {
+  } else if (runaway) {
     mood = care.mood;
     status = care.status;
     missedDays = care.consecutiveMissedDays;
@@ -105,9 +127,8 @@ DaySnapshot evaluateDay({
     status = CatStatus.active;
     missedDays = 0;
   } else {
-    // Today is only half over, so the mood comes from the last finished day:
-    // one that was missed, or one that was only walked half way.
-    mood = missed > 0 || gap.lastWasPartial ? CatMood.sad : CatMood.neutral;
+    // Today is only half over, so the mood comes from the last finished day.
+    mood = missed > 0 ? CatMood.sad : CatMood.neutral;
     status = care.status;
     missedDays = care.consecutiveMissedDays;
   }
@@ -120,7 +141,7 @@ DaySnapshot evaluateDay({
   final snackNow =
       !completed &&
       !(previous?.snackAwarded ?? false) &&
-      isPartialDay(stepsToday: stepsToday, goal: goal);
+      reachedHalfway(stepsToday: stepsToday, goal: goal);
   final snackXp = snackNow ? snackForGoal(goal) : 0;
 
   final xp = cat.xp + (awardNow ? reward : 0) + snackXp;
@@ -130,6 +151,8 @@ DaySnapshot evaluateDay({
     mood: mood,
     status: status,
     consecutiveMissedDays: missedDays,
+    ranAwayOn: status == CatStatus.runaway ? ranAwayOn : null,
+    clearRanAwayOn: status != CatStatus.runaway,
   );
   final progress = DailyProgress(
     date: today,
@@ -146,19 +169,21 @@ DaySnapshot evaluateDay({
     today: progress,
     xpGainedToday: awardNow ? reward : 0,
     frozenDays: gap.frozen,
-    recoveredByWeek: weeklyHome,
+    walkedHome: walkedHome,
     snackXp: snackXp,
+    recovery: walkedHome ? null : window,
+    windowClosed: windowClosed,
   );
 }
 
 class _Gap {
-  const _Gap(this.missed, this.frozen, this.lastWasPartial);
+  const _Gap(this.missed, this.frozen, this.ranAwayOn);
   final int missed;
   final List<CalendarDate> frozen;
 
-  /// The most recent finished day was a half day: no missed count, but the cat
-  /// is not happy about it.
-  final bool lastWasPartial;
+  /// The day the cat ran away during this evaluation, when it did. A cat that
+  /// was already gone keeps the day saved on it.
+  final CalendarDate? ranAwayOn;
 }
 
 _Gap _missedDays({
@@ -170,7 +195,7 @@ _Gap _missedDays({
 }) {
   final created = CalendarDate.fromDateTime(cat.createdAt);
   if (!today.toDateTime().isAfter(created.toDateTime())) {
-    return const _Gap(0, [], false);
+    return _Gap(cat.consecutiveMissedDays, const [], null);
   }
 
   final start = lastEvaluated == null || lastEvaluated.daysUntil(created) > 0
@@ -178,20 +203,13 @@ _Gap _missedDays({
       : lastEvaluated;
   var missed = cat.consecutiveMissedDays;
   var left = freezes;
-  var lastWasPartial = false;
+  CalendarDate? ranAwayOn;
   final frozen = <CalendarDate>[];
   var cursor = start;
   while (cursor.daysUntil(today) > 0) {
     final record = byDate[cursor];
     if (record != null && record.goalCompleted) {
       missed = 0;
-      lastWasPartial = false;
-    } else if (record != null &&
-        isPartialDay(stepsToday: record.steps, goal: record.stepGoal)) {
-      // A half day holds the counter. It is not a miss, and it does not make up
-      // for one either, so a freeze is not wasted on it. The cat notices it
-      // all the same.
-      lastWasPartial = true;
     } else if (record != null && record.frozen) {
       // Already covered on an earlier open.
     } else if (missed == 0 && left > 0) {
@@ -200,10 +218,13 @@ _Gap _missedDays({
       left -= 1;
       frozen.add(cursor);
     } else {
+      // Any day without the whole goal is missed, half a goal included.
       missed += 1;
-      lastWasPartial = false;
+      if (missed == AppConstants.runawayMissedDays) {
+        ranAwayOn = cursor.addDays(1);
+      }
     }
     cursor = cursor.addDays(1);
   }
-  return _Gap(missed, frozen, lastWasPartial);
+  return _Gap(missed, frozen, ranAwayOn);
 }

@@ -21,15 +21,12 @@ import 'widgets/room_scene.dart';
 /// The room shows state; it never decides it. Mood and status come from the day's
 /// rules, and the room only picks what a cat does about them.
 class RoomScreen extends ConsumerStatefulWidget {
-  const RoomScreen({
-    this.layout,
-    this.animations,
-    super.key,
-  });
+  const RoomScreen({this.layout, this.animations, super.key});
 
   /// Overrides the room, for tests. Normally the room is built from what you
   /// have found.
   final RoomLayout? layout;
+
   /// Overrides how cats are drawn, for tests. Normally the sprite sheets are
   /// used, with the placeholder until they load.
   final CatAnimationSet? animations;
@@ -54,11 +51,10 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
   }
 
   /// The cats the room is built from. A change means a fresh room.
-  String _signatureOf(List<RoomCat> cats, RoomLayout layout) =>
-      [
-        for (final cat in cats) '${cat.id}:${cat.mood.name}:${cat.status.name}',
-        for (final spot in layout.spots) spot.id,
-      ].join(',');
+  String _signatureOf(List<RoomCat> cats, RoomLayout layout) => [
+    for (final cat in cats) '${cat.id}:${cat.mood.name}:${cat.status.name}',
+    for (final spot in layout.spots) spot.id,
+  ].join(',');
 
   /// Creates a fresh room when the cats or the motion setting change.
   void _syncRoom(List<RoomCat> cats, RoomLayout layout, bool reducedMotion) {
@@ -89,7 +85,10 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
     if (previous == Duration.zero) return;
     // A long gap means the tab was hidden or the app was suspended. Take a
     // small step instead of teleporting cats across the room.
-    final seconds = ((elapsed - previous).inMicroseconds / 1e6).clamp(0.0, 0.05);
+    final seconds = ((elapsed - previous).inMicroseconds / 1e6).clamp(
+      0.0,
+      0.05,
+    );
     if (seconds <= 0) return;
     simulation.step(seconds);
     setState(() => _states = simulation.states);
@@ -129,7 +128,8 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
                     _CatLayer(
                       state: state,
                       cat: cat,
-                      animations: widget.animations ?? ref.watch(catAnimationsProvider),
+                      animations:
+                          widget.animations ?? ref.watch(catAnimationsProvider),
                       layout: layout,
                       room: size,
                       onTap: () => CatDetailsSheet.show(context, cat),

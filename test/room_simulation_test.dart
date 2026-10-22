@@ -86,9 +86,7 @@ void main() {
   });
 
   test('no spot is ever over capacity', () {
-    final sim = simOf(
-      [for (var i = 0; i < 6; i++) catOf('$i')],
-    );
+    final sim = simOf([for (var i = 0; i < 6; i++) catOf('$i')]);
 
     for (var i = 0; i < 3000; i++) {
       sim.step(1 / 30);
@@ -127,10 +125,9 @@ void main() {
   });
 
   test('a neglected cat never chooses a walk', () {
-    final sim = simOf(
-      [catOf('1', mood: CatMood.sad, status: CatStatus.neglected)],
-      seed: 5,
-    );
+    final sim = simOf([
+      catOf('1', mood: CatMood.sad, status: CatStatus.neglected),
+    ], seed: 5);
 
     for (var i = 0; i < 4000; i++) {
       sim.step(1 / 30);
@@ -155,22 +152,18 @@ void main() {
     // And everyone is somewhere sensible, doing something calm.
     for (final state in sim.states) {
       expect(state.isTravelling, isFalse);
-      expect(
-        [
-          CatAction.sleep,
-          CatAction.perch,
-          CatAction.sit,
-        ],
-        contains(state.action),
-      );
+      expect([
+        CatAction.sleep,
+        CatAction.perch,
+        CatAction.sit,
+      ], contains(state.action));
     }
   });
 
   test('reduced motion still respects capacity', () {
-    final sim = simOf(
-      [for (var i = 0; i < 8; i++) catOf('$i')],
-      reducedMotion: true,
-    );
+    final sim = simOf([
+      for (var i = 0; i < 8; i++) catOf('$i'),
+    ], reducedMotion: true);
 
     for (final spot in RoomLayout.standard.spots) {
       expect(sim.occupantsOf(spot.id).length, lessThanOrEqualTo(spot.capacity));
@@ -178,10 +171,7 @@ void main() {
   });
 
   test('a runaway cat is not in the room', () {
-    final sim = simOf([
-      catOf('1'),
-      catOf('2', status: CatStatus.runaway),
-    ]);
+    final sim = simOf([catOf('1'), catOf('2', status: CatStatus.runaway)]);
 
     expect(sim.states.map((state) => state.catId), ['1']);
   });

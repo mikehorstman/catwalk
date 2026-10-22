@@ -75,7 +75,9 @@ class SensorStepRepository implements StepRepository {
     final raw = await _store.read(baselineKey);
     if (raw == null) return null;
     try {
-      return SensorStepBaseline.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      return SensorStepBaseline.fromJson(
+        jsonDecode(raw) as Map<String, dynamic>,
+      );
     } catch (_) {
       // A damaged anchor is no anchor. Start today again rather than guess.
       return null;

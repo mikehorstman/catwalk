@@ -23,6 +23,10 @@ import '../../daily_goal/domain/xp_for_goal.dart';
 import '../../daily_goal/domain/streak.dart';
 import '../../map/data/inventory_repository.dart';
 import '../../map/data/location_service.dart';
+import '../../map/data/lost_cat_repository.dart';
+import '../../map/domain/lost_cat.dart';
+import '../../map/domain/recovery.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../onboarding/data/onboarding_repository.dart';
 import '../../settings/data/goal_nudges.dart';
 import '../../settings/data/profile_repository.dart';
@@ -37,7 +41,10 @@ class HomeState {
     required this.stepsPermissionGranted,
     required this.currentStreak,
     this.stepSource,
-    this.catCameHomeThisWeek = false,
+    this.catWalkedHome = false,
+    this.recovery,
+    this.lostCatName,
+    this.kittenName,
     this.goalsMet = 0,
     this.snackXpToday = 0,
     this.quest,
@@ -55,8 +62,16 @@ class HomeState {
   final DailyProgress today;
   final int xpGainedToday;
 
-  /// The cat came home through the weekly walk, with no map to use.
-  final bool catCameHomeThisWeek;
+  /// The cat came home because the step target was met, with no map to use.
+  final bool catWalkedHome;
+
+  /// How a runaway cat's recovery window stands, or null while the cat is home.
+  final RecoveryWindow? recovery;
+
+  /// The cat that was lost on this open, and the stray kitten that took its
+  /// place. Both are null on every other open.
+  final String? lostCatName;
+  final String? kittenName;
 
   /// Days the goal was completed, ever. Never goes down.
   final int goalsMet;
@@ -154,23 +169,52 @@ class HomeController extends AsyncNotifier<HomeState> {
     final steps = reading.steps ?? 0;
     final inventories = ref.read(inventoryRepositoryProvider);
     final inventory = await inventories.read();
-    final weeklyAllowed = await ref.read(weeklyRecoveryAllowedProvider.future);
-    final snapshot = evaluateDay(
+    final withoutMap = await ref.read(recoveryWithoutMapProvider.future);
+    final lastEvaluated = await history.readLastEvaluated();
+    DaySnapshot evaluate(Map<CalendarDate, int> windowSteps) => evaluateDay(
       freezes: inventory.freezes,
-      allowWeeklyRecovery: weeklyAllowed,
-      weekSteps: await _weekSteps(
-        cat: cat,
-        repository: repository,
-        saved: days,
-        weeklyAllowed: weeklyAllowed,
-      ),
+      homeWithoutMap: withoutMap,
+      windowSteps: windowSteps,
       cat: cat,
       dailyStepGoal: profile.dailyStepGoal,
       stepsToday: steps,
       today: CalendarDate.today(),
       history: days,
-      lastEvaluated: await history.readLastEvaluated(),
+      lastEvaluated: lastEvaluated,
     );
+    // A runaway cat needs the steps of every day since it left, and only the
+    // phone can say. Ask once the first pass knows when that was.
+    var snapshot = evaluate(const {});
+    final ranAwayOn = snapshot.cat.ranAwayOn;
+    if (ranAwayOn != null && snapshot.cat.status == CatStatus.runaway) {
+      snapshot = evaluate(
+        await _windowSteps(
+          ranAwayOn: ranAwayOn,
+          repository: repository,
+          saved: days,
+        ),
+      );
+    }
+    String? lostCatName;
+    String? kittenName;
+    if (snapshot.windowClosed) {
+      // Not walked home in time. The cat leaves the room, remembered with the
+      // day it may turn up on the map again, and a stray kitten arrives.
+      final today = CalendarDate.today();
+      final kitten = strayKitten(lost: snapshot.cat, on: today);
+      await ref
+          .read(lostCatRepositoryProvider)
+          .add(LostCat.leaving(snapshot.cat, today));
+      lostCatName = snapshot.cat.name;
+      kittenName = kitten.name;
+      snapshot = DaySnapshot(
+        cat: kitten,
+        today: snapshot.today,
+        xpGainedToday: snapshot.xpGainedToday,
+        frozenDays: snapshot.frozenDays,
+        snackXp: snapshot.snackXp,
+      );
+    }
     final frozen = [
       for (final date in snapshot.frozenDays)
         DailyProgress(
@@ -203,8 +247,9 @@ class HomeController extends AsyncNotifier<HomeState> {
 
     // A quest changes how you walk, not how much. It is judged from what the
     // phone can see, pays once, and costs nothing when missed.
-    final hours = granted ? await _hoursOrNull(repository) : null;
-    final yesterdaySteps = granted
+    final questsOn = AppConstants.sideQuestsEnabled;
+    final hours = granted && questsOn ? await _hoursOrNull(repository) : null;
+    final yesterdaySteps = granted && questsOn
         ? await _stepsOrNull(repository, todayDate.addDays(-1))
         : null;
     final daysWalking = allDays.where((day) => day.steps > 0).length;
@@ -224,11 +269,13 @@ class HomeController extends AsyncNotifier<HomeState> {
       ),
       daysWalking: daysWalking,
     );
-    final quest = pickQuest(
-      trace: trace,
-      daysWalking: daysWalking,
-      previous: yesterdayPick,
-    );
+    final quest = questsOn
+        ? pickQuest(
+            trace: trace,
+            daysWalking: daysWalking,
+            previous: yesterdayPick,
+          )
+        : null;
     final questMet = quest != null && questDone(quest, trace);
     var grownCat = snapshot.cat;
     var todayProgress = snapshot.today;
@@ -236,8 +283,11 @@ class HomeController extends AsyncNotifier<HomeState> {
     if (questMet && !todayProgress.questAwarded) {
       final goalXp = xpForGoal(todayProgress.stepGoal);
       final paid = questXpFor(goalXp);
-      final already = (todayProgress.goalCompleted ? goalXp : 0) +
-          (todayProgress.snackAwarded ? snackForGoal(todayProgress.stepGoal) : 0);
+      final already =
+          (todayProgress.goalCompleted ? goalXp : 0) +
+          (todayProgress.snackAwarded
+              ? snackForGoal(todayProgress.stepGoal)
+              : 0);
       if (withinDailyCeiling(goalXp: goalXp, paid: already + paid)) {
         questXpToday = paid;
         grownCat = grownCat.copyWith(
@@ -263,7 +313,8 @@ class HomeController extends AsyncNotifier<HomeState> {
       currentGoal: todayProgress.stepGoal,
     );
     final raiseOk = raise != null && await nudges.raiseAllowed(todayDate);
-    final farOff = suggestion != null &&
+    final farOff =
+        suggestion != null &&
         todayProgress.stepGoal > 0 &&
         (todayProgress.stepGoal - suggestion.goal).abs() /
                 todayProgress.stepGoal >
@@ -278,7 +329,10 @@ class HomeController extends AsyncNotifier<HomeState> {
       stepsAvailable: available,
       stepsPermissionGranted: granted,
       stepSource: reading.source,
-      catCameHomeThisWeek: snapshot.recoveredByWeek,
+      catWalkedHome: snapshot.walkedHome,
+      recovery: snapshot.recovery,
+      lostCatName: lostCatName,
+      kittenName: kittenName,
       goalsMet: goalsMet,
       snackXpToday: snapshot.snackXp,
       quest: quest,
@@ -293,9 +347,7 @@ class HomeController extends AsyncNotifier<HomeState> {
   /// Sets the goal from a suggestion or a raise, and answers the card.
   Future<void> applyGoal(int goal) async {
     final profile = await ref.read(profileRepositoryProvider).read();
-    final next = profile.copyWith(
-      dailyStepGoal: normaliseGoal(goal),
-    );
+    final next = profile.copyWith(dailyStepGoal: normaliseGoal(goal));
     await ref.read(profileRepositoryProvider).write(next);
     await ref.read(goalNudgesProvider).clearTune();
     await refresh();
@@ -310,17 +362,13 @@ class HomeController extends AsyncNotifier<HomeState> {
   Future<void> acceptGoalRaise() async {
     final raise = state.value?.goalRaise;
     if (raise == null) return;
-    await ref
-        .read(goalNudgesProvider)
-        .markRaiseOffered(CalendarDate.today());
+    await ref.read(goalNudgesProvider).markRaiseOffered(CalendarDate.today());
     await applyGoal(raise.goal);
   }
 
   /// Not today: the offer stays quiet for a fortnight.
   Future<void> declineGoalRaise() async {
-    await ref
-        .read(goalNudgesProvider)
-        .markRaiseOffered(CalendarDate.today());
+    await ref.read(goalNudgesProvider).markRaiseOffered(CalendarDate.today());
     await refresh();
   }
 
@@ -344,37 +392,39 @@ class HomeController extends AsyncNotifier<HomeState> {
     }
   }
 
-  /// The last six days of steps, for the weekly walk home.
+  /// The steps of every day from [ranAwayOn] up to yesterday, for the recovery
+  /// window.
   ///
   /// A day the app was opened for is already saved. The rest is asked of the
-  /// phone, which is the only source that can still see them. Read only when it
-  /// can matter, so an ordinary open asks for nothing.
-  Future<Map<CalendarDate, int>> _weekSteps({
-    required Cat cat,
+  /// phone, which is the only source that can still see them. Read only for a
+  /// runaway cat, so an ordinary open asks for nothing.
+  Future<Map<CalendarDate, int>> _windowSteps({
+    required CalendarDate ranAwayOn,
     required StepRepository repository,
     required List<DailyProgress> saved,
-    required bool weeklyAllowed,
   }) async {
-    if (!weeklyAllowed || cat.status != CatStatus.runaway) return const {};
     final byDate = {for (final day in saved) day.date: day.steps};
     final today = CalendarDate.today();
-    final week = <CalendarDate, int>{};
-    for (var back = 1; back <= 6; back++) {
-      final date = today.addDays(-back);
+    final window = <CalendarDate, int>{};
+    for (
+      var date = ranAwayOn;
+      date.daysUntil(today) > 0;
+      date = date.addDays(1)
+    ) {
+      if (ranAwayOn.daysUntil(date) >= AppConstants.recoveryWindowDays) break;
       final remembered = byDate[date];
       if (remembered != null) {
-        week[date] = remembered;
+        window[date] = remembered;
         continue;
       }
-      StepReading reading;
       try {
-        reading = await repository.getStepsForDate(date);
+        final reading = await repository.getStepsForDate(date);
+        if (reading.steps != null) window[date] = reading.steps!;
       } catch (_) {
         continue;
       }
-      if (reading.steps != null) week[date] = reading.steps!;
     }
-    return week;
+    return window;
   }
 
   Future<void> _write(

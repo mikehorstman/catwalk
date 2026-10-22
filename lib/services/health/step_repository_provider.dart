@@ -12,8 +12,7 @@ import 'step_repository.dart';
 ///
 /// The product flag wins over the dart-define, so a release build reads the
 /// phone whatever the define says.
-const bool useMockSteps =
-    bool.fromEnvironment('dart.vm.product')
+const bool useMockSteps = bool.fromEnvironment('dart.vm.product')
     ? false
     : bool.fromEnvironment('USE_MOCK_STEPS', defaultValue: true);
 

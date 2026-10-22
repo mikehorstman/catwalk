@@ -37,14 +37,20 @@ void main() {
   test('an action we do not know is ignored, not an error', () {
     final manifest = SpriteManifest.parse(_source);
 
-    expect(manifest.actions.keys, containsAll([CatAction.walk, CatAction.sleep]));
+    expect(
+      manifest.actions.keys,
+      containsAll([CatAction.walk, CatAction.sleep]),
+    );
     expect(manifest.actions.length, 2);
   });
 
   test('a mood with no sheet falls back to neutral', () {
     final manifest = SpriteManifest.parse(_source);
 
-    expect(manifest.lookup(CatAction.walk, CatMood.happy)?.fur, 'walk_happy_fur.png');
+    expect(
+      manifest.lookup(CatAction.walk, CatMood.happy)?.fur,
+      'walk_happy_fur.png',
+    );
     expect(manifest.lookup(CatAction.walk, CatMood.sad)?.fur, 'walk_fur.png');
     expect(manifest.lookup(CatAction.perch, CatMood.neutral), isNull);
   });

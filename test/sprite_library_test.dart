@@ -13,7 +13,9 @@ void main() {
 
   group('the placeholder sprite sheets', () {
     testWidgets('load, and every action has art', (tester) async {
-      final library = await tester.runAsync(() => loadSpriteLibrary(rootBundle));
+      final library = await tester.runAsync(
+        () => loadSpriteLibrary(rootBundle),
+      );
       expect(library, isNotNull);
       for (final action in CatAction.values) {
         final sheet = library!.lookup(action, CatMood.neutral);
@@ -31,7 +33,9 @@ void main() {
     });
 
     testWidgets('a mood without art uses the neutral sheet', (tester) async {
-      final library = await tester.runAsync(() => loadSpriteLibrary(rootBundle));
+      final library = await tester.runAsync(
+        () => loadSpriteLibrary(rootBundle),
+      );
       final neutral = library!.lookup(CatAction.walk, CatMood.neutral)!;
       final sad = library.lookup(CatAction.walk, CatMood.sad)!;
       expect(sad.fur, same(neutral.fur));

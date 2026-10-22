@@ -72,7 +72,9 @@ Collected collect({
     case CatProgressReward(:final points):
       return Collected(
         reward: reward,
-        inventory: inventory.copyWith(catProgress: inventory.catProgress + points),
+        inventory: inventory.copyWith(
+          catProgress: inventory.catProgress + points,
+        ),
         cat: cat,
       );
   }

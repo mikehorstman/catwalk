@@ -28,9 +28,8 @@ class AnimationLabSheet extends StatefulWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) => AnimationLabSheet(
-        animations: ProviderScope.containerOf(
-          context,
-        ).read(catAnimationsProvider),
+        animations: ProviderScope.containerOf(context)
+            .read(catAnimationsProvider),
       ),
     );
   }
@@ -174,8 +173,7 @@ class _Preview extends StatelessWidget {
           elapsed: elapsed,
           size: 96,
         ),
-        if (guide)
-          Container(height: 2, width: 96, color: CatwalkColors.teal),
+        if (guide) Container(height: 2, width: 96, color: CatwalkColors.teal),
         const SizedBox(height: 6),
         Text(
           appearance.label,

@@ -96,7 +96,12 @@ class _SpritePainter extends CustomPainter {
       frameSize.width,
       frameSize.height,
     );
-    final dst = Rect.fromLTWH(0, 0, frameSize.width * scale, frameSize.height * scale);
+    final dst = Rect.fromLTWH(
+      0,
+      0,
+      frameSize.width * scale,
+      frameSize.height * scale,
+    );
 
     canvas.save();
     // Art faces right; left is the same frame mirrored about the box centre.

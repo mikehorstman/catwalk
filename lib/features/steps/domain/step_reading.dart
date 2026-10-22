@@ -23,11 +23,14 @@ class StepReading {
   /// No source could be read.
   const StepReading.unavailable() : source = null, steps = null;
 
-  const StepReading.health(int steps) : this(source: StepSource.health, steps: steps);
+  const StepReading.health(int steps)
+    : this(source: StepSource.health, steps: steps);
 
-  const StepReading.sensor(int steps) : this(source: StepSource.sensor, steps: steps);
+  const StepReading.sensor(int steps)
+    : this(source: StepSource.sensor, steps: steps);
 
-  const StepReading.mock(int steps) : this(source: StepSource.mock, steps: steps);
+  const StepReading.mock(int steps)
+    : this(source: StepSource.mock, steps: steps);
 
   final StepSource? source;
 

@@ -66,9 +66,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         : 'You averaged about ${formatNumber(suggestion.medianSteps)} steps on '
               '${suggestion.daysUsed} days, so ${formatNumber(suggestion.goal)} '
               'gives you something to reach for.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool get _canContinue {
@@ -165,7 +164,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     _GoalStep(
                       controller: _goalController,
-                      goal: int.tryParse(_goalController.text) ??
+                      goal:
+                          int.tryParse(_goalController.text) ??
                           AppConstants.defaultDailyStepGoal,
                       suggesting: _suggesting,
                       onSuggest: _suggestGoal,

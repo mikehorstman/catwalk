@@ -8,7 +8,11 @@ void main() {
   final yesterday = CalendarDate(2026, 10, 12);
 
   test('the first reading of a day anchors the day at zero steps', () {
-    final baseline = resolver.resolve(today: today, reading: 4000, stored: null);
+    final baseline = resolver.resolve(
+      today: today,
+      reading: 4000,
+      stored: null,
+    );
 
     expect(baseline.date, today);
     expect(baseline.bootSteps, 4000);
@@ -16,8 +20,16 @@ void main() {
   });
 
   test('later readings count up from the anchor', () {
-    final baseline = resolver.resolve(today: today, reading: 4000, stored: null);
-    final later = resolver.resolve(today: today, reading: 4600, stored: baseline);
+    final baseline = resolver.resolve(
+      today: today,
+      reading: 4000,
+      stored: null,
+    );
+    final later = resolver.resolve(
+      today: today,
+      reading: 4600,
+      stored: baseline,
+    );
 
     expect(later.bootSteps, 4000);
     expect(later.lastReading, 4600);

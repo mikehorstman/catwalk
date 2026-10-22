@@ -67,9 +67,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         : 'You averaged about ${formatNumber(suggestion.medianSteps)} steps on '
               '${suggestion.daysUsed} days. Save to keep '
               '${formatNumber(suggestion.goal)}.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _saveGoal() async {
@@ -188,9 +187,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onPressed: _suggesting ? null : _suggestGoal,
                   icon: const Icon(Icons.auto_awesome, size: 18),
                   label: Text(
-                    _suggesting
-                        ? 'Looking at your week…'
-                        : 'Use my last week',
+                    _suggesting ? 'Looking at your week…' : 'Use my last week',
                   ),
                 ),
               ),

@@ -33,7 +33,9 @@ class SpriteAction {
     final detailsRef = json['details'];
     return SpriteAction(
       fur: fur,
-      details: detailsRef is String && detailsRef.isNotEmpty ? detailsRef : null,
+      details: detailsRef is String && detailsRef.isNotEmpty
+          ? detailsRef
+          : null,
       frames: frames,
       fps: fps.toDouble(),
       loop: json['loop'] != false,
@@ -102,10 +104,7 @@ class SpriteManifest {
     }
 
     return SpriteManifest(
-      frameSize: [
-        (size[0] as num).toDouble(),
-        (size[1] as num).toDouble(),
-      ],
+      frameSize: [(size[0] as num).toDouble(), (size[1] as num).toDouble()],
       footAnchor: anchor is List && anchor.length == 2
           ? [(anchor[0] as num).toDouble(), (anchor[1] as num).toDouble()]
           : [(size[0] as num) / 2, (size[1] as num).toDouble()],

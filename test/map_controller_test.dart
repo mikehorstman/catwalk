@@ -132,17 +132,20 @@ void main() {
     expect(location.settingsOpened, 1);
   });
 
-  test('opening the map with a fix gives today\'s pins and keeps the cell', () async {
-    final store = await seededStore();
-    final location = FakeLocationService(start: fixAt(amsterdam));
-    final container = containerOf(store, location);
+  test(
+    'opening the map with a fix gives today\'s pins and keeps the cell',
+    () async {
+      final store = await seededStore();
+      final location = FakeLocationService(start: fixAt(amsterdam));
+      final container = containerOf(store, location);
 
-    final view = await container.read(mapControllerProvider.future);
+      final view = await container.read(mapControllerProvider.future);
 
-    expect(view.pins.length, maxPinsPerDay);
-    final saved = await MapStateRepository(store).read();
-    expect(saved.cellFor(CalendarDate.today()), GeoCell.of(amsterdam));
-  });
+      expect(view.pins.length, maxPinsPerDay);
+      final saved = await MapStateRepository(store).read();
+      expect(saved.cellFor(CalendarDate.today()), GeoCell.of(amsterdam));
+    },
+  );
 
   test('walking onto a pin collects it, once, for good', () async {
     final store = await seededStore();
@@ -167,38 +170,37 @@ void main() {
     expect(reopened.pins.map((p) => p.id), isNot(contains(pin.id)));
   });
 
-  test('the reward really lands: XP on the cat, freezes in the inventory', () async {
-    final store = await seededStore();
-    final location = FakeLocationService(start: fixAt(amsterdam));
-    final container = containerOf(store, location);
-    final view = await container.read(mapControllerProvider.future);
-    final notifier = container.read(mapControllerProvider.notifier);
+  test(
+    'the reward really lands: XP on the cat, freezes in the inventory',
+    () async {
+      final store = await seededStore();
+      final location = FakeLocationService(start: fixAt(amsterdam));
+      final container = containerOf(store, location);
+      final view = await container.read(mapControllerProvider.future);
+      final notifier = container.read(mapControllerProvider.notifier);
 
-    for (final pin in List.of(view.pins)) {
-      await notifier.onFix(fixAt(pin.point));
-      notifier.dismissEvent();
-    }
+      for (final pin in List.of(view.pins)) {
+        await notifier.onFix(fixAt(pin.point));
+        notifier.dismissEvent();
+      }
 
-    final inventory = await InventoryRepository(store).read();
-    final expectedXp = [
-      for (final pin in view.pins)
-        if (pin.reward is XpReward) (pin.reward as XpReward).amount,
-    ].fold<int>(0, (a, b) => a + b);
-    expect(inventory.freezes, lessThanOrEqualTo(2));
-    expect(
-      store.values[OnboardingRepository.catKey],
-      contains('"xp":'),
-    );
-    expect(
-      container.read(mapControllerProvider).requireValue.pins,
-      isEmpty,
-    );
-    // XP pins add up, whatever else the pins held.
-    final xpInStore = int.parse(
-      RegExp(r'"xp":(\d+)').firstMatch(store.values[OnboardingRepository.catKey]!)!.group(1)!,
-    );
-    expect(xpInStore, greaterThanOrEqualTo(expectedXp));
-  });
+      final inventory = await InventoryRepository(store).read();
+      final expectedXp = [
+        for (final pin in view.pins)
+          if (pin.reward is XpReward) (pin.reward as XpReward).amount,
+      ].fold<int>(0, (a, b) => a + b);
+      expect(inventory.freezes, lessThanOrEqualTo(2));
+      expect(store.values[OnboardingRepository.catKey], contains('"xp":'));
+      expect(container.read(mapControllerProvider).requireValue.pins, isEmpty);
+      // XP pins add up, whatever else the pins held.
+      final xpInStore = int.parse(
+        RegExp(r'"xp":(\d+)')
+            .firstMatch(store.values[OnboardingRepository.catKey]!)!
+            .group(1)!,
+      );
+      expect(xpInStore, greaterThanOrEqualTo(expectedXp));
+    },
+  );
 
   test('a vague position collects nothing', () async {
     final store = await seededStore();
@@ -225,31 +227,35 @@ void main() {
 
       expect(view.runaway, isTrue);
       expect(view.recovery.isLocated, isFalse);
-      expect(view.stepsToCatLocated, 7500);
+      // The goal is 8,000, so the target is 80,000 within seven days.
+      expect(view.recoveryStepsToGo, 79500);
+      expect(view.recoveryDaysLeft, 7);
     });
 
-    test('the long walk places the cat, and it stays put', () async {
+    test('meeting the target places the cat, and it stays put', () async {
       final store = await seededStore(runaway: true);
       final location = FakeLocationService(start: fixAt(amsterdam));
-      final container = containerOf(store, location, steps: 9000);
+      final container = containerOf(store, location, steps: 90000);
 
       final view = await container.read(mapControllerProvider.future);
 
       expect(view.recovery.isLocated, isTrue);
       expect(catStatusIn(store), 'runaway');
 
-      final again = containerOf(store, location, steps: 9000);
+      final again = containerOf(store, location, steps: 90000);
       final reopened = await again.read(mapControllerProvider.future);
       expect(reopened.recovery.catPoint, view.recovery.catPoint);
     });
 
-    test('the long walk alone does not bring the cat home', () async {
+    test('meeting the target alone does not bring the cat home', () async {
       final store = await seededStore(runaway: true);
       final location = FakeLocationService(start: fixAt(amsterdam));
-      final container = containerOf(store, location, steps: 20000);
+      final container = containerOf(store, location, steps: 90000);
 
       await container.read(mapControllerProvider.future);
-      await container.read(mapControllerProvider.notifier).onFix(fixAt(amsterdam));
+      await container
+          .read(mapControllerProvider.notifier)
+          .onFix(fixAt(amsterdam));
 
       expect(catStatusIn(store), 'runaway');
     });
@@ -257,7 +263,7 @@ void main() {
     test('finding the cat on the map brings it home', () async {
       final store = await seededStore(runaway: true);
       final location = FakeLocationService(start: fixAt(amsterdam));
-      final container = containerOf(store, location, steps: 9000);
+      final container = containerOf(store, location, steps: 90000);
       final view = await container.read(mapControllerProvider.future);
 
       await container
@@ -271,20 +277,22 @@ void main() {
       expect(catStatusIn(store), 'active');
 
       // And the next open does not send it away again.
-      final again = containerOf(store, location, steps: 9000);
+      final again = containerOf(store, location, steps: 90000);
       final reopened = await again.read(mapControllerProvider.future);
       expect(reopened.runaway, isFalse);
       expect(catStatusIn(store), 'active');
     });
 
-    test('finding the cat without the long walk is impossible', () async {
+    test('finding the cat before the target is met is impossible', () async {
       final store = await seededStore(runaway: true);
       final location = FakeLocationService(start: fixAt(amsterdam));
       final container = containerOf(store, location, steps: 500);
       await container.read(mapControllerProvider.future);
 
       // Nowhere to look yet, so wherever you stand, nothing is found.
-      await container.read(mapControllerProvider.notifier).onFix(fixAt(amsterdam));
+      await container
+          .read(mapControllerProvider.notifier)
+          .onFix(fixAt(amsterdam));
 
       expect(catStatusIn(store), 'runaway');
     });
@@ -339,11 +347,7 @@ void main() {
 
     testWidgets('shows how many pickups are near', (tester) async {
       final store = await seededStore();
-      await pump(
-        tester,
-        store,
-        FakeLocationService(start: fixAt(amsterdam)),
-      );
+      await pump(tester, store, FakeLocationService(start: fixAt(amsterdam)));
 
       expect(find.text('5 pickups nearby.'), findsOneWidget);
     });
@@ -358,7 +362,9 @@ void main() {
       );
 
       expect(
-        find.textContaining('Jip ran away. Walk 7,500 more steps today'),
+        find.textContaining(
+          'Jip ran away. Walk 79,500 more steps within 7 days',
+        ),
         findsOneWidget,
       );
     });
@@ -371,7 +377,7 @@ void main() {
         tester,
         store,
         FakeLocationService(start: fixAt(amsterdam)),
-        steps: 9000,
+        steps: 90000,
       );
 
       expect(find.textContaining('Jip is '), findsOneWidget);

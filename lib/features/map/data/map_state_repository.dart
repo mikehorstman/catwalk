@@ -27,7 +27,9 @@ class MapState {
   factory MapState.fromJson(Map<String, dynamic> json) {
     final collected = json['collected'];
     return MapState(
-      cell: json['cell'] is String ? GeoCell.parse(json['cell'] as String) : null,
+      cell: json['cell'] is String
+          ? GeoCell.parse(json['cell'] as String)
+          : null,
       cellDate: json['cellDate'] is String
           ? CalendarDate.parse(json['cellDate'] as String)
           : null,

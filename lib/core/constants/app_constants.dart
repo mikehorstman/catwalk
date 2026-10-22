@@ -9,9 +9,9 @@ abstract final class AppConstants {
   static const int minDailyStepGoal = 3000;
   static const int maxDailyStepGoal = 30000;
 
-  /// A day with at least this share of the goal holds the cat's care counter
-  /// instead of counting as a miss. It still earns no streak.
-  static const double partialDayFraction = 0.5;
+  /// Getting this far towards the goal pays the small halfway bonus. It does
+  /// not change whether the day counts: only the whole goal does.
+  static const double halfwayFraction = 0.5;
 
   /// Suggesting a goal stops here, so the app never proposes a number that the
   /// research says most people will miss.
@@ -24,15 +24,27 @@ abstract final class AppConstants {
   /// the goal may be lower or higher.
   static const int benefitReferenceSteps = 7000;
 
+  /// Daily side quests are built but switched off for now. The goal is the only
+  /// daily target.
+  static const bool sideQuestsEnabled = false;
+
   /// A daily quest pays this share of the day's goal reward.
   static const double questXpShare = 0.05;
 
   /// A day may pay out this much of its goal reward in total, bonuses included.
   static const double dailyXpCeilingShare = 1.2;
 
-  /// The weekly walk that brings a runaway cat home with no map to use: twice a
-  /// normal week at your own goal.
-  static const int weeklyGoalMultiplier = 14;
+  /// A cat that ran away has this many days to be walked home.
+  static const int recoveryWindowDays = 7;
+
+  /// The steps to walk inside that window, as a multiple of the daily goal. A
+  /// normal week at the goal is 7, so this asks for about 40% more.
+  static const int recoveryTargetMultiplier = 10;
+
+  /// A cat that could not be walked home may turn up on the map again, on a
+  /// random day this far after it was lost.
+  static const int lostCatReturnMinDays = 7;
+  static const int lostCatReturnMaxDays = 30;
 
   /// Full days without a completed goal before the cat runs away.
   static const int runawayMissedDays = 3;

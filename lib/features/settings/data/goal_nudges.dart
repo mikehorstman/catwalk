@@ -34,7 +34,8 @@ class GoalNudges {
       _store.write(key, jsonEncode(json));
 
   /// True once the "tune your goal" card has been answered or dismissed.
-  Future<bool> tuneDismissed() async => (await _read())['tuneDismissed'] == true;
+  Future<bool> tuneDismissed() async =>
+      (await _read())['tuneDismissed'] == true;
 
   Future<void> dismissTune() async {
     final json = await _read();

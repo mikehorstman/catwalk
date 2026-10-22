@@ -93,9 +93,10 @@ void main() {
     test('the same day and place give the same pins', () {
       final a = spawnPins(cell: cell, date: day);
       final b = spawnPins(cell: cell, date: day);
-      expect([for (final p in a) p.toJson().toString()], [
-        for (final p in b) p.toJson().toString(),
-      ]);
+      expect(
+        [for (final p in a) p.toJson().toString()],
+        [for (final p in b) p.toJson().toString()],
+      );
     });
 
     test('another day gives other pins', () {
@@ -171,24 +172,21 @@ void main() {
     Recovery place({
       Recovery current = const Recovery(),
       bool runaway = true,
-      int steps = 6000,
-      int goal = 6000,
+      bool targetMet = true,
       CalendarDate? today,
     }) => placeCat(
       current: current,
       runaway: runaway,
-      stepsToday: steps,
-      dailyGoal: goal,
+      targetMet: targetMet,
       from: where(),
       today: today ?? day,
     );
 
-    test('a few steps do not bring the cat onto the map', () {
-      expect(place(steps: 100).isLocated, isFalse);
-      expect(place(steps: 5999).isLocated, isFalse);
+    test('the cat stays off the map until the target is met', () {
+      expect(place(targetMet: false).isLocated, isFalse);
     });
 
-    test('the long walk places the cat inside the band', () {
+    test('meeting the target places the cat inside the band', () {
       final r = place();
       expect(r.isLocated, isTrue);
       expect(r.placedOn, day);
@@ -198,7 +196,7 @@ void main() {
 
     test('the cat stays where it was placed, even on another day', () {
       final first = place();
-      final later = place(current: first, today: day.addDays(1), steps: 9000);
+      final later = place(current: first, today: day.addDays(1));
       expect(later.catPoint, first.catPoint);
       expect(later.placedOn, day);
     });
@@ -208,10 +206,6 @@ void main() {
       expect(place(current: place(), runaway: false).isLocated, isFalse);
     });
 
-    test('a zero goal is never a long walk', () {
-      expect(longWalkDone(stepsToday: 5000, dailyGoal: 0), isFalse);
-    });
-
     test('recovery survives JSON, and a broken one falls back to away', () {
       final r = place();
       final back = Recovery.fromJson(r.toJson());
@@ -219,11 +213,11 @@ void main() {
       expect(back.catPoint, r.catPoint);
       expect(back.placedOn, r.placedOn);
 
+      expect(Recovery.fromJson({'phase': 'located'}).isLocated, isFalse);
       expect(
-        Recovery.fromJson({'phase': 'located'}).isLocated,
-        isFalse,
+        Recovery.fromJson({'phase': 'nonsense'}).phase,
+        RecoveryPhase.away,
       );
-      expect(Recovery.fromJson({'phase': 'nonsense'}).phase, RecoveryPhase.away);
     });
   });
 }

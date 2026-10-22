@@ -42,10 +42,7 @@ class CatDetailsSheet extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    cat.name,
-                    style: theme.textTheme.headlineMedium,
-                  ),
+                  child: Text(cat.name, style: theme.textTheme.headlineMedium),
                 ),
                 Text(
                   cat.cat.appearance.label,

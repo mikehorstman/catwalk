@@ -79,7 +79,11 @@ class RoomScene extends StatelessWidget {
             ),
 
             // Basket.
-            _Basket(center: at(basket.position.dx, basket.position.dy), w: w, h: h),
+            _Basket(
+              center: at(basket.position.dx, basket.position.dy),
+              w: w,
+              h: h,
+            ),
 
             // Toys you have found, lying on the floor.
             for (final spot in layout.toySpotsHere)

@@ -111,7 +111,6 @@ class PlaceholderCatAnimations implements CatAnimationSet {
   }
 }
 
-
 /// Draws cats from the sprite sheets in `assets/cats/`.
 ///
 /// An action with no sheet keeps using the placeholder, so art can arrive one

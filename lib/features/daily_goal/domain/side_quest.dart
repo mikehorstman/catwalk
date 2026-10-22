@@ -37,13 +37,11 @@ class DayTrace {
     return total > steps ? total : steps;
   }
 
-  int get beforeNoon => hasHourly
-      ? hourly!.take(12).fold<int>(0, (sum, hour) => sum + hour)
-      : 0;
+  int get beforeNoon =>
+      hasHourly ? hourly!.take(12).fold<int>(0, (sum, hour) => sum + hour) : 0;
 
-  int get afterDinner => hasHourly
-      ? hourly!.skip(19).fold<int>(0, (sum, hour) => sum + hour)
-      : 0;
+  int get afterDinner =>
+      hasHourly ? hourly!.skip(19).fold<int>(0, (sum, hour) => sum + hour) : 0;
 
   /// Hours with at least [threshold] steps: a walk, rather than a wander.
   int hoursWithAtLeast(int threshold) {

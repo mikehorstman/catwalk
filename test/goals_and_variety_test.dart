@@ -57,20 +57,29 @@ void main() {
     });
 
     test('refuses to guess from fewer than four days', () {
-      expect(suggestGoal(stepsByDate: week([6000, 6000, 6000]), today: today), isNull);
+      expect(
+        suggestGoal(stepsByDate: week([6000, 6000, 6000]), today: today),
+        isNull,
+      );
       expect(suggestGoal(stepsByDate: const {}, today: today), isNull);
     });
 
-    test('never suggests below the minimum goal or above the suggestion cap', () {
-      final tiny = suggestGoal(stepsByDate: week([400, 400, 400, 400]), today: today);
-      expect(tiny!.goal, AppConstants.minDailyStepGoal);
+    test(
+      'never suggests below the minimum goal or above the suggestion cap',
+      () {
+        final tiny = suggestGoal(
+          stepsByDate: week([400, 400, 400, 400]),
+          today: today,
+        );
+        expect(tiny!.goal, AppConstants.minDailyStepGoal);
 
-      final huge = suggestGoal(
-        stepsByDate: week([24000, 24000, 24000, 24000]),
-        today: today,
-      );
-      expect(huge!.goal, AppConstants.maxSuggestedDailyStepGoal);
-    });
+        final huge = suggestGoal(
+          stepsByDate: week([24000, 24000, 24000, 24000]),
+          today: today,
+        );
+        expect(huge!.goal, AppConstants.maxSuggestedDailyStepGoal);
+      },
+    );
 
     test('days with no reading are not counted as zero', () {
       final sparse = <CalendarDate, int>{
@@ -87,27 +96,43 @@ void main() {
 
   group('goal raise', () {
     test('offers a raise after five of seven days', () {
-      final history = [for (var back = 0; back < 5; back++) done(today.addDays(-back))];
-      final raise = raiseOffer(history: history, today: today, currentGoal: 6000);
+      final history = [
+        for (var back = 0; back < 5; back++) done(today.addDays(-back)),
+      ];
+      final raise = raiseOffer(
+        history: history,
+        today: today,
+        currentGoal: 6000,
+      );
       expect(raise, isNotNull);
       expect(raise!.goal, 6500);
       expect(raise.daysHit, 5);
     });
 
     test('says nothing after four of seven days', () {
-      final history = [for (var back = 0; back < 4; back++) done(today.addDays(-back))];
-      expect(raiseOffer(history: history, today: today, currentGoal: 6000), isNull);
+      final history = [
+        for (var back = 0; back < 4; back++) done(today.addDays(-back)),
+      ];
+      expect(
+        raiseOffer(history: history, today: today, currentGoal: 6000),
+        isNull,
+      );
     });
 
     test('ignores days outside the window', () {
       final history = [
         for (var back = 8; back < 14; back++) done(today.addDays(-back)),
       ];
-      expect(raiseOffer(history: history, today: today, currentGoal: 6000), isNull);
+      expect(
+        raiseOffer(history: history, today: today, currentGoal: 6000),
+        isNull,
+      );
     });
 
     test('does not raise past the maximum', () {
-      final history = [for (var back = 0; back < 7; back++) done(today.addDays(-back))];
+      final history = [
+        for (var back = 0; back < 7; back++) done(today.addDays(-back)),
+      ];
       expect(
         raiseOffer(
           history: history,
@@ -214,7 +239,10 @@ void main() {
 
     test('goal, halfway and quest stay inside the daily ceiling', () {
       for (final goal in [3000, 6000, 9000, 12000, 15000, 30000]) {
-        final goalXp = (goal / 6000 * AppConstants.dailyGoalXp).round().clamp(20, 250);
+        final goalXp = (goal / 6000 * AppConstants.dailyGoalXp).round().clamp(
+          20,
+          250,
+        );
         final paid = goalXp + snackForGoal(goal) + questXpFor(goalXp);
         expect(
           withinDailyCeiling(goalXp: goalXp, paid: paid),

@@ -31,12 +31,20 @@ class CalendarDate {
 
   DateTime toDateTime() => DateTime(year, month, day);
 
+  /// Calendar arithmetic, not clock arithmetic: adding 24-hour blocks lands on
+  /// the wrong date across the days the clocks change.
   CalendarDate addDays(int days) {
-    return CalendarDate.fromDateTime(toDateTime().add(Duration(days: days)));
+    return CalendarDate.fromDateTime(DateTime(year, month, day + days));
   }
 
+  /// Whole calendar days from this date to [other], the same whether or not the
+  /// clocks change in between.
   int daysUntil(CalendarDate other) {
-    return other.toDateTime().difference(toDateTime()).inDays;
+    return DateTime.utc(
+      other.year,
+      other.month,
+      other.day,
+    ).difference(DateTime.utc(year, month, day)).inDays;
   }
 
   String toIsoDate() {

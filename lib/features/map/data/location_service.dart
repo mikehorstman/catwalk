@@ -105,10 +105,7 @@ class GeolocatorLocationService implements LocationService {
 
 /// A location you control, for tests and for the simulator.
 class FakeLocationService implements LocationService {
-  FakeLocationService({
-    this.access_ = LocationAccess.granted,
-    this.start,
-  });
+  FakeLocationService({this.access_ = LocationAccess.granted, this.start});
 
   LocationAccess access_;
   GeoFix? start;
@@ -142,12 +139,13 @@ class FakeLocationService implements LocationService {
   Future<void> openSettings() async => settingsOpened++;
 }
 
-/// Whether a runaway cat can come home through the weekly walk instead of the
-/// map: true when location is switched off, denied, or cannot be read.
+/// Whether a runaway cat comes straight home once its step target is met,
+/// because there is no map to find it on: true when location is switched off,
+/// denied, or cannot be read.
 ///
-/// When we cannot tell, the weekly walk is allowed, so nobody is left with a
-/// cat that can never come home.
-final weeklyRecoveryAllowedProvider = FutureProvider<bool>((ref) async {
+/// When we cannot tell, the cat comes home without the map, so nobody is left
+/// with a cat that can never come home.
+final recoveryWithoutMapProvider = FutureProvider<bool>((ref) async {
   try {
     final access = await ref.watch(locationServiceProvider).access();
     return access == LocationAccess.blocked || access == LocationAccess.denied;

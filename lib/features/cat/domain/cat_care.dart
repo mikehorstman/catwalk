@@ -49,12 +49,9 @@ CatCareState careStateForMissedDays(int missedDays) {
   );
 }
 
-/// Whether a day of [stepsToday] against [goal] counts as a half day.
-///
-/// A half day is not a miss: the care counter holds and the cat does not get
-/// closer to running away. It earns no streak, and the cat is not happy about
-/// it either.
-bool isPartialDay({required int stepsToday, required int goal}) {
+/// Whether [stepsToday] is far enough towards [goal] for the halfway bonus. This
+/// says nothing about the day: half a goal is still a missed day.
+bool reachedHalfway({required int stepsToday, required int goal}) {
   if (goal <= 0) return false;
-  return stepsToday >= (goal * AppConstants.partialDayFraction).ceil();
+  return stepsToday >= (goal * AppConstants.halfwayFraction).ceil();
 }
