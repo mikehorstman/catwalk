@@ -59,23 +59,23 @@ def chart_loop():
 def chart_recovery():
     c = Chart(
         "2. Getting a runaway cat back",
-        "A deadline now. Walk enough in time and the cat appears on the map. Miss it and the cat is gone for good. Anything marked proposed is my suggestion, not a decision.",
+        "A deadline now. Walk enough in time and the cat appears on the map. Miss it and the cat leaves the room for good, but one day it may turn up on the map again.",
         1040, 780,
     )
     c.node("r0", 300, 40, 300, 60, "bad", "The cat has run away\n3 missed days in a row")
-    c.node("win", 300, 140, 380, 60, "chg", "The window opens: 7 days (proposed)\nEvery step in it counts toward the target")
-    c.node("d1", 300, 265, 300, 96, "dec", "Target reached in time?\ngoal × 10 steps (proposed)")
+    c.node("win", 300, 140, 380, 60, "chg", "The window opens: 7 days\nEvery step in it counts toward the target")
+    c.node("d1", 300, 265, 300, 96, "dec", "Target reached in time?\ngoal × 10 steps")
     c.node("d2", 300, 400, 260, 92, "dec", "Can the app use\nyour location?")
     c.node("nomap", 72, 400, 140, 64, "good", "The cat comes\nhome, no map")
     c.node("cat", 300, 520, 310, 60, "built", "The cat appears on the map\n250 to 900 m away")
     c.node("walk", 300, 610, 260, 44, "built", "Walk to within 30 m")
     c.node("home", 300, 690, 200, 44, "good", "The cat is home")
 
-    c.node("gone", 790, 265, 270, 64, "bad", "The window closes\nThe cat is gone forever")
+    c.node("gone", 790, 265, 270, 64, "bad", "The window closes\nThe cat is gone from the room")
     c.node("d3", 790, 385, 200, 90, "dec", "Another cat?")
     c.node("other", 555, 385, 230, 60, "out", "The others stay\nThe room carries on")
-    c.node("kit", 790, 510, 340, 66, "plan", "A stray kitten arrives\nlevel 1, lifetime stats kept (proposed)")
-    c.node("optb", 790, 640, 400, 66, "open", "D10 option, instead of gone forever:\nthe cat becomes a street cat you can\nwin back by photographing it")
+    c.node("kit", 790, 510, 340, 66, "plan", "A stray kitten arrives\nlevel 1, lifetime stats kept")
+    c.node("back", 790, 650, 420, 78, "plan", "Someday, on a random day 7 to 30 days later\nthe lost cat shows up on the map\nWalk to it and it comes home")
 
     c.edge("r0", "b", "win", "t")
     c.edge("win", "b", "d1", "t")
@@ -88,9 +88,12 @@ def chart_recovery():
     c.edge("gone", "b", "d3", "t")
     c.edge("d3", "l", "other", "r", "Yes", label_at=(672, 377))
     c.edge("d3", "b", "kit", "t", "No")
+    c.edge("kit", "b", "back", "t", "Later")
+    c.edge("other", "b", "back", "l", via=[(555, 650)])
     c.note("Steps from before the cat ran away do not count.")
-    c.note("Once the cat is on the map it stays until you find it (proposed: no second timer).")
+    c.note("Once the cat is on the map it stays until you find it. There is no second timer. The same goes for a lost cat that comes back.")
     c.note("A streak freeze never rescues a cat that has already run away.")
+    c.note("A lost cat that comes back is another cat in your room. If you are at the cap for your goal, it waits until there is room.")
     return c
 
 
@@ -169,7 +172,7 @@ def chart_map():
 def chart_first_week():
     c = Chart(
         "First week",
-        "Most people quit in the first days, so the first week is easy and pays early. All of it is proposed.",
+        "Most people quit in the first days, so the first week is easy and pays early.",
         1000, 660,
     )
     c.node("open", 330, 36, 220, 40, "term", "First open")
@@ -195,7 +198,7 @@ def chart_first_week():
 def chart_hooks():
     c = Chart(
         "Every day: reasons to open the app",
-        "Small reasons, none of them a second score. All proposed except the fresh pins, which already exist.",
+        "Small reasons, none of them a second score. Only the fresh pins exist today.",
         1040, 860,
     )
     c.node("fresh", 300, 40, 320, 56, "built", "Morning: a fresh set of\nup to 5 map pins")
@@ -234,14 +237,14 @@ RULES = [
     ("A good day", "Reach the goal: the cat is happy, XP once that day, the streak grows. Half the goal is not the goal."),
     ("A missed day", "Any day without the goal. 1 day: sad. 2 days: neglected. 3 days: the cat runs away. Today does not count until it ends."),
     ("Streak freeze", "Found on the map. Saves one missed day, then it is gone. Hold at most 2. No streak credit. Cannot rescue a cat that has already run away."),
-    ("Running away", "After 3 missed days a 7-day window opens (proposed)."),
-    ("Getting it back", "Reach the step target inside the window (goal × 10, proposed). The cat then appears on the map 250 to 900 m away. Walk to within 30 m. With no usable location the cat comes home as soon as the target is reached."),
-    ("Gone forever", "Window closes without the target: that cat is gone. If it was your only cat, a stray kitten arrives at level 1 and your lifetime stats stay (proposed)."),
+    ("Running away", "After 3 missed days a 7-day window opens."),
+    ("Getting it back", "Reach the step target inside the window (goal × 10). The cat then appears on the map 250 to 900 m away. Walk to within 30 m. With no usable location the cat comes home as soon as the target is reached."),
+    ("Gone, and maybe back", "Window closes without the target: that cat leaves the room. If it was your only cat, a stray kitten arrives at level 1 and your lifetime stats stay. Some random day 7 to 30 days later the lost cat can show up on the map. Walk to it and it comes home."),
     ("The map", "Up to 5 pickups a day: extra XP, a streak freeze, a toy or post, or progress toward a new cat. The map is for going somewhere; the phone's step record decides the day."),
     ("New cats", "Enough level, XP or map progress and a new cat appears on the map. Walk there to unlock it. Street cats can be photographed; the same cat seen enough times may unlock."),
     ("Cats you can keep", "Your daily goal sets the cap: 3,000 one cat, 6,000 two, 9,000 three, 12,000 four, 15,000 and up five (numbers can change). Lowering the goal never deletes a cat."),
     ("The room", "One room where every unlocked cat walks about. Toys and scratching posts you find stand in it."),
-    ("First week", "Gentle start (proposed): goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. A free toy and freeze on the first goal met."),
+    ("First week", "Gentle start: goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. A free toy and freeze on the first goal met."),
     ("Rewards", "Streak prizes at 3, 7, 14, 30 and 100 days, and a freeze every 7 days. A daily draw after a goal day, with a toy or a freeze guaranteed within every 5 goal days."),
     ("Reminders", "One reminder from the cat, at the time you usually walk, only while the goal is open. At most 3 a day, none after the goal is met, off switch in Settings."),
     ("Progress", "A weekly recap with personal bests, and a monthly look back. After a bad week (fewer than 3 of 7 met) the app offers a lower goal. It is never forced."),
@@ -278,7 +281,7 @@ CHECK = [
     ("kat kan spawnen op de map na bepaald level/xp -> heenlopen en unlocken", "planned", "Slice 5. What triggers it is not chosen: D5."),
     ("kattenkamer … speeltjes en krabpalen … (vinden op kaart of kopen met currency?)", "partly", "Room and toys are built. Scratching posts are not. Found on the map for now; currency is undecided (D8)."),
     ("kat kan weglopen als doel aantal dagen niet behaald is", "changing", "Built at 3 missed days. Now half a goal also counts as missed."),
-    ("terugkomen door weer veel te lopen", "changing", "Now a target inside a window, then the map. If it is missed the cat is gone forever. See D1 and D2."),
+    ("terugkomen door weer veel te lopen", "changing", "Now a target inside a window, then the map. If it is missed the cat leaves, and may come back on the map some random day later. See D1, D2 and D10."),
     ("fotos maken van katten op straat -> meerdere keren zelfde kat -> kans op unlocken", "planned", "Slice 5. The camera is only for this. How many photos unlock a cat is open."),
     ("beloning voor hoe hoog je doel is -> hoe hoger je stappendoel hoe meer voordeel", "partly", "A higher goal already pays more XP a day, in proportion. Extra advantage would be more cat slots and rarer pickups (D6)."),
     ("maximaal aantal katten op basis van doel?", "planned", "A table exists in the code but does nothing until there are new cats. Numbers are open."),
@@ -293,7 +296,7 @@ DECISIONS = [
     ("D1", "How big is the recovery target, and how long is the window?",
      "7 days, goal × 10 steps (60,000 at a 6,000 goal).",
      "A normal week is goal × 7, so this asks for about 40% more than usual. The old weekly walk asked for goal × 14, which is double a normal week."),
-    ("D2", "What happens when the only cat is gone forever?",
+    ("D2", "What happens when the only cat is gone from the room?",
      "A stray kitten arrives at level 1. Lifetime stats stay, the streak resets.",
      "Otherwise the game ends with nothing to walk for. The loss still costs the cat's level and history."),
     ("D3", "Does the cat on the map have its own timer?",
@@ -304,16 +307,16 @@ DECISIONS = [
      "It gives a pickup a reason to exist beyond today. Tell me if you meant something else."),
     ("D5", "What makes a new cat appear on the map?",
      "Reach level 3, then every third level after that.",
-     "Level is cumulative, so it rewards staying. Not final: you said you don't know yet."),
+     "Level is cumulative, so it rewards staying. Revisit it when slice 5 is built."),
     ("D6", "What does a higher goal give besides more XP?",
      "More cat slots and rarer pickups. XP per step stays the same.",
      "More XP per step would make a hard goal always the better deal, and the research says higher goals mean fewer wins and more quitting."),
     ("D7", "How many notifications?",
      "At most 3 a day, none after the goal is met, off switch in Settings.",
      "That keeps the guilt but stays under the point where people turn all of them off."),
-    ("D10", "Is a lost cat gone forever, or can it be won back?",
-     "Not gone for good: it becomes a street cat you win back by photographing it several times.",
-     "Your rule is in chart 2 as the default. A total loss is the likeliest moment to quit the app, and the street-cat photo idea already exists, so this adds no new system."),
+    ("D10", "Is a lost cat gone for good, or can it come back?",
+     "It leaves the room, but some random day 7 to 30 days later it can show up on the map. Walk to it and it comes home.",
+     "Your decision. The 7 to 30 day range is my number to fill in: it keeps the loss real without making it final. A lost cat that returns is another cat in your room, so the cap applies."),
     ("D11", "A gentle first week?",
      "Yes, on by default: goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. Players who pick their own goal skip it.",
      "The first days decide whether people stay. A 6,000 goal on day 1 is the likeliest early miss."),
@@ -395,6 +398,9 @@ show(location.hash.slice(1) || 'overview');
 """
 
 
+DECISIONS.sort(key=lambda d: int(d[0][1:]))
+
+
 def table(headers, rows, cls=None):
     head = "".join(f"<th>{escape(h)}</th>" for h in headers)
     body = ""
@@ -416,7 +422,7 @@ def main():
 
     overview = f"""
 <p class="lead"><b>Walk enough each day to keep your cat.</b> Reach the step goal and the cat is happy. Miss it and the cat gets sadder, then runs away. Getting it back takes a lot of walking in time, and then finding it on the map. Take too long and it is gone for good.</p>
-<div class="callout"><b>Changed since the last plan:</b> half a goal now counts as a miss; the side quest is off; a runaway cat has a deadline and can be lost forever. <b>Added:</b> a retention layer (a gentle first week, early rewards, a daily draw, smarter reminders, a weekly recap, a lower-goal offer). Anything marked proposed is my suggestion, not a decision: see <a href="#decisions" data-go="decisions">Decisions</a>. One of them, D10, is a warning about my own rule: losing a cat for good may be the moment people quit.</div>
+<div class="callout"><b>All decisions are made.</b> You decided D10: a lost cat leaves the room but can turn up on the map some random day later. D1 to D9 and D11 to D16 follow my recommendations. The one number still mine is the 7 to 30 day range for a lost cat to return. Half a goal counts as a miss, the side quest is off, and a runaway cat has a deadline. See <a href="#decisions" data-go="decisions">Decisions</a>.</div>
 <h2>The final rules</h2>
 {table(["Area", "Rule"], [(escape(a), escape(b)) for a, b in RULES], ["k", ""])}
 """
@@ -457,8 +463,8 @@ def main():
 """
 
     decisions = f"""
-<p class="lead">Nothing here is decided. The green text is what I recommend. Answer with the ID and a change, for example "D1: 10 days". D1 to D9 are the rules; D10 to D16 are the retention layer.</p>
-{table(["ID", "Question", "Recommendation", "Why"], [(a, escape(q), f'<span class="rec">{escape(r)}</span>', escape(w)) for a, q, r, w in DECISIONS], ["k", "", "", ""])}
+<p class="lead">All decided. D1 to D9 are the rules; D10 to D16 are the retention layer. D10 is your answer; the rest follow my recommendations, which you accepted. To change one, send the ID and a new value, for example D1: 10 days.</p>
+{table(["ID", "Question", "Decision", "Why"], [(a, escape(q), f'<span class="rec">{pill("built", "decided")} {escape(r)}</span>', escape(w)) for a, q, r, w in DECISIONS], ["k", "", "", ""])}
 """
 
     tabs = [("overview", "Overview"), ("flow", "Flowcharts"), ("plan", "Plan"), ("check", "Your list"), ("decisions", "Decisions")]
