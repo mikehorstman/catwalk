@@ -136,11 +136,11 @@ class NextReward {
 
 /// Name of the prize paid for a streak of [days].
 String _streakPrizeName(int days) => switch (days) {
-  3 => 'a small bonus',
+  3 => 'a 20 XP bonus',
   7 => 'a toy',
-  14 => 'an accessory',
-  30 => 'a rare find',
-  _ => 'a collectible',
+  14 => 'a 50 XP bonus',
+  30 => 'a toy and 100 XP',
+  _ => 'a 250 XP bonus',
 };
 
 /// The closest of the three things worth waiting for: the next streak prize,
@@ -169,7 +169,7 @@ NextReward? nextReward({
       if (milestone > goalsMet)
         NextReward(
           title: milestone == goalMilestones.first
-              ? 'a reward for ten goals'
+              ? 'a 50 XP reward for ten goals'
               : 'a milestone reward',
           detail: milestone - goalsMet == 1
               ? '1 more goal met'

@@ -434,6 +434,18 @@ class _GoalStep extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        if (goal == AppConstants.defaultDailyStepGoal) ...[
+          const SizedBox(height: 10),
+          Text(
+            'You start gently: '
+            '${formatNumber(AppConstants.gentleGoalDays1To3)} steps for 3 days, '
+            '${formatNumber(AppConstants.gentleGoalDays4To7)} for the next 4, '
+            'then ${formatNumber(goal)}. Pick your own goal to skip this.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         OutlinedButton.icon(
           onPressed: suggesting ? null : onSuggest,

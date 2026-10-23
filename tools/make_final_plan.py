@@ -258,8 +258,8 @@ SLICES = [
     ("3. The room", "built", "Cat walks, sits, sleeps, grooms, climbs, plays. Placeholder sprites in."),
     ("4. The map", "built", "Pickups, toys, freezes. Runaway recovery by step target, then the map."),
     ("Rules change", "built", "Half a goal is a miss. Side quest off. 7-day recovery window, lost cat leaves, stray kitten arrives. The lost cat is remembered with its random return day; the return on the map is not built yet (needs more than one cat in the room)."),
-    ("First week", "planned", "Gentle goal ramp, free first toy and freeze, a lower-goal offer after a bad week."),
-    ("Rewards", "planned", "Streak prizes at 3, 7, 14, 30 and 100 days, a freeze every 7 days, the daily draw."),
+    ("First week", "built", "Gentle goal ramp (3,000 then 4,500), free first toy and freeze. The lower-goal offer after a bad week is not built yet."),
+    ("Rewards", "built", "Streak prizes at 3, 7, 14, 30 and 100 days, goal milestones, a freeze every 7 days, the daily draw with a guarantee every fifth goal day."),
     ("5. More cats", "planned", "New cat on the map, street cat photos, the goal cap. Needs D5 and D6."),
     ("Reminders and recap", "planned", "Reminders in the cat's voice, the weekly recap, and analytics opt-out. Before outside testers."),
     ("6. Other people", "planned", "Account, friends, room visits, nudges, leaderboard."),
@@ -267,7 +267,7 @@ SLICES = [
 
 NEXT = [
     ("1", "Rules change (done, except the return)", "Built and tested: half a goal is a miss, side quest off, 7-day window with a 10 × goal target, lost cat and stray kitten. Still to build: the lost cat coming back on the map, which needs more than one cat in the room, so it goes with Slice 5."),
-    ("2", "First week and rewards", "The gentle first week, the first free toy and freeze, streak prizes, a freeze every 7 days, the daily draw. This is the biggest retention gain for the least work."),
+    ("2", "First week and rewards (done)", "Built and tested. The gentle first week, the first free toy and freeze, streak prizes, a freeze every 7 days, the daily draw. This is the biggest retention gain for the least work."),
     ("3", "Try it on a real phone", "Install the APK, check Health Connect, the step sensor and GPS, and move the map to a production tile host. Nothing so far has run on hardware."),
     ("4", "Reminders and recap", "Reminders in the cat's voice with an off switch, the weekly recap and personal bests, the lower-goal offer, and opt-out analytics. Before anyone outside tests it."),
     ("5", "More cats", "After you choose what spawns a new cat (D5) and what a higher goal gives (D6)."),

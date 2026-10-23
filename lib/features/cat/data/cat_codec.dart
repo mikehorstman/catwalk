@@ -11,6 +11,8 @@ Map<String, Object> profileToJson(UserProfile profile) {
     'dailyStepGoal': profile.dailyStepGoal,
     'onboardingCompleted': profile.onboardingCompleted,
     'soundEnabled': profile.soundEnabled,
+    'gentleStart': profile.gentleStart,
+    if (profile.startedOn != null) 'startedOn': profile.startedOn!.toIsoDate(),
   };
 }
 
@@ -21,6 +23,10 @@ UserProfile profileFromJson(Map<String, dynamic> json) {
     dailyStepGoal: json['dailyStepGoal'] as int,
     onboardingCompleted: json['onboardingCompleted'] == true,
     soundEnabled: json['soundEnabled'] != false,
+    gentleStart: json['gentleStart'] == true,
+    startedOn: json['startedOn'] is String
+        ? CalendarDate.parse(json['startedOn'] as String)
+        : null,
   );
 }
 

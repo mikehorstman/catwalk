@@ -176,9 +176,27 @@ class _HomeBody extends ConsumerWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        if (state.rewardLines.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _RewardsToday(lines: state.rewardLines),
+        ],
         if (next case final reward?) ...[
           const SizedBox(height: 12),
           _NextReward(reward: reward),
+        ],
+        if (state.gentleDay case final day?) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              'Gentle start, day $day of 7: today\'s goal is '
+              '${formatNumber(state.today.stepGoal)}. '
+              '${state.fullGoal > state.today.stepGoal ? 'Your goal of ${formatNumber(state.fullGoal)} starts on day 8.' : ''}',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ],
         if (state.quest case final quest?) ...[
           const SizedBox(height: 16),
@@ -427,6 +445,43 @@ class _Retry extends StatelessWidget {
           const SizedBox(height: 12),
           FilledButton(onPressed: onPressed, child: const Text('Try again')),
         ],
+      ),
+    );
+  }
+}
+
+/// What today's goal paid on top of the XP: gifts, prizes and the daily draw.
+class _RewardsToday extends StatelessWidget {
+  const _RewardsToday({required this.lines});
+
+  /// One line per reward, already worded for the player.
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.card_giftcard, size: 20),
+                const SizedBox(width: 8),
+                Text('Today\'s rewards', style: theme.textTheme.titleSmall),
+              ],
+            ),
+            const SizedBox(height: 6),
+            for (final line in lines)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(line, style: theme.textTheme.bodyMedium),
+              ),
+          ],
+        ),
       ),
     );
   }

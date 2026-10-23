@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/calendar_date.dart';
 import '../../../services/storage/local_store.dart';
+import '../../cat/data/cat_codec.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_appearance.dart';
 import '../../cat/domain/cat_mood.dart';
@@ -43,6 +46,10 @@ class OnboardingRepository {
     final profile = UserProfile(
       dailyStepGoal: draft.dailyStepGoal,
       onboardingCompleted: true,
+      // Keeping the suggested goal means starting gently; choosing your own
+      // goal means you meant it, so it applies from day one.
+      gentleStart: draft.dailyStepGoal == AppConstants.defaultDailyStepGoal,
+      startedOn: CalendarDate.fromDateTime(now),
     );
     final cat = Cat(
       id: now.microsecondsSinceEpoch.toString(),
@@ -55,17 +62,8 @@ class OnboardingRepository {
       consecutiveMissedDays: 0,
       createdAt: now,
     );
-    await _store.write(profileKey, jsonEncode(_profileToJson(profile)));
+    await _store.write(profileKey, jsonEncode(profileToJson(profile)));
     await _store.write(catKey, jsonEncode(_catToJson(cat)));
-  }
-
-  /// Plain-JSON form of [profile] for storage.
-  Map<String, Object> _profileToJson(UserProfile profile) {
-    return {
-      'dailyStepGoal': profile.dailyStepGoal,
-      'onboardingCompleted': profile.onboardingCompleted,
-      'soundEnabled': profile.soundEnabled,
-    };
   }
 
   /// Plain-JSON form of [cat] for storage. Enums are saved by name.

@@ -16,7 +16,10 @@ import '../../daily_goal/data/history_repository.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/day_evaluation.dart';
 import '../../daily_goal/domain/goal_suggestion.dart';
+import '../../daily_goal/data/reward_ledger_repository.dart';
+import '../../daily_goal/domain/gentle_start.dart';
 import '../../daily_goal/domain/goal_tiers.dart';
+import '../../daily_goal/domain/reward_settlement.dart';
 import '../../daily_goal/domain/side_quest.dart';
 import '../../daily_goal/domain/xp_budget.dart';
 import '../../daily_goal/domain/xp_for_goal.dart';
@@ -46,6 +49,9 @@ class HomeState {
     required this.currentStreak,
     this.stepSource,
     this.catWalkedHome = false,
+    this.rewardLines = const [],
+    this.gentleDay,
+    this.fullGoal = 0,
     this.recovery,
     this.lostCatName,
     this.kittenName,
@@ -74,6 +80,18 @@ class HomeState {
   /// The cat came home because the recovery step target was met and the map
   /// was not needed to find it.
   final bool catWalkedHome;
+
+  /// What today's goal paid besides the goal XP, as lines to show: the first
+  /// goal gift, streak prizes, milestones, the daily draw and the weekly
+  /// freeze. Empty when nothing was paid.
+  final List<String> rewardLines;
+
+  /// Which day (1 to 7) of the gentle first week today is, or null when the
+  /// first week is over or was switched off.
+  final int? gentleDay;
+
+  /// The player's own goal, which applies once the gentle first week is over.
+  final int fullGoal;
 
   /// How the runaway cat's 7-day recovery window stands (steps to go, days
   /// left), or null while the cat is home.
@@ -209,7 +227,12 @@ class HomeController extends AsyncNotifier<HomeState> {
       homeWithoutMap: withoutMap,
       windowSteps: windowSteps,
       cat: cat,
-      dailyStepGoal: profile.dailyStepGoal,
+      dailyStepGoal: goalForDay(
+        goal: profile.dailyStepGoal,
+        gentleStart: profile.gentleStart,
+        startedOn: profile.startedOn,
+        today: CalendarDate.today(),
+      ),
       stepsToday: steps,
       today: CalendarDate.today(),
       history: days,
@@ -278,6 +301,28 @@ class HomeController extends AsyncNotifier<HomeState> {
     final goalsMet = allDays.where((day) => day.goalCompleted).length;
     final todayDate = CalendarDate.today();
 
+    // What today earned beyond the goal XP: gifts, prizes and the daily draw.
+    // Paid once a day and remembered, so reopening the app pays nothing more.
+    final ledgers = ref.read(rewardLedgerRepositoryProvider);
+    final settled = settleRewards(
+      today: todayDate,
+      startedOn: profile.startedOn,
+      goalCompleted: snapshot.today.goalCompleted,
+      streak: streak,
+      goalsMet: goalsMet,
+      cat: snapshot.cat,
+      inventory: frozen.isEmpty
+          ? inventory
+          : inventory.copyWith(freezes: inventory.freezes - frozen.length),
+      ledger: await ledgers.read(),
+    );
+    await ledgers.write(settled.ledger);
+    await inventories.write(settled.inventory);
+    await store.write(
+      OnboardingRepository.catKey,
+      jsonEncode(catToJson(settled.cat)),
+    );
+
     // A quest changes how you walk, not how much. It is judged from what the
     // phone can see, pays once, and costs nothing when missed.
     final questsOn = AppConstants.sideQuestsEnabled;
@@ -310,7 +355,7 @@ class HomeController extends AsyncNotifier<HomeState> {
           )
         : null;
     final questMet = quest != null && questDone(quest, trace);
-    var grownCat = snapshot.cat;
+    var grownCat = settled.cat;
     var todayProgress = snapshot.today;
     var questXpToday = 0;
     if (questMet && !todayProgress.questAwarded) {
@@ -363,6 +408,13 @@ class HomeController extends AsyncNotifier<HomeState> {
       stepsPermissionGranted: granted,
       stepSource: reading.source,
       catWalkedHome: snapshot.walkedHome,
+      rewardLines: settled.lines,
+      gentleDay: gentleDayNumber(
+        gentleStart: profile.gentleStart,
+        startedOn: profile.startedOn,
+        today: todayDate,
+      ),
+      fullGoal: profile.dailyStepGoal,
       recovery: snapshot.recovery,
       lostCatName: lostCatName,
       kittenName: kittenName,

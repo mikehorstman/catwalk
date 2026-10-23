@@ -61,4 +61,18 @@ abstract final class AppConstants {
   /// Full missed days in a row before the cat runs away. A day is missed unless
   /// the whole goal was reached; half a goal does not count.
   static const int runawayMissedDays = 3;
+
+  /// The gentle first week: the goal on days 1 to 3, and on days 4 to 7. After
+  /// that the player's own goal applies. Never above the player's own goal.
+  static const int gentleGoalDays1To3 = 3000;
+  static const int gentleGoalDays4To7 = 4500;
+  static const int gentleWeekDays = 7;
+
+  /// A goal day with no toy or freeze from the daily draw is followed by at
+  /// most this many more before one is guaranteed.
+  static const int drawPityAfter = 4;
+
+  /// One free streak freeze for every full week since the player started, when
+  /// they hold fewer than the limit.
+  static const int weeklyFreezeEveryDays = 7;
 }

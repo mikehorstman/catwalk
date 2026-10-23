@@ -33,6 +33,7 @@ void main() {
   test('the guide does not promise rules that were removed', () {
     final text = testGuideItems.map((i) => '${i.how} ${i.check}').join(' ');
     expect(text.toLowerCase(), isNot(contains('weekly walk')));
-    expect(text, isNot(contains('14')));
+    expect(text, isNot(contains('84,000')));
+    expect(text, isNot(contains('× 14')));
   });
 }

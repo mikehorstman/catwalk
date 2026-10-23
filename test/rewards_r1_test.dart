@@ -122,14 +122,14 @@ void main() {
 
     test('a streak prize two days away beats a level 45 XP away', () {
       final reward = next(streak: 1, xp: 5);
-      expect(reward!.title, 'a small bonus');
+      expect(reward!.title, 'a 20 XP bonus');
       expect(reward.detail, '2 more days of walking');
       expect(reward.remaining, 2);
     });
 
     test('the next milestone is named for the first one', () {
       final reward = next(goalsMet: 9);
-      expect(reward!.title, 'a reward for ten goals');
+      expect(reward!.title, 'a 50 XP reward for ten goals');
       expect(reward.detail, '1 more goal met');
     });
 

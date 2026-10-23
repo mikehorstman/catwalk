@@ -34,8 +34,16 @@ const List<TestGuideItem> testGuideItems = [
     feature: 'Goal ring and minutes',
     how: 'Look at Home.',
     check:
-        'The default goal is 6,000 and Home says “about 60 min of walking”. '
-        'The ring fills as you walk.',
+        'Home says “about N min of walking” for today’s goal. The ring fills '
+        'as you walk. In the first week the goal is lower, see below.',
+  ),
+  TestGuideItem(
+    feature: 'Gentle first week',
+    how: 'Finish onboarding with the suggested 6,000 goal, then use Home.',
+    check:
+        'Days 1 to 3 the goal is 3,000, days 4 to 7 it is 4,500, then 6,000. '
+        'Home says which day it is. Picking your own goal in onboarding '
+        'skips this.',
   ),
   TestGuideItem(
     feature: 'Halfway bonus',
@@ -48,6 +56,36 @@ const List<TestGuideItem> testGuideItems = [
     check:
         'The cat turns happy, XP is paid once, and the streak shows 1. '
         'Reopening does not pay again.',
+  ),
+  TestGuideItem(
+    feature: 'First goal gift',
+    how: 'Reach the goal for the very first time.',
+    check:
+        '“Today’s rewards” lists a free toy and a free streak freeze. It '
+        'never pays a second time.',
+  ),
+  TestGuideItem(
+    feature: 'Daily draw',
+    how: 'Reach the goal on any day.',
+    check:
+        'One surprise appears under “Today’s rewards”: XP, a streak freeze or '
+        'a toy. It is the same when you reopen. At least every fifth goal day '
+        'gives a toy or freeze.',
+  ),
+  TestGuideItem(
+    feature: 'Streak prizes',
+    how: 'Reach the goal 3 days in a row, then 7.',
+    check:
+        '3 days: 20 XP. 7 days: a toy. Also 14 (50 XP), 30 (toy and 100 XP) '
+        'and 100 (250 XP). The “Next” line on Home names the next one. Goal '
+        'milestones at 10, 25, 50, 100 and 250 goals pay XP.',
+  ),
+  TestGuideItem(
+    feature: 'Weekly freeze',
+    how: 'Keep the app for a full week.',
+    check:
+        'On day 8, and every 7 days after, you get a free streak freeze if '
+        'you hold fewer than 2.',
   ),
   TestGuideItem(
     feature: 'Suggested goal',
@@ -112,8 +150,6 @@ const List<TestGuideItem> testGuideItems = [
 
 /// What is not in this build, so a missing feature is not mistaken for a bug.
 const List<String> testGuideNotBuilt = [
-  'First-week ramp and the free first toy',
-  'Streak prizes, the weekly freeze and the daily draw',
   'The lost cat coming back on the map',
   'More than one cat, street cats and photos',
   'Reminders and the weekly recap',
