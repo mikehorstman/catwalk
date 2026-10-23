@@ -14,8 +14,10 @@ import '../domain/room_cat.dart';
 class CatDetailsSheet extends StatelessWidget {
   const CatDetailsSheet({required this.cat, super.key});
 
+  /// The cat to describe.
   final RoomCat cat;
 
+  /// Opens the sheet over the room for [cat].
   static Future<void> show(BuildContext context, RoomCat cat) {
     return showModalBottomSheet<void>(
       context: context,
@@ -89,6 +91,8 @@ class CatDetailsSheet extends StatelessWidget {
   }
 }
 
+/// A thin progress bar from the XP needed for the current level to the XP for
+/// the next one.
 class _LevelBar extends StatelessWidget {
   const _LevelBar({required this.cat});
 
@@ -107,6 +111,7 @@ class _LevelBar extends StatelessWidget {
   }
 }
 
+/// One line of the sheet: a grey label on the left, a bold value on the right.
 class _Row extends StatelessWidget {
   const _Row({required this.label, required this.value});
 

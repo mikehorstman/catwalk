@@ -9,6 +9,8 @@ import '../../cat/domain/xp_curve.dart';
 import 'daily_progress.dart';
 import 'xp_for_goal.dart';
 
+/// The result of evaluating one app open: the updated cat, today's record and
+/// anything the caller must act on (freezes used, cat walked home, window closed).
 class DaySnapshot {
   const DaySnapshot({
     required this.cat,
@@ -21,31 +23,41 @@ class DaySnapshot {
     this.windowClosed = false,
   });
 
+  /// The cat after this evaluation (XP, level, mood, status, missed days).
   final Cat cat;
+
+  /// Today's record after this evaluation.
   final DailyProgress today;
+
+  /// XP the full-goal reward paid in this evaluation. Zero on repeat opens, so the
+  /// reward is paid once a day.
   final int xpGainedToday;
 
   /// Past days a streak freeze covered during this evaluation. The caller saves
   /// them as frozen days and takes one freeze from the inventory for each.
   final List<CalendarDate> frozenDays;
 
-  /// The cat came home because the step target was met and there is no map to
-  /// find it on.
+  /// The cat came home because the recovery step target was met and there is no
+  /// map to find it on.
   final bool walkedHome;
 
-  /// Where a runaway cat's recovery window stands. Null while the cat is home.
+  /// Where a runaway cat's recovery window stands (7 days, target is the goal
+  /// x 10). Null while the cat is home.
   final RecoveryWindow? recovery;
 
   /// The window closed without the target: the cat is lost. The caller swaps it
-  /// for a stray kitten and remembers the lost cat. [cat] is still the cat that
-  /// ran away.
+  /// for a stray kitten and stores the lost cat with a random return day 7 to
+  /// 30 days later (the return on the map is not built yet). [cat] is still the
+  /// cat that ran away.
   final bool windowClosed;
 
-  /// XP paid out for getting halfway today, if this open crossed that line.
+  /// XP paid out for getting halfway today, if this open crossed that line. Zero
+  /// otherwise.
   final int snackXp;
 }
 
-/// XP for getting halfway to [goal]. A tenth of the day's reward, at least 2.
+/// XP for the halfway snack on a day with [goal] steps. A tenth of the day's
+/// reward, at least 2. Example: a 6,000 goal pays 50 XP, so the snack is 5.
 int snackForGoal(int goal) {
   final reward = xpForGoal(goal);
   final snack = (reward / 10).round();
@@ -61,7 +73,14 @@ int snackForGoal(int goal) {
 /// the cat straight home.
 ///
 /// A day counts only when the whole goal is reached. Half a goal is a missed
-/// day.
+/// day (the 50% mark only pays a small XP snack, see [snackForGoal]).
+///
+/// [cat] is the cat before this open, [dailyStepGoal] the current goal, and
+/// [stepsToday] the steps so far today. [history] holds the saved past days and
+/// [lastEvaluated] the last day already judged (null on the first run).
+/// [freezes] is how many streak freezes the player owns. A runaway cat gets a
+/// 7-day recovery window with a target of the goal x 10 steps; when it closes
+/// unmet, [DaySnapshot.windowClosed] is true.
 ///
 /// Calling this again on the same day cannot award the completion XP twice.
 /// Days before [today] that have no completed record count as misses. Today
@@ -176,9 +195,15 @@ DaySnapshot evaluateDay({
   );
 }
 
+/// Result of judging the days since the last open: how many days in a row are
+/// missed, which days a freeze covered, and when the cat ran away.
 class _Gap {
   const _Gap(this.missed, this.frozen, this.ranAwayOn);
+
+  /// Consecutive missed days after judging the gap.
   final int missed;
+
+  /// Days a streak freeze covered.
   final List<CalendarDate> frozen;
 
   /// The day the cat ran away during this evaluation, when it did. A cat that
@@ -186,6 +211,12 @@ class _Gap {
   final CalendarDate? ranAwayOn;
 }
 
+/// Walks each finished day from [lastEvaluated] up to (not including) [today] and
+/// counts the run of missed days.
+///
+/// A completed day resets the run. A day already marked frozen is skipped. A
+/// freeze is spent on a miss only while the run is 0. The run reaching
+/// AppConstants.runawayMissedDays (3) marks the day after as the run-away day.
 _Gap _missedDays({
   required Cat cat,
   required CalendarDate today,

@@ -9,6 +9,7 @@ import '../domain/cat_action.dart';
 /// the cat's colour, [details] holds eyes, nose and whiskers and is drawn on top
 /// untinted. One neutral pair therefore serves every cat colour.
 class SpriteAction {
+  /// [frames] and [fps] must be above zero. [loop] false holds the last frame.
   const SpriteAction({
     required this.fur,
     required this.details,
@@ -17,6 +18,11 @@ class SpriteAction {
     this.loop = true,
   });
 
+  /// Reads one action entry of the manifest. [where] (like `walk.neutral`)
+  /// names the entry in error messages.
+  ///
+  /// Throws [FormatException] when `frames` or `fps` is not positive or `fur`
+  /// is missing. `details` is optional and `loop` defaults to true.
   factory SpriteAction.fromJson(Map<String, dynamic> json, String where) {
     final frames = json['frames'];
     final fps = json['fps'];
@@ -48,12 +54,16 @@ class SpriteAction {
   /// The sheet that does not get tinted, when there is one.
   final String? details;
 
+  /// How many frames the strip holds, side by side.
   final int frames;
+
+  /// Playback speed in frames per second.
   final double fps;
 
   /// When false the last frame holds, for one-shots like lying down.
   final bool loop;
 
+  /// Seconds for one pass through all the frames.
   double get duration => frames / fps;
 }
 
@@ -63,12 +73,19 @@ class SpriteAction {
 /// lookup falls back to `neutral`, so art can grow one action and one mood at a
 /// time without the app changing.
 class SpriteManifest {
+  /// [frameSize] and [footAnchor] are `[x, y]` pixel pairs; see [parse].
   const SpriteManifest({
     required this.frameSize,
     required this.footAnchor,
     required this.actions,
   });
 
+  /// Reads the text of `manifest.json`.
+  ///
+  /// Strict about the size and every entry that is used, which throw
+  /// [FormatException]; relaxed about extras: actions or moods this app does
+  /// not know are skipped, so art can be added before the code is. `footAnchor`
+  /// defaults to the bottom centre of the frame.
   factory SpriteManifest.parse(String source) {
     final decoded = jsonDecode(source);
     if (decoded is! Map<String, dynamic>) {
@@ -112,11 +129,15 @@ class SpriteManifest {
     );
   }
 
+  /// Width and height of one frame in pixels, as `[width, height]`. Every sheet
+  /// uses the same size.
   final List<double> frameSize;
 
   /// Where the feet are inside a frame, so cats stand on the floor line.
   final List<double> footAnchor;
 
+  /// The sheets for each action, then each mood. Actions without art are
+  /// absent.
   final Map<CatAction, Map<CatMood, SpriteAction>> actions;
 
   /// The sheet for [action] in [mood], or the `neutral` one, or nothing.
@@ -126,6 +147,7 @@ class SpriteManifest {
     return byMood[mood] ?? byMood[CatMood.neutral];
   }
 
+  /// True when there is art for [action] in at least one mood.
   bool has(CatAction action) => actions.containsKey(action);
 }
 
@@ -140,6 +162,8 @@ int spriteFrameAt(SpriteAction action, double elapsed) {
   return index.clamp(0, action.frames - 1);
 }
 
+/// The [CatAction] called [name] in the manifest, or null if the app has none
+/// by that name.
 CatAction? _actionByName(String name) {
   for (final action in CatAction.values) {
     if (action.name == name) return action;
@@ -147,6 +171,7 @@ CatAction? _actionByName(String name) {
   return null;
 }
 
+/// The [CatMood] called [name] in the manifest, or null if unknown.
 CatMood? _moodByName(String name) {
   for (final mood in CatMood.values) {
     if (mood.name == name) return mood;

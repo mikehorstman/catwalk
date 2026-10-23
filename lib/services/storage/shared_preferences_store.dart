@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'local_store.dart';
 
+/// [LocalStore] kept in the platform's shared preferences (small, on-device).
 class SharedPreferencesStore implements LocalStore {
   SharedPreferencesStore(this._preferences);
 

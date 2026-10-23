@@ -5,6 +5,7 @@ import '../../../services/health/step_repository.dart';
 import '../../../services/health/step_repository_provider.dart';
 import '../domain/goal_suggestion.dart';
 
+/// Gives the app its [GoalSuggestionService].
 final goalSuggestionServiceProvider = Provider<GoalSuggestionService>((ref) {
   return GoalSuggestionService(ref.watch(stepRepositoryProvider));
 });
@@ -19,8 +20,13 @@ class GoalSuggestionService {
 
   final StepRepository _steps;
 
+  /// How many days back (today included) are read from the phone.
   static const int window = 7;
 
+  /// Reads the last [window] days of steps and suggests a goal from them.
+  ///
+  /// Returns null when step access is not granted or too few days have data. [today]
+  /// exists so tests can pick the date; it defaults to the real date.
   Future<GoalSuggestion?> fromPhone({CalendarDate? today}) async {
     final date = today ?? CalendarDate.today();
     final recorded = <CalendarDate, int>{};

@@ -28,16 +28,23 @@ sealed class MapNotice {
   const MapNotice();
 }
 
+/// A pin was picked up; [result] says what it gave.
 class PinCollected extends MapNotice {
   const PinCollected(this.result);
+
+  /// What the pin gave, and the inventory and cat after it.
   final Collected result;
 }
 
+/// The runaway cat was found and is home again.
 class CatFound extends MapNotice {
   const CatFound(this.catName);
+
+  /// The cat's name, for the message.
   final String catName;
 }
 
+/// Everything the map screen needs to draw, in one immutable snapshot.
 class MapViewState {
   const MapViewState({
     required this.access,
@@ -53,28 +60,44 @@ class MapViewState {
     this.event,
   });
 
+  /// Whether location is allowed. Anything but granted shows the access card.
   final LocationAccess access;
+
+  /// The latest position; null until the first reading.
   final GeoFix? fix;
 
   /// Today's pins you have not collected.
   final List<MapPin> pins;
 
+  /// Where the runaway cat's search stands.
   final Recovery recovery;
+
+  /// True while the cat has run away and is not yet home.
   final bool runaway;
+
+  /// The cat's name, used in banner text.
   final String catName;
 
   /// The runaway cat's step target is met, so it can be found on the map.
   final bool recoveryTargetMet;
+
+  /// Steps still to walk before the cat can be found. Zero when not runaway.
   final int recoveryStepsToGo;
+
+  /// Days left in the recovery window, today included. Zero when not runaway.
   final int recoveryDaysLeft;
+
+  /// What you hold, for example streak freezes.
   final Inventory inventory;
 
   /// Shown once, then cleared by [CatMapController.dismissEvent].
   final MapNotice? event;
 
+  /// True when location is allowed and a position is known.
   bool get hasLocation => access == LocationAccess.granted && fix != null;
 
-  /// Steps still to walk before the cat shows up on the map.
+  /// A copy with the given fields replaced. Pass [clearEvent] to drop the
+  /// event, since null alone means "keep it".
   MapViewState copyWith({
     LocationAccess? access,
     GeoFix? fix,
@@ -103,11 +126,21 @@ class MapViewState {
   );
 }
 
+/// The map's state and logic, loaded when the map tab opens.
 final mapControllerProvider =
     AsyncNotifierProvider<CatMapController, MapViewState>(CatMapController.new);
 
+/// Runs the map: follows your position, spawns the day's pins, collects what
+/// you walk onto, and places and finds a runaway cat.
+///
+/// All game rules live in the domain files; this class only wires them to
+/// storage and the location stream.
 class CatMapController extends AsyncNotifier<MapViewState> {
+  /// The live subscription to position updates, cancelled on dispose.
   StreamSubscription<GeoFix>? _fixes;
+
+  /// True while a position is being handled, so fixes that arrive meanwhile are
+  /// skipped instead of collecting the same pin twice.
   bool _busy = false;
 
   /// A debug build may accept faked positions, so the simulator works. A
@@ -115,6 +148,8 @@ class CatMapController extends AsyncNotifier<MapViewState> {
   static bool get allowMocked => !kReleaseMode;
 
   @override
+  /// Loads location access, the cat, inventory and saved map state, and takes a
+  /// first position if location is allowed.
   Future<MapViewState> build() async {
     ref.onDispose(() => _fixes?.cancel());
     final location = ref.read(locationServiceProvider);
@@ -156,9 +191,11 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     state = AsyncData(view);
   }
 
+  /// Opens the phone's Settings page so a blocked user can allow location.
   Future<void> openSettings() =>
       ref.read(locationServiceProvider).openSettings();
 
+  /// Clears the one-time [MapViewState.event] after its sheet was closed.
   void dismissEvent() {
     final view = state.value;
     if (view == null) return;
@@ -178,6 +215,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     }
   }
 
+  /// Starts following position updates, replacing any earlier subscription.
   void _listen(LocationService location) {
     _fixes?.cancel();
     _fixes = location.fixes().listen(onFix);
@@ -264,6 +302,8 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     );
   }
 
+  /// Collects [pin]: updates the saved inventory and, when XP was paid, the saved
+  /// cat, then refreshes the home screen.
   Future<Collected> _take(MapPin pin, MapViewState view) async {
     final store = ref.read(localStoreProvider);
     final cat = await _readCat();
@@ -282,7 +322,8 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     return result;
   }
 
-  /// The cat is back: happy to see you, and no longer counting missed days.
+  /// The cat is back: active again, neutral mood, and no longer counting missed
+  /// days. Saved, then the home screen is refreshed.
   Future<void> _bringHome() async {
     final cat = await _readCat();
     final home = cat.copyWith(
@@ -296,6 +337,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     await ref.read(homeControllerProvider.notifier).refreshSilently();
   }
 
+  /// Reads the current cat straight from the store.
   Future<Cat> _readCat() async {
     final raw = await ref
         .read(localStoreProvider)

@@ -5,6 +5,7 @@ import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
 import '../../settings/domain/user_profile.dart';
 
+/// Turns a [profile] into JSON-ready data for saving.
 Map<String, Object> profileToJson(UserProfile profile) {
   return {
     'dailyStepGoal': profile.dailyStepGoal,
@@ -13,6 +14,8 @@ Map<String, Object> profileToJson(UserProfile profile) {
   };
 }
 
+/// Rebuilds a profile from saved [json]. Missing flags fall back to safe
+/// defaults: onboarding not done, sound on.
 UserProfile profileFromJson(Map<String, dynamic> json) {
   return UserProfile(
     dailyStepGoal: json['dailyStepGoal'] as int,
@@ -21,6 +24,8 @@ UserProfile profileFromJson(Map<String, dynamic> json) {
   );
 }
 
+/// Turns a [cat] into JSON-ready data. Enums are saved by name and
+/// `ranAwayOn` is left out while the cat is home.
 Map<String, Object> catToJson(Cat cat) {
   return {
     'id': cat.id,
@@ -36,6 +41,8 @@ Map<String, Object> catToJson(Cat cat) {
   };
 }
 
+/// Rebuilds a cat from saved [json]. Throws when a required field is
+/// missing or an enum name is unknown.
 Cat catFromJson(Map<String, dynamic> json) {
   return Cat(
     id: json['id'] as String,

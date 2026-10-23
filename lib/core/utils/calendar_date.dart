@@ -4,15 +4,20 @@
 /// instead of [DateTime] avoids rewarding or penalizing the same day twice
 /// when the app is opened more than once.
 class CalendarDate {
+  /// Builds a date from [year], [month] (1-12) and [day] (1-31).
   const CalendarDate(this.year, this.month, this.day);
 
+  /// Takes the local calendar day of [dateTime] and drops the time.
   factory CalendarDate.fromDateTime(DateTime dateTime) {
     final local = dateTime.toLocal();
     return CalendarDate(local.year, local.month, local.day);
   }
 
+  /// Today in the device timezone.
   factory CalendarDate.today() => CalendarDate.fromDateTime(DateTime.now());
 
+  /// Reads "yyyy-MM-dd" (as written by [toIsoDate]). Throws a [FormatException]
+  /// when [value] has the wrong shape.
   factory CalendarDate.parse(String value) {
     final parts = value.split('-');
     if (parts.length != 3) {
@@ -25,10 +30,16 @@ class CalendarDate {
     );
   }
 
+  /// Four-digit year.
   final int year;
+
+  /// Month, 1 to 12.
   final int month;
+
+  /// Day of the month, 1 to 31.
   final int day;
 
+  /// Midnight at the start of this day, local time.
   DateTime toDateTime() => DateTime(year, month, day);
 
   /// Calendar arithmetic, not clock arithmetic: adding 24-hour blocks lands on
@@ -47,6 +58,7 @@ class CalendarDate {
     ).difference(DateTime.utc(year, month, day)).inDays;
   }
 
+  /// Text form "yyyy-MM-dd", used for storage keys and saved data.
   String toIsoDate() {
     final monthText = month.toString().padLeft(2, '0');
     final dayText = day.toString().padLeft(2, '0');

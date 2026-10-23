@@ -6,6 +6,8 @@ import '../features/onboarding/presentation/onboarding_controller.dart';
 import 'router.dart';
 import 'theme.dart';
 
+/// Root widget. Shows a spinner until we know whether onboarding is done, then
+/// hands over to the router (which sends new users to onboarding).
 class CatwalkApp extends ConsumerWidget {
   const CatwalkApp({super.key});
 

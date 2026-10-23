@@ -8,6 +8,7 @@ import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
 import '../domain/lost_cat.dart';
 
+/// The app-wide [LostCatRepository], built on the local store.
 final lostCatRepositoryProvider = Provider<LostCatRepository>((ref) {
   return LostCatRepository(ref.watch(localStoreProvider));
 });
@@ -21,8 +22,11 @@ class LostCatRepository {
 
   final LocalStore _store;
 
+  /// Storage key the list of lost cats is saved under.
   static const key = 'lost_cats';
 
+  /// Every remembered lost cat, oldest first. Empty if nothing is saved or the
+  /// save is unreadable.
   Future<List<LostCat>> readAll() async {
     final raw = await _store.read(key);
     if (raw == null) return const [];

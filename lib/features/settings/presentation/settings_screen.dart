@@ -14,6 +14,7 @@ import '../../steps/presentation/home_controller.dart';
 import '../data/profile_repository.dart';
 import 'daily_goal_field.dart';
 
+/// Settings page: change the daily goal, allow step access, or reset the app.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -21,10 +22,19 @@ class SettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
+/// State for [SettingsScreen]: the goal text field and busy flags.
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  /// Goal text field. Filled once from the saved profile.
   final _goalController = TextEditingController();
+
+  /// True after the field was filled from the profile, so later rebuilds do not
+  /// overwrite what the player is typing.
   bool _loaded = false;
+
+  /// True while saving, so Save cannot be pressed twice.
   bool _saving = false;
+
+  /// True while a goal suggestion is being fetched.
   bool _suggesting = false;
 
   @override
@@ -33,6 +43,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.dispose();
   }
 
+  /// True when the typed goal is a whole number inside the allowed min/max range.
   bool get _goalValid {
     final goal = int.tryParse(_goalController.text);
     return goal != null &&
@@ -40,6 +51,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         goal <= AppConstants.maxDailyStepGoal;
   }
 
+  /// The typed goal in steps, or the default goal while the text is not a number.
   int get _typedGoal =>
       int.tryParse(_goalController.text) ?? AppConstants.defaultDailyStepGoal;
 
@@ -71,6 +83,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Saves the typed goal to the profile and refreshes the home screen.
   Future<void> _saveGoal() async {
     final goal = int.tryParse(_goalController.text);
     if (goal == null || !_goalValid || _saving) return;
@@ -90,6 +103,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  /// Asks the phone for step access again, e.g. after it was refused in onboarding.
   Future<void> _requestStepAccess() async {
     final granted = await ref
         .read(homeControllerProvider.notifier)
@@ -106,6 +120,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// After confirmation, wipes all local data (cat, history, goal) and returns to
+  /// onboarding.
   Future<void> _reset() async {
     final confirmed = await showDialog<bool>(
       context: context,

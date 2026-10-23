@@ -6,6 +6,8 @@ import 'reward.dart';
 /// XP a pin pays when what it held is no use to you any more.
 const int consolationXp = 15;
 
+/// The outcome of picking up a pin: what it held and the new state of the
+/// inventory and the cat.
 class Collected {
   const Collected({
     required this.reward,
@@ -18,7 +20,10 @@ class Collected {
   /// What the pin held.
   final Reward reward;
 
+  /// The inventory after the pickup.
   final Inventory inventory;
+
+  /// The cat after the pickup (more XP and maybe a new level).
   final Cat cat;
 
   /// XP the cat got, from an XP pin or as a consolation.

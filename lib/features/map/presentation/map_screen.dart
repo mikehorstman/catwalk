@@ -21,8 +21,12 @@ const String mapTileUrl = String.fromEnvironment(
 /// Tests turn the tiles off so no widget test touches the network.
 final mapTilesEnabledProvider = Provider<bool>((ref) => true);
 
+/// Converts our [GeoPoint] to the map package's [LatLng].
 LatLng _ll(GeoPoint p) => LatLng(p.lat, p.lon);
 
+/// The map tab: shows you, today's pickups and (for a runaway cat) the cat.
+///
+/// Pins are collected by walking onto them; there is no tap to collect.
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -31,10 +35,20 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
+  /// Moves and zooms the map from code.
   final MapController _map = MapController();
+
+  /// True while the map keeps centring on you. Dragging the map turns it off; the
+  /// recentre button turns it on.
   bool _following = true;
+
+  /// True once the map is drawn and will accept move commands.
   bool _mapReady = false;
+
+  /// Last zoom level, kept so following keeps the user's zoom.
   double _zoom = 16;
+
+  /// True while a pickup sheet is open, so another does not stack on top.
   bool _showingEvent = false;
 
   @override
@@ -71,6 +85,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  /// Picks what to show: the access card, a waiting message, or the map.
   Widget _body(BuildContext context, MapViewState view) {
     if (view.access != LocationAccess.granted) {
       return _AccessCard(view: view);
@@ -154,6 +169,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  /// Shows [event] in a bottom sheet, then clears it from the controller.
   Future<void> _showEvent(MapNotice event) async {
     _showingEvent = true;
     final controller = ref.read(mapControllerProvider.notifier);
@@ -171,6 +187,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 }
 
+/// The card at the top of the map: what to do next (find the cat, walk more,
+/// pick things up) plus how many streak freezes you hold.
 class _Banner extends StatelessWidget {
   const _Banner({required this.view});
 
@@ -244,6 +262,8 @@ class _Banner extends StatelessWidget {
   }
 }
 
+/// Shown instead of the map when location is not allowed: explains why, and
+/// offers to ask again or open Settings.
 class _AccessCard extends ConsumerWidget {
   const _AccessCard({required this.view});
 
@@ -299,6 +319,7 @@ class _AccessCard extends ConsumerWidget {
   }
 }
 
+/// The blue dot for your own position.
 class _YouMarker extends StatelessWidget {
   const _YouMarker();
 
@@ -316,6 +337,7 @@ class _YouMarker extends StatelessWidget {
   );
 }
 
+/// The orange gift icon for a pickup.
 class _PinMarker extends StatelessWidget {
   const _PinMarker();
 
@@ -338,6 +360,7 @@ class _PinMarker extends StatelessWidget {
   );
 }
 
+/// The teal paw for the runaway cat, once the step target is met.
 class _CatMarker extends StatelessWidget {
   const _CatMarker();
 
@@ -356,6 +379,7 @@ class _CatMarker extends StatelessWidget {
   );
 }
 
+/// The bottom sheet that tells you what you just found or that the cat is home.
 class _EventSheet extends StatelessWidget {
   const _EventSheet({required this.event});
 
@@ -406,6 +430,8 @@ class _EventSheet extends StatelessWidget {
     );
   }
 
+  /// Title, body and icon for a collected pin. When the pin was [Collected.converted]
+  /// the text says it paid XP instead.
   (String, String, IconData) _describe(Collected result) {
     final extra = result.converted
         ? ' You already had ${result.reward is FreezeReward ? 'the most freezes you can hold' : 'this toy'}, so it paid XP instead.'

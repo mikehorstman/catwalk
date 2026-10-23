@@ -3,6 +3,8 @@ import 'daily_progress.dart';
 
 /// Consecutive completed days ending today or yesterday.
 ///
+/// Frozen days (covered by a streak freeze) are bridged without counting.
+///
 /// Today never breaks the streak. It only adds to it once completed. A full
 /// day with no completed record breaks it.
 int currentStreak({
@@ -24,7 +26,8 @@ int currentStreak({
   return streak;
 }
 
-/// Longest run of consecutive completed days in [history].
+/// Longest run of consecutive completed days in [history]. A gap of even one
+/// day starts a new run.
 int bestStreak(List<DailyProgress> history) {
   final completed = [
     for (final day in history)

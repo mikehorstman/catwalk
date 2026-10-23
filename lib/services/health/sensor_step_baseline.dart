@@ -1,13 +1,17 @@
 import '../../../core/utils/calendar_date.dart';
 
-/// What we stored from the step sensor's last reading.
+/// What we stored from the step sensor's last reading: the anchor for one day.
+/// Saved so restarting the app does not lose the day's starting point.
 class SensorStepBaseline {
+  /// Creates the anchor for [date], with the sensor value [bootSteps] it started
+  /// from and the highest value seen so far, [lastReading].
   const SensorStepBaseline({
     required this.date,
     required this.bootSteps,
     required this.lastReading,
   });
 
+  /// Reads a stored anchor. Throws when a field is missing or the wrong type.
   factory SensorStepBaseline.fromJson(Map<String, dynamic> json) {
     return SensorStepBaseline(
       date: CalendarDate.parse(json['date'] as String),
@@ -16,6 +20,7 @@ class SensorStepBaseline {
     );
   }
 
+  /// The day this anchor belongs to. A new day starts a new anchor.
   final CalendarDate date;
 
   /// The sensor's "steps since boot" value the day is anchored to. Steps walked
@@ -25,6 +30,7 @@ class SensorStepBaseline {
   /// The highest sensor value seen today, for detecting a mid-day reboot.
   final int lastReading;
 
+  /// The saved form, read back by [SensorStepBaseline.fromJson].
   Map<String, Object> toJson() => {
     'date': date.toIsoDate(),
     'bootSteps': bootSteps,
@@ -38,8 +44,12 @@ class SensorStepBaseline {
 /// zero. A reboot makes the sensor start over, which would look like going
 /// backwards; when that happens the anchor moves to the new reading.
 class SensorStepResolver {
+  /// Stateless; it only holds the anchoring rules.
   const SensorStepResolver();
 
+  /// Decides the anchor to use for [today] given the current sensor [reading]
+  /// and the [stored] anchor (null when none was saved). Starts a new anchor
+  /// on a new day or after a reboot; otherwise keeps the old one.
   SensorStepBaseline resolve({
     required CalendarDate today,
     required int reading,

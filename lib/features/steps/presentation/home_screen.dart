@@ -39,9 +39,12 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+/// The scrolling Home content: cat, progress ring, steps, streak, level and
+/// any notices or offers, built from [state].
 class _HomeBody extends ConsumerWidget {
   const _HomeBody({required this.state});
 
+  /// What to draw.
   final HomeState state;
 
   @override
@@ -332,11 +335,17 @@ class _Steps extends ConsumerWidget {
   }
 }
 
+/// A centred message, with an optional button when the user can fix it.
 class _Notice extends StatelessWidget {
   const _Notice({required this.text, this.action, this.onPressed});
 
+  /// The message shown.
   final String text;
+
+  /// Button label, or null for no button.
   final String? action;
+
+  /// Called when the button is pressed.
   final VoidCallback? onPressed;
 
   @override
@@ -360,11 +369,17 @@ class _Notice extends StatelessWidget {
   }
 }
 
+/// A small rounded pill with an icon and a short label, such as the streak.
 class _Chip extends StatelessWidget {
   const _Chip({required this.icon, required this.text, this.strong = false});
 
+  /// Icon shown before the text.
   final IconData icon;
+
+  /// The label.
   final String text;
+
+  /// Teal filled pill when true, soft orange when false.
   final bool strong;
 
   @override
@@ -396,6 +411,7 @@ class _Chip extends StatelessWidget {
   }
 }
 
+/// Error view with a "Try again" button, shown when loading today fails.
 class _Retry extends StatelessWidget {
   const _Retry({required this.onPressed});
 
@@ -420,6 +436,7 @@ class _Retry extends StatelessWidget {
 class _NextReward extends StatelessWidget {
   const _NextReward({required this.reward});
 
+  /// The upcoming reward to describe.
   final NextReward reward;
 
   @override
@@ -448,12 +465,18 @@ class _NextReward extends StatelessWidget {
   }
 }
 
-/// One optional challenge for the day, never a second score.
+/// One optional challenge for the day, never a second score. Only shown when
+/// side quests are switched on ([AppConstants.sideQuestsEnabled]).
 class _QuestLine extends StatelessWidget {
   const _QuestLine({required this.quest, required this.done, required this.xp});
 
+  /// Which quest is on offer today.
   final SideQuest quest;
+
+  /// True once the quest has been met.
   final bool done;
+
+  /// XP paid for it on this open, in XP. Zero when nothing was paid.
   final int xp;
 
   @override
@@ -514,10 +537,19 @@ class _GoalNudge extends StatelessWidget {
     required this.onDecline,
   });
 
+  /// The question asked.
   final String title;
+
+  /// A line explaining why it is asked.
   final String detail;
+
+  /// Label of the button that takes the offer.
   final String acceptLabel;
+
+  /// Called when the user takes the offer.
   final VoidCallback onAccept;
+
+  /// Called on "Not now".
   final VoidCallback onDecline;
 
   @override

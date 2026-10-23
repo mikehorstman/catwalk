@@ -14,9 +14,16 @@ class ProgressRing extends StatelessWidget {
     super.key,
   });
 
+  /// Progress from 0 to 1. Values outside that range are clamped.
   final double value;
+
+  /// Shown in the middle of the ring.
   final Widget child;
+
+  /// Width and height of the ring, in logical pixels.
   final double size;
+
+  /// Thickness of the ring, in logical pixels.
   final double strokeWidth;
 
   @override
@@ -43,9 +50,12 @@ class ProgressRing extends StatelessWidget {
   }
 }
 
+/// Draws the pale full circle (track) and the orange arc on top, starting at
+/// 12 o'clock.
 class _RingPainter extends CustomPainter {
   _RingPainter({required this.value, required this.strokeWidth});
 
+  /// Fraction of the circle to fill, 0 to 1.
   final double value;
   final double strokeWidth;
 

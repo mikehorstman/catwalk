@@ -6,6 +6,7 @@ const double reachRadiusMeters = 30;
 /// Worse than this and a fix is too vague to say you are there.
 const double maxReachAccuracyMeters = 50;
 
+/// One position reading from the phone.
 class GeoFix {
   const GeoFix({
     required this.point,
@@ -13,6 +14,7 @@ class GeoFix {
     this.isMocked = false,
   });
 
+  /// Where the phone says you are.
   final GeoPoint point;
 
   /// Radius of doubt around [point], in metres.

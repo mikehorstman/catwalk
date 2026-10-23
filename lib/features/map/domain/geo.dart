@@ -5,6 +5,7 @@ import 'dart:math' as math;
 /// Kept separate from any map package so the rules never depend on a widget
 /// library.
 class GeoPoint {
+  /// [lat] is latitude and [lon] longitude, both in degrees.
   const GeoPoint(this.lat, this.lon);
 
   factory GeoPoint.fromJson(Map<String, dynamic> json) => GeoPoint(
@@ -12,7 +13,10 @@ class GeoPoint {
     (json['lon'] as num).toDouble(),
   );
 
+  /// Latitude in degrees, north positive.
   final double lat;
+
+  /// Longitude in degrees, east positive.
   final double lon;
 
   Map<String, Object> toJson() => {'lat': lat, 'lon': lon};
@@ -28,9 +32,13 @@ class GeoPoint {
   String toString() => 'GeoPoint($lat, $lon)';
 }
 
+/// Mean radius of the earth in metres.
 const double _earthRadius = 6371008.8;
 
+/// Degrees to radians.
 double _rad(double degrees) => degrees * math.pi / 180;
+
+/// Radians to degrees.
 double _deg(double radians) => radians * 180 / math.pi;
 
 /// Great-circle distance in metres.
@@ -69,25 +77,34 @@ const double cellDegrees = 0.0045;
 /// A coarse grid cell. Pins hang off the cell, not off your exact position, so
 /// the map never keeps a precise trail of where you were.
 class GeoCell {
+  /// [x] counts cells east-west and [y] north-south, from longitude 0 / latitude 0.
   const GeoCell(this.x, this.y);
 
+  /// The cell that contains [point].
   factory GeoCell.of(GeoPoint point) => GeoCell(
     (point.lon / cellDegrees).floor(),
     (point.lat / cellDegrees).floor(),
   );
 
+  /// Reads the `x:y` form made by [id]. Throws a [FormatException] if it is not
+  /// that shape.
   factory GeoCell.parse(String value) {
     final parts = value.split(':');
     if (parts.length != 2) throw FormatException('Bad cell: $value');
     return GeoCell(int.parse(parts[0]), int.parse(parts[1]));
   }
 
+  /// Cell column (east-west).
   final int x;
+
+  /// Cell row (north-south).
   final int y;
 
+  /// The middle of the cell. Pins are placed around this, not around you.
   GeoPoint get center =>
       GeoPoint((y + 0.5) * cellDegrees, (x + 0.5) * cellDegrees);
 
+  /// Stable text form, `x:y`, used for storage and as a random seed.
   String get id => '$x:$y';
 
   @override

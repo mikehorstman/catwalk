@@ -9,14 +9,17 @@ import '../../cat/data/cat_codec.dart';
 import '../../onboarding/data/onboarding_repository.dart';
 import '../domain/user_profile.dart';
 
+/// Gives the app its [ProfileRepository].
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   return ProfileRepository(ref.watch(localStoreProvider));
 });
 
+/// The saved [UserProfile]. Invalidate it after changing the goal so screens reload.
 final profileProvider = FutureProvider<UserProfile>((ref) {
   return ref.watch(profileRepositoryProvider).read();
 });
 
+/// Reads and writes the player's [UserProfile] (step goal, sound) in local storage.
 class ProfileRepository {
   ProfileRepository(this._store);
 
@@ -38,6 +41,7 @@ class ProfileRepository {
     return raised;
   }
 
+  /// Saves [profile] over the stored one.
   Future<void> write(UserProfile profile) async {
     await _store.write(
       OnboardingRepository.profileKey,

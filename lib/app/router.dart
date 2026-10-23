@@ -11,8 +11,12 @@ import '../features/room/presentation/room_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/steps/presentation/home_screen.dart';
 
+/// Navigator above the tab bar, so screens like Settings cover it fully.
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// The app's routes. A user who has not finished onboarding is always sent to
+/// `/onboarding`; a finished one is kept out of it. The four tabs (home, cats,
+/// map, history) keep their own state when you switch between them.
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefresh(ref);
   ref.onDispose(refresh.dispose);
@@ -83,6 +87,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Makes the router re-run its redirect when onboarding completes or resets.
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(this._ref) {
     _ref.listen(onboardingCompletedProvider, (previous, next) {
@@ -90,12 +95,15 @@ class _RouterRefresh extends ChangeNotifier {
     });
   }
 
+  /// The provider reference used to listen for onboarding changes.
   final Ref _ref;
 }
 
+/// Frame around the four tabs: the bottom navigation bar plus the current tab.
 class AppShell extends StatelessWidget {
   const AppShell({required this.navigationShell, super.key});
 
+  /// Router-owned state that knows the current tab and can switch tabs.
   final StatefulNavigationShell navigationShell;
 
   @override
@@ -132,9 +140,11 @@ class AppShell extends StatelessWidget {
   }
 }
 
+/// Stand-in screen that says a page is not built yet.
 class FoundationNote extends StatelessWidget {
   const FoundationNote({required this.title, super.key});
 
+  /// Title shown in the app bar.
   final String title;
 
   @override

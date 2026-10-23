@@ -5,8 +5,10 @@ abstract interface class HealthClient {
   /// True when the platform health store can be used at all.
   Future<bool> isAvailable();
 
+  /// True when the user already allowed reading steps.
   Future<bool> hasPermission();
 
+  /// Shows the system permission prompt. True when steps were allowed.
   Future<bool> requestPermission();
 
   /// Total steps between [start] and [end], or null when the store has none.
@@ -19,13 +21,19 @@ abstract interface class HealthClient {
 
 /// The real client. Apple Health on iOS, Health Connect on Android.
 class HealthPluginClient implements HealthClient {
+  /// Pass a [health] plugin instance in tests; by default the real one is used.
   HealthPluginClient({Health? health}) : _health = health ?? Health();
 
+  /// The underlying plugin.
   final Health _health;
+
+  /// The plugin must be configured once before first use.
   bool _configured = false;
 
+  /// The only data we read: step counts.
   static const _types = [HealthDataType.STEPS];
 
+  /// Configures the plugin on first use, then does nothing.
   Future<void> _ensureConfigured() async {
     if (_configured) return;
     await _health.configure();
@@ -56,6 +64,8 @@ class HealthPluginClient implements HealthClient {
     return _health.getTotalStepsInInterval(start, end);
   }
 
+  /// Adds up the day's step records into 24 hourly totals (hour 0 = [start]).
+  /// Null when the store has no records at all.
   @override
   Future<List<int>?> hourlyBetween(DateTime start, DateTime end) async {
     await _ensureConfigured();

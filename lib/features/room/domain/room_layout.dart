@@ -8,6 +8,7 @@ import 'cat_action.dart';
 /// (1, 1) the bottom-right. A spot's position is where the cat's feet go, so
 /// furniture can be drawn around the same point.
 class RoomSpot {
+  /// [capacity] must be above zero. [isHigh] marks spots reached by climbing.
   const RoomSpot({
     required this.id,
     required this.position,
@@ -17,7 +18,11 @@ class RoomSpot {
     this.isHigh = false,
   }) : assert(capacity > 0, 'A spot that fits nobody is not a spot');
 
+  /// Unique within a layout, e.g. `rug`, `tree`, `toy_ball`. The scene finds
+  /// furniture by these ids.
   final String id;
+
+  /// Where the cat's feet go, as fractions of the room.
   final Offset position;
 
   /// Actions that make sense here. A cat only ever does these at this spot.
@@ -32,10 +37,11 @@ class RoomSpot {
   /// Where the cat is, in words: "on the rug".
   final String label;
 
+  /// True when a cat may do [action] at this spot.
   bool allowsAction(CatAction action) => allows.contains(action);
 }
 
-/// Spot ids for toys start with this: `toy_ball`.
+/// Spot ids for toys start with this: `toy_ball`. It tells toys from furniture.
 const String toySpotPrefix = 'toy_';
 
 /// Where each toy lies on the floor, left to right as a fraction of the room.
@@ -47,6 +53,8 @@ const Map<String, double> toySpots = {
 
 /// The room: where cats can walk and what they can use.
 class RoomLayout {
+  /// The walk line defaults put cats near the bottom (0.88 of the height) and
+  /// inside the side walls (0.10 to 0.90 of the width).
   const RoomLayout({
     required this.spots,
     this.walkY = 0.88,
@@ -54,11 +62,16 @@ class RoomLayout {
     this.walkRight = 0.90,
   });
 
+  /// Every place a cat can use: furniture first, then any toys.
   final List<RoomSpot> spots;
 
   /// The line cats walk along.
   final double walkY;
+
+  /// Left end of the walk line, as a fraction of the room's width.
   final double walkLeft;
+
+  /// Right end of the walk line, as a fraction of the room's width.
   final double walkRight;
 
   /// Floor spots sit on the walk line, so furniture and feet agree.
@@ -100,6 +113,8 @@ class RoomLayout {
     ],
   );
 
+  /// The spot with this [id], or null when the room has none, e.g. a toy you
+  /// have not found.
   RoomSpot? spot(String id) {
     for (final spot in spots) {
       if (spot.id == id) return spot;
@@ -137,6 +152,8 @@ class RoomLayout {
       if (spot.id.startsWith(toySpotPrefix)) spot,
   ];
 
+  /// Every spot where [action] is allowed. Empty when the room has nowhere for
+  /// it.
   List<RoomSpot> spotsAllowing(CatAction action) {
     return [
       for (final spot in spots)

@@ -16,6 +16,12 @@ import 'sprite_cat.dart';
 /// for your sprite sheets means implementing this once, not touching the room.
 abstract interface class CatAnimationSet {
   /// A frame of [action] for a [mood], [elapsed] into the action.
+  ///
+  /// [appearance] picks the coat colour. [facing] is which way the cat looks;
+  /// art is drawn facing right and mirrored for left. [elapsed] is time since
+  /// this action began, so a looping animation can pick its frame. [size] is
+  /// the side of the square the cat is drawn in, in logical pixels, with the
+  /// feet on the bottom edge.
   Widget frame(
     BuildContext context, {
     required CatAppearance appearance,
@@ -51,6 +57,8 @@ class PlaceholderCatAnimations implements CatAnimationSet {
     return facing == CatFacing.right ? posed : _mirror(posed);
   }
 
+  /// Applies a simple transform (bob, squash, tilt) to the vector cat to
+  /// suggest [action]. [t] is seconds into the action, which drives the wobble.
   Widget _pose(Widget cat, CatAction action, double t) {
     return switch (action) {
       // A walk bob: two small hops a second.
@@ -121,7 +129,10 @@ class SpriteCatAnimations implements CatAnimationSet {
     this.fallback = const PlaceholderCatAnimations(),
   });
 
+  /// The decoded sheets to draw from.
   final SpriteLibrary library;
+
+  /// Used for any action the [library] has no art for.
   final CatAnimationSet fallback;
 
   @override

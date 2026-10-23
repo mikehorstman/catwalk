@@ -15,8 +15,11 @@ const String catSpriteFolder = 'assets/cats/';
 /// Sheets are decoded once and shared by every cat; the cat's colour is applied
 /// when drawing, so one neutral pair serves cream, charcoal and ginger.
 class SpriteLibrary {
+  /// Both arguments come from [loadSpriteLibrary].
   const SpriteLibrary({required this.manifest, required this.images});
 
+  /// What the manifest says: frame size, foot anchor, and the sheet and frame
+  /// count for each action and mood.
   final SpriteManifest manifest;
 
   /// Decoded sheets by file name.
@@ -40,10 +43,18 @@ class SpriteLibrary {
 
 /// One action's decoded sheets.
 class SpriteSheet {
+  /// Pairs one manifest entry with its decoded images.
   const SpriteSheet({required this.action, required this.fur, this.details});
 
+  /// The manifest entry: frame count, fps and loop flag.
   final SpriteAction action;
+
+  /// The grey fur strip: frames laid side by side, left to right. Painted
+  /// tinted with the cat's colour.
   final ui.Image fur;
+
+  /// Eyes, nose and whiskers, painted untinted on top of [fur]. Null when the
+  /// action has no details sheet or it failed to load.
   final ui.Image? details;
 }
 
@@ -51,6 +62,9 @@ class SpriteSheet {
 ///
 /// A sheet that is missing or will not decode is skipped, not fatal: that action
 /// keeps using the placeholder. Only an unreadable manifest fails the whole load.
+///
+/// [bundle] is where assets are read from (tests pass a fake). [folder] must
+/// end in a slash; the manifest is `manifest.json` inside it.
 Future<SpriteLibrary> loadSpriteLibrary(
   AssetBundle bundle, {
   String folder = catSpriteFolder,

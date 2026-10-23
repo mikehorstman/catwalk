@@ -6,9 +6,14 @@ import 'package:geolocator/geolocator.dart';
 import '../domain/geo.dart';
 import '../domain/reach_rule.dart';
 
+/// Where the user stands on sharing location with the app.
+///
+/// The map only works with [granted]; everything else shows an explanation card.
 enum LocationAccess {
   /// Not asked yet, or can be asked again.
   undecided,
+
+  /// Allowed. The map can follow you.
   granted,
 
   /// Denied this time. Asking again is allowed.
@@ -19,9 +24,13 @@ enum LocationAccess {
 }
 
 /// The map's only window onto where you are.
+///
+/// A seam so tests can fake the position instead of using real GPS.
 abstract interface class LocationService {
+  /// The current permission state, without showing any prompt.
   Future<LocationAccess> access();
 
+  /// Shows the system permission prompt (if allowed) and returns the outcome.
   Future<LocationAccess> request();
 
   /// The last good fix, or null when there is none.
@@ -30,13 +39,19 @@ abstract interface class LocationService {
   /// Fixes as you walk. Foreground only.
   Stream<GeoFix> fixes();
 
+  /// Opens the phone's Settings page for this app, for a [LocationAccess.blocked] user.
   Future<void> openSettings();
 }
 
+/// The [LocationService] in use. Tests and the simulator override it with a
+/// [FakeLocationService].
 final locationServiceProvider = Provider<LocationService>(
   (ref) => GeolocatorLocationService(),
 );
 
+/// The real [LocationService], backed by the `geolocator` package.
+///
+/// The phone's permission answer is folded into the four [LocationAccess] values.
 class GeolocatorLocationService implements LocationService {
   @override
   Future<LocationAccess> access() async {
@@ -82,12 +97,14 @@ class GeolocatorLocationService implements LocationService {
     await Geolocator.openAppSettings();
   }
 
+  /// Converts a geolocator [position] into our own [GeoFix].
   GeoFix _fix(Position position) => GeoFix(
     point: GeoPoint(position.latitude, position.longitude),
     accuracy: position.accuracy,
     isMocked: position.isMocked,
   );
 
+  /// Folds geolocator's permission values into [LocationAccess].
   LocationAccess _map(LocationPermission permission) {
     switch (permission) {
       case LocationPermission.always:
@@ -105,13 +122,23 @@ class GeolocatorLocationService implements LocationService {
 
 /// A location you control, for tests and for the simulator.
 class FakeLocationService implements LocationService {
+  /// Starts with [access_] as the permission answer and [start] as the position.
   FakeLocationService({this.access_ = LocationAccess.granted, this.start});
 
+  /// The permission answer returned by [access]. [request] upgrades undecided or
+  /// denied to granted, like a user tapping Allow.
   LocationAccess access_;
+
+  /// The position [current] returns; null means no fix yet.
   GeoFix? start;
+
+  /// Feeds [fixes]; [move] pushes new positions into it.
   final _controller = StreamController<GeoFix>.broadcast();
+
+  /// How many times [openSettings] was called, so tests can check it.
   int settingsOpened = 0;
 
+  /// Pretends the user walked to [fix]: updates [start] and emits it on [fixes].
   void move(GeoFix fix) {
     start = fix;
     _controller.add(fix);

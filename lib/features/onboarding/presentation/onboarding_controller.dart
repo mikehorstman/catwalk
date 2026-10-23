@@ -8,15 +8,20 @@ import '../../cat/domain/cat_appearance.dart';
 import '../data/onboarding_repository.dart';
 import '../domain/onboarding_draft.dart';
 
+/// Gives the app the [OnboardingRepository] bound to local storage.
 final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
   return OnboardingRepository(ref.watch(localStoreProvider));
 });
 
+/// Whether onboarding is finished. The router uses it to choose between the
+/// onboarding flow and the home screen.
 final onboardingCompletedProvider = FutureProvider<bool>((ref) {
   return ref.watch(onboardingRepositoryProvider).isCompleted();
 });
 
+/// Holds the [OnboardingDraft] while the player moves through the pages.
 class OnboardingController extends Notifier<OnboardingDraft> {
+  /// Starting draft: cream cat, no name, the default goal, no permission yet.
   @override
   OnboardingDraft build() {
     return const OnboardingDraft(
@@ -27,14 +32,17 @@ class OnboardingController extends Notifier<OnboardingDraft> {
     );
   }
 
+  /// Remembers which cat look the player tapped.
   void selectAppearance(CatAppearance appearance) {
     state = state.copyWith(appearance: appearance);
   }
 
+  /// Stores the name as typed (trimming happens on [complete]).
   void setName(String name) {
     state = state.copyWith(name: name);
   }
 
+  /// Stores the chosen goal in steps. The screen checks the min/max bounds.
   void setDailyStepGoal(int goal) {
     state = state.copyWith(dailyStepGoal: goal);
   }
@@ -52,6 +60,10 @@ class OnboardingController extends Notifier<OnboardingDraft> {
     return granted;
   }
 
+  /// Saves the profile and cat, then refreshes [onboardingCompletedProvider] so
+  /// the router moves on to the home screen.
+  ///
+  /// Throws [StateError] if the cat has no name.
   Future<void> complete() async {
     final name = state.name.trim();
     if (name.isEmpty) {
@@ -64,6 +76,7 @@ class OnboardingController extends Notifier<OnboardingDraft> {
   }
 }
 
+/// Provider for the onboarding draft and its controller.
 final onboardingControllerProvider =
     NotifierProvider<OnboardingController, OnboardingDraft>(
       OnboardingController.new,

@@ -10,12 +10,21 @@ class CatCareState {
     required this.consecutiveMissedDays,
   });
 
+  /// How the cat feels.
   final CatMood mood;
+
+  /// At home, neglected, or run away.
   final CatStatus status;
+
+  /// The missed-day count after clamping below zero to 0.
   final int consecutiveMissedDays;
 }
 
 /// Maps a streak of fully missed days onto mood and status.
+///
+/// 0 days = neutral/active, 1 = sad/active, 2 = sad/neglected, 3 or more
+/// (`AppConstants.runawayMissedDays`) = sad/runaway. Half a goal is a missed
+/// day too. Negative input counts as 0.
 ///
 /// The current calendar day is never counted. A day only becomes a miss after
 /// it ends without a completed goal.

@@ -11,7 +11,10 @@ class DailyGoalField extends StatelessWidget {
     super.key,
   });
 
+  /// Holds the typed digits. The caller owns and disposes it.
   final TextEditingController controller;
+
+  /// Called with the raw text on each edit; the caller parses and validates.
   final ValueChanged<String> onChanged;
 
   @override

@@ -52,4 +52,5 @@ StepRepository createStepRepository(Ref ref) {
   );
 }
 
+/// Riverpod provider for the app's one [StepRepository].
 final stepRepositoryProvider = Provider<StepRepository>(createStepRepository);

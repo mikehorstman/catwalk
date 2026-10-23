@@ -10,6 +10,8 @@ import '../../daily_goal/domain/goal_suggestion.dart';
 import '../../settings/presentation/daily_goal_field.dart';
 import 'onboarding_controller.dart';
 
+/// The five-page first-run flow: welcome, choose a cat, name it, set a daily
+/// step goal, then ask for step access. Paging is by buttons only (no swiping).
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -17,17 +19,32 @@ class OnboardingScreen extends ConsumerStatefulWidget {
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+/// State for [OnboardingScreen]: page position, text fields and busy flags.
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  /// Drives the page view.
   final _pageController = PageController();
+
+  /// Text field for the cat's name.
   final _nameController = TextEditingController();
+
+  /// Text field for the goal; starts at the default goal.
   final _goalController = TextEditingController(
     text: '${AppConstants.defaultDailyStepGoal}',
   );
+
+  /// Zero-based index of the visible page.
   int _page = 0;
+
+  /// True while the final save runs, so buttons cannot be pressed twice.
   bool _saving = false;
+
+  /// True while a goal suggestion is being fetched from the phone.
   bool _suggesting = false;
+
+  /// Message shown on the permission page after asking. Null until asked.
   String? _permissionNote;
 
+  /// Total pages: welcome, cat, name, goal, step access.
   static const _pageCount = 5;
 
   @override
@@ -70,6 +87,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Whether the current page is filled in well enough to move on: the name page
+  /// needs a non-blank name, the goal page needs a goal within the allowed range.
   bool get _canContinue {
     final draft = ref.read(onboardingControllerProvider);
     return switch (_page) {
@@ -81,6 +100,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     };
   }
 
+  /// Goes to the next page. Leaving the goal page asks for step access first; on
+  /// the last page it saves everything and finishes onboarding.
   Future<void> _next() async {
     if (!_canContinue || _saving) return;
     if (_page == 3) {
@@ -101,6 +122,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  /// Asks for step access and sets a note. A "no" never blocks the player.
   Future<void> _askPermission() async {
     final granted = await ref
         .read(onboardingControllerProvider.notifier)
@@ -111,6 +133,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
   }
 
+  /// Goes back one page.
   void _back() {
     _pageController.previousPage(
       duration: const Duration(milliseconds: 240),
@@ -216,6 +239,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 }
 
+/// Page 1: what Catwalk is.
 class _WelcomeStep extends StatelessWidget {
   const _WelcomeStep();
 
@@ -243,6 +267,7 @@ class _WelcomeStep extends StatelessWidget {
   }
 }
 
+/// Page 2: pick a cat look from the available appearances.
 class _ChooseCatStep extends StatelessWidget {
   const _ChooseCatStep({required this.selected, required this.onSelected});
 
@@ -284,6 +309,7 @@ class _ChooseCatStep extends StatelessWidget {
   }
 }
 
+/// One tappable cat card; the selected one gets a thicker border.
 class _CatChoice extends StatelessWidget {
   const _CatChoice({
     required this.appearance,
@@ -326,6 +352,7 @@ class _CatChoice extends StatelessWidget {
   }
 }
 
+/// Page 3: text field for the cat's name (up to 24 characters).
 class _NameStep extends StatelessWidget {
   const _NameStep({required this.controller, required this.onChanged});
 
@@ -359,6 +386,8 @@ class _NameStep extends StatelessWidget {
   }
 }
 
+/// Page 4: daily step goal field, a minutes-of-walking hint and a button that
+/// suggests a goal from the last week.
 class _GoalStep extends StatelessWidget {
   const _GoalStep({
     required this.controller,
@@ -369,8 +398,14 @@ class _GoalStep extends StatelessWidget {
   });
 
   final TextEditingController controller;
+
+  /// The goal currently typed, in steps; used for the minutes hint.
   final int goal;
+
+  /// True while the suggestion is loading (disables the button).
   final bool suggesting;
+
+  /// Called when the player asks for a suggestion.
   final VoidCallback onSuggest;
   final ValueChanged<String> onChanged;
 
@@ -412,10 +447,14 @@ class _GoalStep extends StatelessWidget {
   }
 }
 
+/// Page 5: explains why step access is needed and shows the result note.
 class _PermissionStep extends StatelessWidget {
   const _PermissionStep({required this.catName, required this.note});
 
+  /// The cat's name; blank falls back to "Your cat".
   final String catName;
+
+  /// Result of the permission request, or null before it was asked.
   final String? note;
 
   @override

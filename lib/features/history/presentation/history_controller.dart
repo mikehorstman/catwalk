@@ -7,6 +7,7 @@ import '../../daily_goal/domain/progress_milestones.dart';
 import '../../daily_goal/domain/streak.dart';
 import '../../steps/presentation/home_controller.dart';
 
+/// Everything the Me tab shows, loaded in one go from the saved days.
 class HistoryView {
   const HistoryView({
     required this.days,
@@ -16,18 +17,25 @@ class HistoryView {
     required this.lifetime,
   });
 
-  /// Newest first.
+  /// Every saved day, newest first.
   final List<DailyProgress> days;
+
+  /// Consecutive days with the goal met, counting today once it is met.
   final int currentStreak;
+
+  /// The longest run of goal-met days ever recorded.
   final int bestStreak;
 
   /// The last seven days, today included.
   final WeekSummary week;
 
-  /// Counts that never go down.
+  /// Counts that never go down, even after a missed day.
   final LifetimeStats lifetime;
 }
 
+/// Loads and sorts the saved days into a [HistoryView] for the Me tab.
+///
+/// It watches the Home controller so it reloads whenever Home saves a day.
 final historyViewProvider = FutureProvider<HistoryView>((ref) async {
   // Reload whenever Home saves a new day.
   ref.watch(homeControllerProvider);

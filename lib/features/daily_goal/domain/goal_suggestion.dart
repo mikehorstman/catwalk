@@ -33,6 +33,11 @@ const int suggestionGoalStep = 500;
 
 /// Suggests a goal from up to [window] recorded days ending today.
 ///
+/// [stepsByDate] maps days to steps (missing days are skipped). Needs at least
+/// [minDays] recorded days. The result is the median x [suggestionMultiplier],
+/// rounded to [suggestionGoalStep] and kept between the minimum goal and
+/// AppConstants.maxSuggestedDailyStepGoal.
+///
 /// Returns null when there is not enough history to be worth guessing, which
 /// keeps the app honest instead of inventing a number from two days.
 GoalSuggestion? suggestGoal({
@@ -80,6 +85,9 @@ class GoalRaise {
 
 /// Offers a small raise once the current goal has been met [needed] days in the
 /// window.
+///
+/// [needed] days out of the last [window] days must be completed. The raise is
+/// one [suggestionGoalStep] (500 steps) above [currentGoal].
 ///
 /// Only offered after the player has shown they can hit the goal: the app must
 /// not talk someone into a goal it just watched them miss.

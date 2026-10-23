@@ -8,14 +8,23 @@ import '../../cat/domain/cat_status.dart';
 import '../../settings/domain/user_profile.dart';
 import '../domain/onboarding_draft.dart';
 
+/// Saves the result of onboarding and answers "has the player finished it?".
+///
+/// Onboarding writes two things to local storage: the [UserProfile] (step goal)
+/// and the first [Cat]. Both are stored as JSON strings.
 class OnboardingRepository {
   OnboardingRepository(this._store);
 
   final LocalStore _store;
 
+  /// Storage key for the saved profile (also read by the profile repository).
   static const profileKey = 'user_profile';
+
+  /// Storage key for the saved cat.
   static const catKey = 'cat';
 
+  /// True once a profile with onboardingCompleted exists. A missing or damaged
+  /// profile counts as "not finished", so the player is sent to onboarding.
   Future<bool> isCompleted() async {
     final raw = await _store.read(profileKey);
     if (raw == null) return false;
@@ -24,6 +33,11 @@ class OnboardingRepository {
     return json['onboardingCompleted'] == true;
   }
 
+  /// Turns the player's [draft] into a saved profile and a brand-new cat.
+  ///
+  /// The cat starts at level 1 with 0 XP, a neutral mood, active status and no
+  /// missed days. Its id is the creation time in microseconds, which is unique
+  /// enough for one local cat. The name is trimmed.
   Future<void> complete(OnboardingDraft draft) async {
     final now = DateTime.now();
     final profile = UserProfile(
@@ -45,6 +59,7 @@ class OnboardingRepository {
     await _store.write(catKey, jsonEncode(_catToJson(cat)));
   }
 
+  /// Plain-JSON form of [profile] for storage.
   Map<String, Object> _profileToJson(UserProfile profile) {
     return {
       'dailyStepGoal': profile.dailyStepGoal,
@@ -53,6 +68,7 @@ class OnboardingRepository {
     };
   }
 
+  /// Plain-JSON form of [cat] for storage. Enums are saved by name.
   Map<String, Object> _catToJson(Cat cat) {
     return {
       'id': cat.id,
@@ -68,6 +84,8 @@ class OnboardingRepository {
   }
 }
 
+/// Looks up a cat look by its saved [name]. Unknown names fall back to cream so
+/// an old or damaged save still loads.
 CatAppearance appearanceByName(String name) {
   return CatAppearance.values.firstWhere(
     (appearance) => appearance.name == name,

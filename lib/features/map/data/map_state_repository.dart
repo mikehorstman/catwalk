@@ -8,6 +8,7 @@ import '../../../services/storage/local_store_provider.dart';
 import '../domain/geo.dart';
 import '../domain/recovery.dart';
 
+/// The app-wide [MapStateRepository], built on the local store.
 final mapStateRepositoryProvider = Provider<MapStateRepository>((ref) {
   return MapStateRepository(ref.watch(localStoreProvider));
 });
@@ -16,6 +17,7 @@ final mapStateRepositoryProvider = Provider<MapStateRepository>((ref) {
 ///
 /// Only a coarse cell is kept, never a track of where you walked.
 class MapState {
+  /// Everything is optional so a fresh install starts with an empty state.
   const MapState({
     this.cell,
     this.cellDate,
@@ -24,6 +26,7 @@ class MapState {
     this.recovery = const Recovery(),
   });
 
+  /// Reads a saved state. Missing or wrongly typed fields fall back to empty.
   factory MapState.fromJson(Map<String, dynamic> json) {
     final collected = json['collected'];
     return MapState(
@@ -48,13 +51,21 @@ class MapState {
   }
 
   /// The cell the day's pins hang off, and the day it was fixed on.
+  /// The cell the day's pins hang off, and the day it was fixed on.
+  /// Null until the map has been opened with a position.
   final GeoCell? cell;
+
+  /// The day [cell] was fixed on. Null until [cell] is set.
   final CalendarDate? cellDate;
 
   /// Pin ids already collected on [collectedDate].
+  /// The day [collected] belongs to. A new day starts a new list.
   final CalendarDate? collectedDate;
+
+  /// Ids of pins already picked up on [collectedDate], so they do not come back.
   final Set<String> collected;
 
+  /// Where the runaway cat's search stands (not placed, or placed on the map).
   final Recovery recovery;
 
   /// The pins' cell for [today], or null when it is yesterday's.
@@ -64,6 +75,8 @@ class MapState {
   Set<String> collectedOn(CalendarDate today) =>
       collectedDate == today ? collected : const {};
 
+  /// A copy with the given fields replaced. Fields left out keep their value
+  /// (so a field cannot be reset to null this way).
   MapState copyWith({
     GeoCell? cell,
     CalendarDate? cellDate,
@@ -78,6 +91,7 @@ class MapState {
     recovery: recovery ?? this.recovery,
   );
 
+  /// The JSON saved to the local store. Null fields are left out.
   Map<String, Object> toJson() => {
     if (cell != null) 'cell': cell!.id,
     if (cellDate != null) 'cellDate': cellDate!.toIsoDate(),
@@ -87,13 +101,16 @@ class MapState {
   };
 }
 
+/// Saves and loads the [MapState] as JSON in the local store.
 class MapStateRepository {
   MapStateRepository(this._store);
 
   final LocalStore _store;
 
+  /// Storage key the map state is saved under.
   static const key = 'map_state';
 
+  /// The saved state, or an empty one if nothing is saved or it is unreadable.
   Future<MapState> read() async {
     final raw = await _store.read(key);
     if (raw == null) return const MapState();
@@ -104,6 +121,7 @@ class MapStateRepository {
     }
   }
 
+  /// Replaces the saved state with [state].
   Future<void> write(MapState state) =>
       _store.write(key, jsonEncode(state.toJson()));
 }

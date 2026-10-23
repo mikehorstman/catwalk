@@ -10,15 +10,20 @@ import 'step_repository.dart';
 /// and for users who declined health access. When neither can answer, this
 /// returns [StepReading.unavailable] so the UI never shows a fake zero.
 class CompositeStepRepository implements StepRepository {
+  /// Both sources are required: [health] is asked first, [sensor] is the fallback.
   CompositeStepRepository({
     required StepRepository health,
     required StepRepository sensor,
   }) : _health = health,
        _sensor = sensor;
 
+  /// The health store (Apple Health / Health Connect).
   final StepRepository _health;
+
+  /// The phone's own step sensor, today only.
   final StepRepository _sensor;
 
+  /// Today's steps from whichever source can answer.
   @override
   Future<StepReading> getTodaySteps() => getStepsForDate(CalendarDate.today());
 
@@ -27,6 +32,7 @@ class CompositeStepRepository implements StepRepository {
   Future<bool> isAvailable() async =>
       await _health.isAvailable() || await _sensor.isAvailable();
 
+  /// True when the health store or the sensor may be read.
   @override
   Future<bool> hasPermissions() async {
     if (await _health.isAvailable() && await _health.hasPermissions()) {
@@ -35,6 +41,7 @@ class CompositeStepRepository implements StepRepository {
     return _sensor.hasPermissions();
   }
 
+  /// Asks the health store first; asks the sensor only if that did not grant.
   @override
   Future<bool> requestPermissions() async {
     if (await _health.isAvailable()) {
@@ -43,6 +50,7 @@ class CompositeStepRepository implements StepRepository {
     return _sensor.requestPermissions();
   }
 
+  /// Hours of [date] from the health store, else null (the sensor has no hours).
   @override
   Future<List<int>?> hourlySteps(CalendarDate date) async {
     if (await _health.isAvailable() && await _health.hasPermissions()) {
@@ -52,6 +60,8 @@ class CompositeStepRepository implements StepRepository {
     return _sensor.hourlySteps(date);
   }
 
+  /// Steps for [date]: the health store if it has a reading, else the sensor
+  /// (today only), else [StepReading.unavailable].
   @override
   Future<StepReading> getStepsForDate(CalendarDate date) async {
     // A store that answers for this day is the answer, even when it says zero.

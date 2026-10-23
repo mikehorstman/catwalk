@@ -4,6 +4,7 @@ import '../../../core/utils/calendar_date.dart';
 import 'geo.dart';
 import 'reward.dart';
 
+/// A pickup on the map: standing within reach of [point] collects [reward].
 class MapPin {
   const MapPin({required this.id, required this.point, required this.reward});
 
@@ -13,8 +14,13 @@ class MapPin {
     reward: Reward.fromJson(json['reward'] as Map<String, dynamic>),
   );
 
+  /// Stable id like `date:cell:index`. Used to remember it as collected.
   final String id;
+
+  /// Where the pin sits.
   final GeoPoint point;
+
+  /// What you get for collecting it.
   final Reward reward;
 
   Map<String, Object> toJson() => {
@@ -24,8 +30,14 @@ class MapPin {
   };
 }
 
+/// Most pins on the map in one day.
 const int maxPinsPerDay = 5;
+
+/// Closest a pin lands to the cell centre, in metres. Keeps pins from stacking
+/// on top of you.
 const double minPinMeters = 250;
+
+/// Furthest a pin lands from the cell centre, in metres. Keeps them walkable.
 const double maxPinMeters = 900;
 
 /// A point in the pin band around [centre], chosen by [random].

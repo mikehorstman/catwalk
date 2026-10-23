@@ -34,9 +34,11 @@ class LifetimeStats {
   /// Days with any record at all.
   final int daysWalked;
 
+  /// True before any day has been recorded.
   bool get isEmpty => daysWalked == 0;
 }
 
+/// Totals over every saved day in [history].
 LifetimeStats lifetimeStats(List<DailyProgress> history) {
   var goals = 0;
   var steps = 0;
@@ -62,12 +64,22 @@ class WeekSummary {
     required this.xpEarned,
   });
 
+  /// Days in the window that have a record (0 to 7).
   final int days;
+
+  /// Days in the window where the goal was completed.
   final int goalsMet;
+
+  /// Total steps over those days.
   final int steps;
+
+  /// Steps on the best day in the window.
   final int bestDaySteps;
+
+  /// XP the completed days paid.
   final int xpEarned;
 
+  /// Average steps per recorded day (not per calendar day), 0 when none.
   int get averageSteps => days == 0 ? 0 : (steps / days).round();
 }
 
@@ -112,11 +124,17 @@ class NextReward {
     required this.remaining,
   });
 
+  /// Short name of the reward, e.g. "a toy".
   final String title;
+
+  /// How far away it is, in plain words.
   final String detail;
+
+  /// Distance in its own unit (days, goals or XP). The smallest one wins.
   final int remaining;
 }
 
+/// Name of the prize paid for a streak of [days].
 String _streakPrizeName(int days) => switch (days) {
   3 => 'a small bonus',
   7 => 'a toy',

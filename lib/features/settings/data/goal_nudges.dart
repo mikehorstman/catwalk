@@ -6,6 +6,7 @@ import '../../../core/utils/calendar_date.dart';
 import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 
+/// Gives the app its [GoalNudges] store.
 final goalNudgesProvider = Provider<GoalNudges>((ref) {
   return GoalNudges(ref.watch(localStoreProvider));
 });
@@ -17,9 +18,13 @@ class GoalNudges {
 
   final LocalStore _store;
 
+  /// Storage key for the saved hint state.
   static const key = 'goal_nudges';
+
+  /// Days to wait before offering a goal raise again.
   static const int raiseCooldownDays = 14;
 
+  /// Reads the saved hint state. Missing or damaged data reads as empty.
   Future<Map<String, dynamic>> _read() async {
     final raw = await _store.read(key);
     if (raw == null) return {};
@@ -30,6 +35,7 @@ class GoalNudges {
     }
   }
 
+  /// Saves the whole hint state.
   Future<void> _write(Map<String, dynamic> json) =>
       _store.write(key, jsonEncode(json));
 
@@ -37,6 +43,7 @@ class GoalNudges {
   Future<bool> tuneDismissed() async =>
       (await _read())['tuneDismissed'] == true;
 
+  /// Records that the "tune your goal" card was dismissed.
   Future<void> dismissTune() async {
     final json = await _read();
     json['tuneDismissed'] = true;
@@ -61,13 +68,15 @@ class GoalNudges {
     }
   }
 
+  /// Records that a raise was offered on [today], starting the cooldown.
   Future<void> markRaiseOffered(CalendarDate today) async {
     final json = await _read();
     json['raiseOfferedOn'] = today.toIsoDate();
     await _write(json);
   }
 
-  /// True when a raise may be offered again today.
+  /// True when a raise may be offered again today: never offered before, or the
+  /// last offer was at least [raiseCooldownDays] days ago.
   Future<bool> raiseAllowed(CalendarDate today) async {
     final last = await lastRaiseOffered();
     if (last == null) return true;

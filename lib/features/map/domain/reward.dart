@@ -4,8 +4,10 @@ import 'dart:math' as math;
 sealed class Reward {
   const Reward();
 
+  /// The JSON form, with a `type` field that [fromJson] reads back.
   Map<String, Object> toJson();
 
+  /// Reads a reward by its `type`. Throws a [FormatException] for an unknown type.
   static Reward fromJson(Map<String, dynamic> json) {
     switch (json['type']) {
       case 'xp':
@@ -36,14 +38,18 @@ sealed class Reward {
   int get hashCode => Object.hashAll(toJson().values);
 }
 
+/// XP for the cat.
 class XpReward extends Reward {
   const XpReward(this.amount);
+
+  /// XP given.
   final int amount;
 
   @override
   Map<String, Object> toJson() => {'type': 'xp', 'amount': amount};
 }
 
+/// One streak freeze, which covers a missed day. Capped by [maxFreezes].
 class FreezeReward extends Reward {
   const FreezeReward();
 
@@ -51,16 +57,22 @@ class FreezeReward extends Reward {
   Map<String, Object> toJson() => {'type': 'freeze'};
 }
 
+/// A toy for the room, named by [toyId] (one of [toyIds]).
 class ToyReward extends Reward {
   const ToyReward(this.toyId);
+
+  /// Which toy this is.
   final String toyId;
 
   @override
   Map<String, Object> toJson() => {'type': 'toy', 'toyId': toyId};
 }
 
+/// Progress towards a new cat. Not given out yet (see [rewardWeights]).
 class CatProgressReward extends Reward {
   const CatProgressReward(this.points);
+
+  /// Progress points given.
   final int points;
 
   @override
@@ -81,9 +93,12 @@ const Map<String, int> rewardWeights = {
   'catProgress': 0,
 };
 
+/// The XP sizes an XP pin can pay, picked at random.
 const List<int> xpAmounts = [15, 25];
 
 /// Picks a reward from [rewardWeights] with [random].
+///
+/// Weights are relative: 60 + 15 + 25 means 60% XP, 15% freeze, 25% toy.
 Reward pickReward(math.Random random) {
   final total = rewardWeights.values.fold<int>(0, (sum, w) => sum + w);
   var roll = random.nextInt(total);
@@ -94,6 +109,7 @@ Reward pickReward(math.Random random) {
   return const XpReward(15);
 }
 
+/// Makes a concrete reward of [kind], using [random] for the toy or XP size.
 Reward _build(String kind, math.Random random) {
   switch (kind) {
     case 'freeze':

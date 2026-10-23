@@ -7,6 +7,7 @@ import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../domain/daily_progress.dart';
 
+/// Gives the app its [HistoryRepository].
 final historyRepositoryProvider = Provider<HistoryRepository>((ref) {
   return HistoryRepository(ref.watch(localStoreProvider));
 });
@@ -19,9 +20,13 @@ class HistoryRepository {
 
   final LocalStore _store;
 
+  /// Storage key for the list of saved days.
   static const historyKey = 'daily_progress';
+
+  /// Storage key for the last date the app already evaluated.
   static const evaluatedKey = 'last_evaluated';
 
+  /// Every saved day. Empty before the first save.
   Future<List<DailyProgress>> readAll() async {
     final raw = await _store.read(historyKey);
     if (raw == null) return const [];
@@ -31,6 +36,8 @@ class HistoryRepository {
     ];
   }
 
+  /// The last day that was processed, or null if none. It tells the evaluator
+  /// which days since then still need judging.
   Future<CalendarDate?> readLastEvaluated() async {
     final raw = await _store.read(evaluatedKey);
     if (raw == null) return null;
@@ -51,11 +58,14 @@ class HistoryRepository {
     );
   }
 
+  /// Remembers that days up to [date] have been processed.
   Future<void> writeLastEvaluated(CalendarDate date) async {
     await _store.write(evaluatedKey, date.toIsoDate());
   }
 }
 
+/// Plain-JSON form of [progress]. Optional flags are only written when set, so
+/// older saves stay small and readable.
 Map<String, Object> progressToJson(DailyProgress progress) {
   return {
     'date': progress.date.toIsoDate(),
@@ -71,6 +81,8 @@ Map<String, Object> progressToJson(DailyProgress progress) {
   };
 }
 
+/// Rebuilds a [DailyProgress] from its JSON. Fields added in later versions are
+/// optional and default to false or zero, so old saves still load.
 DailyProgress progressFromJson(Map<String, dynamic> json) {
   return DailyProgress(
     date: CalendarDate.parse(json['date'] as String),

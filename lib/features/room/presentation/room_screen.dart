@@ -37,11 +37,25 @@ class RoomScreen extends ConsumerStatefulWidget {
 
 class _RoomScreenState extends ConsumerState<RoomScreen>
     with SingleTickerProviderStateMixin {
+  /// Drives the simulation once per frame. Null until the first room is built,
+  /// and stopped in reduced-motion mode.
   Ticker? _ticker;
+
+  /// The current room's brain. Replaced whenever the room is rebuilt.
   RoomSimulation? _simulation;
+
+  /// The latest cat states the screen draws.
   List<CatState> _states = const [];
+
+  /// Ticker time of the previous frame, used for the frame delta. Zero means no
+  /// frame yet.
   Duration _lastTick = Duration.zero;
+
+  /// Fingerprint of what the current simulation was built from; see
+  /// [_signatureOf].
   String _signature = '';
+
+  /// The motion setting the current simulation was built with.
   bool _reducedMotion = false;
 
   @override
@@ -77,6 +91,10 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
     }
   }
 
+  /// Moves the simulation forward by the time since the last frame.
+  ///
+  /// The step is capped at 0.05 s (20 fps worth) so a pause never makes cats
+  /// jump.
   void _onTick(Duration elapsed) {
     final simulation = _simulation;
     if (simulation == null) return;
@@ -152,6 +170,7 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
   List<CatState> _paintOrder() =>
       [..._states]..sort((a, b) => a.position.dy.compareTo(b.position.dy));
 
+  /// The cat with this [id], or null if it is no longer in [cats].
   RoomCat? _catFor(List<RoomCat> cats, String id) {
     for (final cat in cats) {
       if (cat.id == id) return cat;
@@ -171,11 +190,22 @@ class _CatLayer extends StatelessWidget {
     required this.onTap,
   });
 
+  /// Where the cat is and what it is doing.
   final CatState state;
+
+  /// The cat being drawn.
   final RoomCat cat;
+
+  /// How to draw the cat.
   final CatAnimationSet animations;
+
+  /// Used to turn a spot id into words for the screen-reader label.
   final RoomLayout layout;
+
+  /// Size of the room in logical pixels; positions are fractions of it.
   final Size room;
+
+  /// Called when the cat is tapped.
   final VoidCallback onTap;
 
   /// A cat is about this wide on a 390pt phone, and grows a little nearer.
@@ -212,6 +242,7 @@ class _CatLayer extends StatelessWidget {
     );
   }
 
+  /// What the cat is doing, in words: "sitting on the rug".
   String _description() {
     final spotId = state.spotId;
     final label = spotId == null ? null : layout.spot(spotId)?.label;
@@ -220,6 +251,7 @@ class _CatLayer extends StatelessWidget {
   }
 }
 
+/// Centred "No cats yet." message for an empty room.
 class _NoCats extends StatelessWidget {
   const _NoCats();
 
@@ -240,6 +272,7 @@ class _NoCats extends StatelessWidget {
   }
 }
 
+/// Debug-only button in the corner that opens the [AnimationLabSheet].
 class _LabButton extends StatelessWidget {
   const _LabButton();
 

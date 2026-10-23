@@ -1,5 +1,8 @@
 import '../../../core/constants/app_constants.dart';
 
+/// DORMANT: nothing calls this yet. Cat caps from goal tiers are not used until
+/// more cats can be unlocked.
+///
 /// What a higher goal is worth beyond a bigger number.
 ///
 /// The reward for ambition is room for more cats and slightly better finds, not
@@ -12,7 +15,10 @@ class GoalTier {
     required this.rareBonus,
   });
 
+  /// Lowest daily goal (steps) that reaches this tier.
   final int minGoal;
+
+  /// How many cats this tier allows.
   final int catCap;
 
   /// Added to the chance of a rare find, as a fraction.

@@ -16,8 +16,11 @@ import 'cat_animations.dart';
 class AnimationLabSheet extends StatefulWidget {
   const AnimationLabSheet({required this.animations, super.key});
 
+  /// What to preview: whichever set the room itself draws with.
   final CatAnimationSet animations;
 
+  /// Opens the lab as a bottom sheet, previewing the animation set the app
+  /// currently uses (sprite sheets once loaded).
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
@@ -38,13 +41,21 @@ class AnimationLabSheet extends StatefulWidget {
   State<AnimationLabSheet> createState() => _AnimationLabSheetState();
 }
 
+/// State for the lab: the chosen action and facing, and a ticker that keeps the
+/// previews animating.
 class _AnimationLabSheetState extends State<AnimationLabSheet>
     with SingleTickerProviderStateMixin {
+  /// Rebuilds every frame so the previews animate.
   late final Ticker _ticker = createTicker((_) => setState(() {}));
+
+  /// When the lab opened; previews run on the time since then.
   late final DateTime _start = DateTime.now();
 
+  /// The action being previewed.
   CatAction _action = CatAction.walk;
   CatFacing _facing = CatFacing.right;
+
+  /// Whether the teal foot line is drawn under each cat.
   bool _guide = true;
 
   @override
@@ -59,6 +70,7 @@ class _AnimationLabSheetState extends State<AnimationLabSheet>
     super.dispose();
   }
 
+  /// Time since the lab opened; one shared clock keeps all three cats in step.
   Duration get _elapsed => DateTime.now().difference(_start);
 
   @override
@@ -139,6 +151,8 @@ class _AnimationLabSheetState extends State<AnimationLabSheet>
   }
 }
 
+/// One cat colour previewed at 96 px, with an optional foot line and its colour
+/// name underneath.
 class _Preview extends StatelessWidget {
   const _Preview({
     required this.animations,
@@ -156,6 +170,8 @@ class _Preview extends StatelessWidget {
   final CatMood mood;
   final CatFacing facing;
   final Duration elapsed;
+
+  /// Whether to draw the foot line.
   final bool guide;
 
   @override

@@ -33,6 +33,8 @@ ColorFilter furTint(Color tint) {
 /// paint moves the art by the foot anchor: the cat stands on the floor line
 /// whatever pose the frame is in.
 class SpriteCatFrame extends StatelessWidget {
+  /// [elapsed] is time since the action began; [size] is the box side in
+  /// logical pixels.
   const SpriteCatFrame({
     required this.sheet,
     required this.manifest,
@@ -43,11 +45,23 @@ class SpriteCatFrame extends StatelessWidget {
     super.key,
   });
 
+  /// The decoded sheets and manifest entry to draw.
   final SpriteSheet sheet;
+
+  /// Supplies the frame size and foot anchor in sheet pixels.
   final SpriteManifest manifest;
+
+  /// The cat's coat colour, applied to the fur strip through [furTint].
   final Color tint;
+
+  /// Art faces right; [CatFacing.left] mirrors it.
   final CatFacing facing;
+
+  /// Time since the action started. Picks the frame via [spriteFrameAt].
   final Duration elapsed;
+
+  /// Side of the square box, in logical pixels. The frame is scaled to the box
+  /// width.
   final double size;
 
   @override
@@ -70,6 +84,8 @@ class SpriteCatFrame extends StatelessWidget {
   }
 }
 
+/// Paints one frame of the fur strip (tinted) and the details strip (untinted)
+/// into the box.
 class _SpritePainter extends CustomPainter {
   _SpritePainter({
     required this.sheet,
@@ -80,11 +96,22 @@ class _SpritePainter extends CustomPainter {
     required this.flipped,
   });
 
+  /// The decoded sheets to draw.
   final SpriteSheet sheet;
+
+  /// Index of the frame to cut out of the strips, counting from 0.
   final int frame;
+
+  /// Size of one frame in sheet pixels.
   final Size frameSize;
+
+  /// The feet inside a frame, in sheet pixels.
   final Offset footAnchor;
+
+  /// The cat's coat colour, passed to [furTint].
   final Color tint;
+
+  /// True to mirror the cat so it faces left.
   final bool flipped;
 
   @override

@@ -4,7 +4,10 @@ import '../../../core/constants/app_constants.dart';
 const int xpGoalReference = AppConstants.defaultDailyStepGoal;
 
 /// Bounds so a tiny goal still feels worth it and a huge one stays sane.
+/// Lowest XP a completed day can pay.
 const int xpGoalMin = 20;
+
+/// Highest XP a completed day can pay.
 const int xpGoalMax = 250;
 
 /// XP for completing a day at [goal].

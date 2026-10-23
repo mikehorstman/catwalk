@@ -25,16 +25,29 @@ class CatState {
     this.travelled = 0,
   });
 
+  /// Matches [RoomCat.id].
   final String catId;
+
+  /// Copied from the cat when the room was built. A change in mood builds a
+  /// fresh room.
   final CatMood mood;
+
+  /// Copied from the cat when the room was built, like [mood].
   final CatStatus status;
+
+  /// Where the cat's feet are, as fractions of the room.
   final Offset position;
+
+  /// Which way the cat looks.
   final CatFacing facing;
 
   /// What the cat is doing now. Travel counts as doing: climbing shows as
   /// climbing.
   final CatAction action;
 
+  /// Seconds until the planner picks something new. Infinity in reduced-motion
+  /// mode, where nothing ever changes. Not counted down while the cat is
+  /// travelling.
   final double actionSecondsLeft;
 
   /// How long the cat has been doing the current action. This is the clock the
@@ -44,12 +57,24 @@ class CatState {
   /// The spot this cat is on or heading for.
   final String? spotId;
 
+  /// The trip in progress, or null when the cat is staying put.
   final RoomRoute? route;
+
+  /// Which leg of [route] the cat is on.
   final int legIndex;
+
+  /// How far along the current leg, in room units.
   final double travelled;
 
+  /// True while a route is being followed.
   bool get isTravelling => route != null;
 
+  /// A copy with some fields changed.
+  ///
+  /// A null argument keeps the current value, so the two `clear` flags exist to
+  /// set [spotId] or [route] back to null: [clearSpot] and [clearRoute] win
+  /// over a value passed alongside them. [catId], [mood] and [status] never
+  /// change.
   CatState copyWith({
     Offset? position,
     CatFacing? facing,
@@ -117,6 +142,11 @@ Map<CatAction, double> moodWeights(CatMood mood) => switch (mood) {
 /// Deterministic on purpose. Same cats, same seed, same time in means the same
 /// room out, so the behaviour can be tested without a screen.
 class RoomSimulation {
+  /// Builds the room and places every cat that is at home.
+  ///
+  /// A runaway cat is left out. [seed] fixes the dice rolls. With
+  /// [reducedMotion] cats are put on a calm spot and never move. Each action
+  /// lasts a random [minActionSeconds] to [maxActionSeconds].
   RoomSimulation({
     required this.layout,
     required List<RoomCat> cats,
@@ -132,36 +162,60 @@ class RoomSimulation {
     _states = reducedMotion ? _staticPlacement(home) : _spreadOnFloor(home);
   }
 
+  /// The room the cats live in.
   final RoomLayout layout;
+
+  /// When true the room is static: cats are placed once and never move, for
+  /// people who turned on Reduce Motion.
   final bool reducedMotion;
+
+  /// Shortest time, in seconds, a cat keeps doing one thing.
   final double minActionSeconds;
+
+  /// Longest time, in seconds, a cat keeps doing one thing. Each duration is
+  /// random between the two.
   final double maxActionSeconds;
 
+  /// The only source of randomness, seeded, which keeps the room repeatable in
+  /// tests.
   final math.Random _random;
+
+  /// Spot id to the ids of cats on it or heading there. This is what enforces
+  /// [RoomSpot.capacity].
   final Map<String, Set<String>> _occupants = {};
+
+  /// One state per cat at home, replaced on every [step].
   late List<CatState> _states;
 
+  /// A read-only snapshot of every cat's current state.
   List<CatState> get states => List.unmodifiable(_states);
 
   /// Who is on a spot right now, including cats on their way there.
   Set<String> occupantsOf(String spotId) =>
       Set.unmodifiable(_occupants[spotId] ?? const <String>{});
 
+  /// True when [spot] still has space for [catId]; the cat's own claim does not
+  /// count against it.
   bool _hasRoomFor(RoomSpot spot, String catId) {
     final taken = _occupants[spot.id] ?? const <String>{};
     return taken.where((id) => id != catId).length < spot.capacity;
   }
 
+  /// Marks [spotId] as taken by [catId], before the cat has even arrived, so
+  /// two cats cannot head for the same basket.
   void _claim(String spotId, String catId) {
     (_occupants[spotId] ??= <String>{}).add(catId);
   }
 
+  /// Frees every spot [catId] holds.
   void _release(String catId) {
     for (final taken in _occupants.values) {
       taken.remove(catId);
     }
   }
 
+  /// Starting positions when motion is on: cats stand idle along the walk line,
+  /// evenly spaced (a lone cat starts in the middle).
   List<CatState> _spreadOnFloor(List<RoomCat> cats) {
     if (cats.isEmpty) return const [];
     final span = layout.walkRight - layout.walkLeft;
@@ -213,6 +267,8 @@ class RoomSimulation {
     return states;
   }
 
+  /// Floor position for the [index]th cat without a spot in reduced motion: a
+  /// quarter of the room apart, kept on the walk line.
   double _staticX(int index) =>
       (layout.walkLeft + 0.25 * index).clamp(layout.walkLeft, layout.walkRight);
 
@@ -224,6 +280,8 @@ class RoomSimulation {
     return spot.allows.first;
   }
 
+  /// A random time, in seconds, between [minActionSeconds] and
+  /// [maxActionSeconds].
   double _nextDuration() =>
       minActionSeconds +
       _random.nextDouble() * (maxActionSeconds - minActionSeconds);
@@ -238,6 +296,8 @@ class RoomSimulation {
     _states = next;
   }
 
+  /// Advances one cat by [seconds]: follow its route if it has one, else count
+  /// down the current action, else plan the next.
   CatState _stepCat(CatState state, double seconds) {
     final route = state.route;
     if (route != null) {
@@ -348,12 +408,16 @@ class RoomSimulation {
     );
   }
 
+  /// True when the cat is on, or heading for, a high spot, so its route starts
+  /// with a climb down.
   bool _isOnHighSpot(CatState state) {
     final current = state.spotId;
     if (current == null) return false;
     return layout.spot(current)?.isHigh ?? false;
   }
 
+  /// A random spot that allows any of [actions] and has room for [catId], or
+  /// null if there is none.
   RoomSpot? _freeSpotFor(String catId, Set<CatAction> actions) {
     final open = [
       for (final spot in layout.spots)
@@ -363,11 +427,14 @@ class RoomSimulation {
     return open[_random.nextInt(open.length)];
   }
 
+  /// A random point on the walk line, as a fraction of the room's width.
   double _randomWalkX() {
     final span = layout.walkRight - layout.walkLeft;
     return layout.walkLeft + _random.nextDouble() * span;
   }
 
+  /// Picks one action at random, in proportion to its weight. Rolls against the
+  /// running total; the last key is the safety net.
   CatAction _weightedPick(Map<CatAction, double> weights) {
     var total = 0.0;
     for (final value in weights.values) {

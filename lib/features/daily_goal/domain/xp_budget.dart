@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import '../../../core/constants/app_constants.dart';
 
+/// Only used when side quests are on (currently off).
+///
 /// What a quest pays: a small share of the day's reward, never the day itself.
 int questXpFor(int goalXp) =>
     math.max(2, (goalXp * AppConstants.questXpShare).round());
@@ -13,6 +15,7 @@ int questXpFor(int goalXp) =>
 int dailyXpCeiling(int goalXp) =>
     (goalXp * AppConstants.dailyXpCeilingShare).round();
 
-/// True when goal XP plus bonuses stay inside the ceiling.
+/// True when [paid] (goal XP plus bonuses) stays inside the ceiling for
+/// [goalXp].
 bool withinDailyCeiling({required int goalXp, required int paid}) =>
     paid <= dailyXpCeiling(goalXp);

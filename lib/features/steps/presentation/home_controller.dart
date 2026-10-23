@@ -32,6 +32,10 @@ import '../../settings/data/goal_nudges.dart';
 import '../../settings/data/profile_repository.dart';
 import '../domain/step_reading.dart';
 
+/// Everything the Home screen needs for one open of the app: the cat, today's
+/// progress and any one-off events (cat came home, cat lost, goal offers).
+///
+/// Built fresh by [HomeController] each time steps are read.
 class HomeState {
   const HomeState({
     required this.cat,
@@ -55,37 +59,49 @@ class HomeState {
     this.goalRaise,
   });
 
+  /// The cat after today's rules ran (XP, level, mood, runaway status).
   final Cat cat;
 
   /// Consecutive completed days, counting today once it is completed.
   final int currentStreak;
+
+  /// Today's steps, goal and what was earned. Saved to history on each load.
   final DailyProgress today;
+
+  /// XP the cat earned on this open, from goals, snacks and quests, in XP.
   final int xpGainedToday;
 
-  /// The cat came home because the step target was met, with no map to use.
+  /// The cat came home because the recovery step target was met and the map
+  /// was not needed to find it.
   final bool catWalkedHome;
 
-  /// How a runaway cat's recovery window stands, or null while the cat is home.
+  /// How the runaway cat's 7-day recovery window stands (steps to go, days
+  /// left), or null while the cat is home.
   final RecoveryWindow? recovery;
 
-  /// The cat that was lost on this open, and the stray kitten that took its
-  /// place. Both are null on every other open.
+  /// The cat that was lost on this open, because its recovery window closed.
+  /// Null on every other open.
   final String? lostCatName;
+
+  /// The stray kitten that took the lost cat's place. Null unless
+  /// [lostCatName] is set.
   final String? kittenName;
 
   /// Days the goal was completed, ever. Never goes down.
   final int goalsMet;
 
-  /// The halfway bonus paid on this open, if any.
+  /// The small XP snack paid on this open for passing 50% of the goal, or 0.
+  /// Half a goal is still a missed day; the snack is only a nudge.
   final int snackXpToday;
 
-  /// Today's optional challenge, or null when this phone cannot judge one.
+  /// Today's optional side quest, or null when none is offered. Always null
+  /// while [AppConstants.sideQuestsEnabled] is false.
   final SideQuest? quest;
 
   /// The quest was already met by the steps the phone counts.
   final bool questDoneToday;
 
-  /// The quest bonus paid on this open, if any.
+  /// XP paid on this open for finishing the quest, or 0.
   final int questXpToday;
 
   /// A goal picked from the last week, when there is enough history.
@@ -113,14 +129,22 @@ class HomeState {
   bool get stepsFromSensor => stepSource == StepSource.sensor;
 }
 
+/// The Home screen's state. Loads on first read and again on [HomeController]
+/// refreshes.
 final homeControllerProvider = AsyncNotifierProvider<HomeController, HomeState>(
   HomeController.new,
 );
 
+/// Loads and updates [HomeState].
+///
+/// Each load reads the steps, runs the daily rules (goal, streak, freezes,
+/// runaway and recovery), saves the result, then builds the state to show.
 class HomeController extends AsyncNotifier<HomeState> {
+  /// First load, when the screen is first shown.
   @override
   Future<HomeState> build() => _load();
 
+  /// Reloads everything and shows the loading spinner while it does.
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(_load);
@@ -138,6 +162,8 @@ class HomeController extends AsyncNotifier<HomeState> {
     }
   }
 
+  /// Development only: sets today's fake step count to [steps] and reloads.
+  /// Does nothing unless the mock step source is in use.
   Future<void> setMockSteps(int steps) async {
     final repository = ref.read(stepRepositoryProvider);
     if (repository is! MockStepRepository) return;
@@ -152,6 +178,13 @@ class HomeController extends AsyncNotifier<HomeState> {
     return granted;
   }
 
+  /// The core of the app's daily rules, run on every open and refresh.
+  ///
+  /// In order: read the cat, history and today's steps; evaluate the day
+  /// (goal met or missed, streak, freezes, runaway); for a runaway cat, count
+  /// steps since it left; if its 7-day window closed, store it as a lost cat
+  /// (it may return 7 to 30 days later) and bring a stray kitten; save
+  /// everything; then work out the optional quest and goal suggestions.
   Future<HomeState> _load() async {
     final store = ref.read(localStoreProvider);
     final history = ref.read(historyRepositoryProvider);
@@ -345,6 +378,8 @@ class HomeController extends AsyncNotifier<HomeState> {
   }
 
   /// Sets the goal from a suggestion or a raise, and answers the card.
+  /// Sets the daily goal to [goal] steps (rounded to a valid goal) and
+  /// reloads.
   Future<void> applyGoal(int goal) async {
     final profile = await ref.read(profileRepositoryProvider).read();
     final next = profile.copyWith(dailyStepGoal: normaliseGoal(goal));
@@ -359,6 +394,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     await refresh();
   }
 
+  /// Takes the raised goal that Home offered and records the offer as seen.
   Future<void> acceptGoalRaise() async {
     final raise = state.value?.goalRaise;
     if (raise == null) return;
@@ -372,6 +408,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     await refresh();
   }
 
+  /// Today's steps per hour, or null when the phone cannot say.
   Future<List<int>?> _hoursOrNull(StepRepository repository) async {
     try {
       return await repository.hourlySteps(CalendarDate.today());
@@ -380,6 +417,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     }
   }
 
+  /// Steps for [date], or null when the phone cannot say.
   Future<int?> _stepsOrNull(
     StepRepository repository,
     CalendarDate date,
@@ -393,7 +431,7 @@ class HomeController extends AsyncNotifier<HomeState> {
   }
 
   /// The steps of every day from [ranAwayOn] up to yesterday, for the recovery
-  /// window.
+  /// window (at most [AppConstants.recoveryWindowDays] days).
   ///
   /// A day the app was opened for is already saved. The rest is asked of the
   /// phone, which is the only source that can still see them. Read only for a
@@ -427,6 +465,8 @@ class HomeController extends AsyncNotifier<HomeState> {
     return window;
   }
 
+  /// Saves the cat, any freeze-protected days, today's record and the
+  /// "last evaluated" date so a day is never judged twice.
   Future<void> _write(
     HistoryRepository history,
     DaySnapshot snapshot,
@@ -445,6 +485,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     await history.writeLastEvaluated(snapshot.today.date);
   }
 
+  /// Reads the saved cat from storage. Onboarding guarantees it exists.
   Future<Cat> _readCat(LocalStore store) async {
     final raw = await store.read(OnboardingRepository.catKey);
     final json = jsonDecode(raw!) as Map<String, dynamic>;

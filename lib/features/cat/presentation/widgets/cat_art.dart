@@ -17,15 +17,24 @@ class CatArt extends StatefulWidget {
     super.key,
   });
 
+  /// Coat colour set to draw.
   final CatAppearance appearance;
+
+  /// Drives the face: happy = closed smiling eyes, neutral = round eyes, sad = drooping
+  /// ears, worried brows and a frown.
   final CatMood mood;
+
+  /// Width and height of the drawing, in logical pixels.
   final double size;
 
   @override
   State<CatArt> createState() => _CatArtState();
 }
 
+/// Holds the looping animation (tail sway, breathing, blink) and pauses it when the
+/// system asks for reduced motion.
 class _CatArtState extends State<CatArt> with SingleTickerProviderStateMixin {
+  /// Runs 0 to 1 over 4 seconds, forever; the painter turns it into movement.
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
@@ -66,12 +75,15 @@ class _CatArtState extends State<CatArt> with SingleTickerProviderStateMixin {
   }
 }
 
+/// Plain word for the screen reader label.
 String _moodWord(CatMood mood) => switch (mood) {
   CatMood.happy => 'happy',
   CatMood.neutral => 'content',
   CatMood.sad => 'sad',
 };
 
+/// Paints the cat on a 200 x 200 design grid, scaled to the widget size. [animation]
+/// is 0 to 1 and repeats; it moves the tail and body and makes the blink.
 class _CatPainter extends CustomPainter {
   _CatPainter({
     required this.animation,
@@ -237,10 +249,12 @@ class _CatPainter extends CustomPainter {
       old.mood != mood || old.appearance != appearance;
 }
 
-/// What the room shows while the cat has run away.
+/// What the room shows while the cat has run away: an empty cushion instead of
+/// the cat.
 class EmptyCushion extends StatelessWidget {
   const EmptyCushion({this.size = 200, super.key});
 
+  /// Width and height, in logical pixels.
   final double size;
 
   @override

@@ -2,14 +2,31 @@ import 'package:flutter/material.dart';
 
 /// Brand colours. Orange is for fills, never for words on cream.
 abstract final class CatwalkColors {
+  /// Main brand orange, for fills and buttons.
   static const orange = Color(0xFFF69337);
+
+  /// Pale orange for backgrounds and empty progress tracks.
   static const orangeSoft = Color(0xFFFFE3CC);
+
+  /// Accent colour for links and secondary actions.
   static const teal = Color(0xFF1F7A7A);
+
+  /// App background.
   static const cream = Color(0xFFFFF6EA);
+
+  /// Main text colour.
   static const ink = Color(0xFF1B2B30);
+
+  /// Softer text colour for hints and captions.
   static const inkMuted = Color(0xFF52626A);
+
+  /// Card surface.
   static const card = Color(0xFFFFFFFF);
+
+  /// Thin borders and dividers.
   static const line = Color(0xFFEBDCC9);
+
+  /// Error and warning text.
   static const error = Color(0xFFB3382C);
 }
 

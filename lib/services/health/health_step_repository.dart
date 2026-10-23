@@ -9,9 +9,11 @@ import 'step_repository.dart';
 /// missing or access is denied, [isAvailable] or [hasPermissions] say so and
 /// the UI shows that steps are unavailable.
 class HealthStepRepository implements StepRepository {
+  /// Pass a [client] in tests; by default the real health plugin is used.
   HealthStepRepository({HealthClient? client})
     : _client = client ?? HealthPluginClient();
 
+  /// Gateway to Apple Health / Health Connect.
   final HealthClient _client;
 
   @override
@@ -20,6 +22,7 @@ class HealthStepRepository implements StepRepository {
   @override
   Future<bool> isAvailable() => _client.isAvailable();
 
+  /// False when the store is missing, otherwise whether the user allowed steps.
   @override
   Future<bool> hasPermissions() async {
     if (!await _client.isAvailable()) return false;
@@ -32,6 +35,7 @@ class HealthStepRepository implements StepRepository {
     return _client.requestPermission();
   }
 
+  /// Hourly steps for [date], or null when the store or permission is missing.
   @override
   Future<List<int>?> hourlySteps(CalendarDate date) async {
     if (!await _client.isAvailable()) return null;
@@ -41,6 +45,8 @@ class HealthStepRepository implements StepRepository {
     return _client.hourlyBetween(start, end);
   }
 
+  /// Steps for [date] from midnight to midnight local time. "No data" gives
+  /// [StepReading.unavailable], never zero.
   @override
   Future<StepReading> getStepsForDate(CalendarDate date) async {
     if (!await _client.isAvailable()) return const StepReading.unavailable();

@@ -15,12 +15,14 @@ import 'geo.dart';
 /// after it was lost, it may turn up on the map again. The day is fixed from
 /// the cat's id, so closing the app cannot reroll it.
 class LostCat {
+  /// [returnsOn] is the first day the cat may show up again.
   const LostCat({
     required this.cat,
     required this.lostOn,
     required this.returnsOn,
   });
 
+  /// Records [cat] leaving on [lostOn], with its return day worked out from its id.
   factory LostCat.leaving(Cat cat, CalendarDate lostOn) {
     return LostCat(
       cat: cat,
@@ -29,8 +31,14 @@ class LostCat {
     );
   }
 
+  /// The cat as it was when it left.
   final Cat cat;
+
+  /// The day the cat left for good (the recovery window closed).
   final CalendarDate lostOn;
+
+  /// The first day the cat may turn up on the map again (7 to 30 days after
+  /// [lostOn]). Nothing reads this yet: the return is not built.
   final CalendarDate returnsOn;
 
   /// Whether the cat may show up on [today].
@@ -49,6 +57,7 @@ CalendarDate lostCatReturnDay({
   return lostOn.addDays(min + random.nextInt(max - min + 1));
 }
 
+/// Names the stray kitten can get.
 const List<String> _kittenNames = [
   'Mimi',
   'Pip',

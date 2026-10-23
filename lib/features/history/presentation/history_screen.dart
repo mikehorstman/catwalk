@@ -37,9 +37,12 @@ class HistoryScreen extends ConsumerWidget {
   }
 }
 
+/// The Me tab content: streaks, this week, a 7-day strip, totals and every
+/// saved day.
 class _Me extends StatelessWidget {
   const _Me({required this.view});
 
+  /// The loaded history to show.
   final HistoryView view;
 
   @override
@@ -111,6 +114,7 @@ class _Me extends StatelessWidget {
 class _ThisWeek extends StatelessWidget {
   const _ThisWeek({required this.week});
 
+  /// Totals for the last seven days.
   final WeekSummary week;
 
   @override
@@ -163,10 +167,14 @@ class _ThisWeek extends StatelessWidget {
   }
 }
 
+/// A big number with a small label underneath.
 class _Stat extends StatelessWidget {
   const _Stat({required this.label, required this.value});
 
+  /// What the number means.
   final String label;
+
+  /// The number, already formatted.
   final String value;
 
   @override
@@ -196,8 +204,10 @@ class _Stat extends StatelessWidget {
 class _WeekStrip extends StatelessWidget {
   const _WeekStrip({required this.days});
 
+  /// All saved days. Only the last seven are drawn.
   final List<DailyProgress> days;
 
+  /// Weekday initials, Monday first, matching [DateTime.weekday] minus one.
   static const _letters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   @override
@@ -220,6 +230,8 @@ class _WeekStrip extends StatelessWidget {
   }
 }
 
+/// One circle in the week strip: met, missed or still open, with a ring when
+/// it is today.
 class _DayDot extends StatelessWidget {
   const _DayDot({
     required this.date,
@@ -228,9 +240,16 @@ class _DayDot extends StatelessWidget {
     required this.letter,
   });
 
+  /// The day this circle stands for.
   final CalendarDate date;
+
+  /// The saved record for [date], or null when nothing was saved that day.
   final DailyProgress? record;
+
+  /// Today is never shown as missed, because it is still in play.
   final bool isToday;
+
+  /// Weekday initial shown above the circle.
   final String letter;
 
   @override
@@ -288,9 +307,11 @@ class _DayDot extends StatelessWidget {
   }
 }
 
+/// One row in the Days list: date, steps against goal, and XP earned.
 class _DayTile extends StatelessWidget {
   const _DayTile({required this.day});
 
+  /// The saved day to show.
   final DailyProgress day;
 
   @override

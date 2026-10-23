@@ -9,6 +9,8 @@ import '../../domain/room_layout.dart';
 class RoomScene extends StatelessWidget {
   const RoomScene({required this.layout, super.key});
 
+  /// Source of every position: walk line, window sill, rug, basket, tree and
+  /// toys.
   final RoomLayout layout;
 
   @override
@@ -123,9 +125,16 @@ class _Board extends StatelessWidget {
     this.color = const Color(0xFFD9B48C),
   });
 
+  /// Middle of the board, in logical pixels.
   final Offset center;
+
+  /// Width in logical pixels.
   final double width;
+
+  /// Height in logical pixels; the ends are rounded to half of it.
   final double height;
+
+  /// Fill colour; defaults to a light wood.
   final Color color;
 
   @override
@@ -149,8 +158,14 @@ class _Board extends StatelessWidget {
 class _Basket extends StatelessWidget {
   const _Basket({required this.center, required this.w, required this.h});
 
+  /// Where the basket sits, in logical pixels; the cat's feet land inside the
+  /// rim.
   final Offset center;
+
+  /// Room width in logical pixels.
   final double w;
+
+  /// Room height in logical pixels.
   final double h;
 
   @override
@@ -180,8 +195,14 @@ class _Basket extends StatelessWidget {
 class _Toy extends StatelessWidget {
   const _Toy({required this.id, required this.center, required this.size});
 
+  /// The toy's id from the inventory: `ball`, `mouse`; anything else draws as
+  /// the feather.
   final String id;
+
+  /// Where the toy rests on the floor, in logical pixels.
   final Offset center;
+
+  /// Base size in logical pixels; the shapes scale from it.
   final double size;
 
   @override

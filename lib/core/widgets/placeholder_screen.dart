@@ -8,7 +8,10 @@ class PlaceholderScreen extends StatelessWidget {
     super.key,
   });
 
+  /// Title in the app bar.
   final String title;
+
+  /// Centred text explaining what is missing.
   final String message;
 
   @override

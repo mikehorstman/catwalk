@@ -15,6 +15,8 @@ import 'step_repository.dart';
 /// local store and reports the steps walked since the anchor. History is only
 /// available for today; earlier days belong to the health store.
 class SensorStepRepository implements StepRepository {
+  /// Needs a [store] to keep the daily anchor. [client] and [resolver] can be
+  /// replaced in tests.
   SensorStepRepository({
     required LocalStore store,
     SensorStepClient? client,
@@ -23,10 +25,16 @@ class SensorStepRepository implements StepRepository {
        _client = client ?? PedometerSensorClient(),
        _resolver = resolver;
 
+  /// Where the day's anchor is saved.
   final LocalStore _store;
+
+  /// Reads the phone's step sensor.
   final SensorStepClient _client;
+
+  /// Applies the anchor and reboot rules.
   final SensorStepResolver _resolver;
 
+  /// Storage key for the saved [SensorStepBaseline].
   static const baselineKey = 'sensor_step_baseline';
 
   @override
@@ -42,6 +50,8 @@ class SensorStepRepository implements StepRepository {
     return reading != null;
   }
 
+  /// Same check as [requestPermissions]: the plugin has no separate check, so
+  /// this reads the sensor.
   @override
   Future<bool> hasPermissions() async {
     final reading = await _client.stepsSinceBoot();
@@ -52,6 +62,8 @@ class SensorStepRepository implements StepRepository {
   @override
   Future<List<int>?> hourlySteps(CalendarDate date) async => null;
 
+  /// Steps for [date]. Only today can be read; any other day is unavailable.
+  /// Saves the updated anchor every time it reads.
   @override
   Future<StepReading> getStepsForDate(CalendarDate date) async {
     // The sensor cannot look back at another day. Only today is readable.
@@ -71,6 +83,7 @@ class SensorStepRepository implements StepRepository {
     return StepReading.sensor(_resolver.stepsFor(baseline, reading));
   }
 
+  /// The saved anchor, or null when none exists or it cannot be read.
   Future<SensorStepBaseline?> _readBaseline() async {
     final raw = await _store.read(baselineKey);
     if (raw == null) return null;
@@ -84,6 +97,7 @@ class SensorStepRepository implements StepRepository {
     }
   }
 
+  /// Saves [baseline] for the next read.
   Future<void> _writeBaseline(SensorStepBaseline baseline) async {
     await _store.write(baselineKey, jsonEncode(baseline.toJson()));
   }

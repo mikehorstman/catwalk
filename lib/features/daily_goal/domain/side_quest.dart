@@ -1,5 +1,8 @@
 import '../../../core/utils/calendar_date.dart';
 
+/// DORMANT: side quests are switched off (AppConstants.sideQuestsEnabled is
+/// false). This file is kept for later and nothing in the live game uses it.
+///
 /// One optional challenge for the day.
 ///
 /// A quest changes *how* you walk, never how much you must walk. It is never a
@@ -21,12 +24,22 @@ class DayTrace {
     this.yesterdaySteps,
   });
 
+  /// The day being judged.
   final CalendarDate date;
+
+  /// Steps walked so far that day.
   final int steps;
+
+  /// The day's goal, in steps.
   final int goal;
+
+  /// Steps per hour (24 values, index 0 = midnight hour), or null if unknown.
   final List<int>? hourly;
+
+  /// Steps yesterday, or null when the phone has no answer.
   final int? yesterdaySteps;
 
+  /// True when a full 24-hour breakdown is available.
   bool get hasHourly => hourly != null && hourly!.length == 24;
 
   /// Steps the phone can see for today, from the hourly buckets when it has
@@ -37,9 +50,11 @@ class DayTrace {
     return total > steps ? total : steps;
   }
 
+  /// Steps in hours 0 to 11.
   int get beforeNoon =>
       hasHourly ? hourly!.take(12).fold<int>(0, (sum, hour) => sum + hour) : 0;
 
+  /// Steps from 19:00 onwards.
   int get afterDinner =>
       hasHourly ? hourly!.skip(19).fold<int>(0, (sum, hour) => sum + hour) : 0;
 
@@ -50,6 +65,7 @@ class DayTrace {
   }
 }
 
+/// Display text for a [SideQuest] and what data it needs.
 class QuestInfo {
   const QuestInfo({
     required this.quest,
@@ -58,8 +74,13 @@ class QuestInfo {
     required this.needsHourly,
   });
 
+  /// Which quest this describes.
   final SideQuest quest;
+
+  /// Short name shown to the player.
   final String title;
+
+  /// The exact condition, in plain words.
   final String detail;
 
   /// False for quests that only need the day's total, so they survive on a
@@ -67,6 +88,7 @@ class QuestInfo {
   final bool needsHourly;
 }
 
+/// Text and data needs for every quest.
 const Map<SideQuest, QuestInfo> sideQuestInfo = {
   SideQuest.twoWalks: QuestInfo(
     quest: SideQuest.twoWalks,
@@ -110,6 +132,9 @@ List<SideQuest> questsFor(DayTrace trace) => [
 ///
 /// The pick is deterministic from the date, so the quest does not change when
 /// the screen reloads, and it never repeats yesterday's.
+///
+/// [daysWalking] is how many days the player has history for; the first two
+/// days only get the gentlest quest. [previous] is yesterday's quest.
 SideQuest? pickQuest({
   required DayTrace trace,
   required int daysWalking,

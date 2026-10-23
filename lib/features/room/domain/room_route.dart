@@ -12,17 +12,26 @@ class RouteLeg {
     required this.speed,
   }) : assert(speed > 0, 'A leg that never ends is not a leg');
 
+  /// Start of the leg, as fractions of the room.
   final Offset from;
+
+  /// End of the leg, as fractions of the room.
   final Offset to;
+
+  /// What the cat visibly does on this leg: walk, climbUp or climbDown.
   final CatAction action;
 
   /// Normalised room units per second.
   final double speed;
 
+  /// Length of the leg, in room units.
   double get distance => (to - from).distance;
 
+  /// Seconds the leg takes at its [speed].
   double get duration => distance / speed;
 
+  /// Where the cat is after covering [travelled] room units of this leg.
+  /// Clamped to the leg: too little gives [from], too much gives [to].
   Offset positionAt(double travelled) {
     final span = distance;
     if (span == 0) return to;
@@ -40,6 +49,7 @@ class RoomRoute {
     this.arrivedAt,
   });
 
+  /// The legs in order. Empty when the cat is already where it is going.
   final List<RouteLeg> legs;
 
   /// What the cat does once the legs run out.
@@ -51,8 +61,10 @@ class RoomRoute {
   /// Where the route ends. Null when the cat is already there.
   final Offset? arrivedAt;
 
+  /// True when there is nothing to travel.
   bool get isEmpty => legs.isEmpty;
 
+  /// Total seconds for all legs.
   double get duration {
     var total = 0.0;
     for (final leg in legs) {
@@ -72,6 +84,15 @@ const double climbSpeed = 0.30;
 const double _minLegDistance = 0.02;
 
 /// Builds the way from [from] to a spot, or to a walk along the floor.
+///
+/// [from] and the result are in fractions of the room. With a [spotId] the
+/// route ends on that spot; without one it ends on the walk line at [floorX].
+/// [arrivalAction] is what the cat does on arriving. [fromIsHigh] says the cat
+/// starts on a high spot, so it climbs down first. [facingRight] is currently
+/// unused: the direction is worked out later by [facingOf].
+///
+/// Legs shorter than 0.02 are dropped, so a cat already in place gets an empty
+/// route.
 ///
 /// A cat on a high spot climbs down first. A high target is reached by walking
 /// under it and then climbing. Everything else is a walk, with a short step
@@ -135,7 +156,10 @@ class RouteStep {
     this.action,
   });
 
+  /// Where the cat's feet are, as fractions of the room.
   final Offset position;
+
+  /// The way the cat is looking after this step.
   final CatFacing facing;
 
   /// Which leg the cat is on. Equal to `route.legs.length` once arrived.
@@ -144,6 +168,7 @@ class RouteStep {
   /// How far along the current leg, in normalised units.
   final double travelled;
 
+  /// True once every leg is done; the cat then does [RoomRoute.arrivalAction].
   final bool arrived;
 
   /// The action the cat is visibly doing, from the leg it is on.

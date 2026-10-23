@@ -13,8 +13,10 @@ abstract interface class SensorStepClient {
 /// The real client. The pedometer plugin has no separate permission call; the
 /// first subscription is what triggers the system prompt on Android and iOS.
 class PedometerSensorClient implements SensorStepClient {
+  /// Waits up to [timeout] for the sensor's first value before giving up.
   PedometerSensorClient({this.timeout = const Duration(seconds: 2)});
 
+  /// How long to wait for the sensor, since it may never answer.
   final Duration timeout;
 
   @override
