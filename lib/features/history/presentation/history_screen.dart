@@ -8,6 +8,7 @@ import '../../../core/utils/format.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/progress_milestones.dart';
 import 'history_controller.dart';
+import 'test_guide.dart';
 
 /// The Me tab: how have I been doing?
 class HistoryScreen extends ConsumerWidget {
@@ -105,6 +106,8 @@ class _Me extends StatelessWidget {
             _DayTile(day: day),
             const SizedBox(height: 8),
           ],
+        const SizedBox(height: 24),
+        const TestGuide(),
       ],
     );
   }
