@@ -161,15 +161,39 @@ const List<TestGuideItem> testGuideItems = [
         'Total steps at the top, then streak, best streak, days met, this week '
         'and every saved day. The total should match the sum of your days.',
   ),
+  TestGuideItem(
+    feature: 'Shop and cat beds',
+    how:
+        'Tap the shop icon at the top right of Home. Buy a bed when you have '
+        'the candy (the second bed costs 40).',
+    check:
+        'Candy drops, a bed is added, and the next morning a cat waits on '
+        'the Map. Walk to it (within 30 m) and it joins your room. Only one '
+        'bed can be waiting at a time.',
+  ),
+  TestGuideItem(
+    feature: 'Toy perks',
+    how: 'Buy a toy for 8 candy and read its line in the shop.',
+    check:
+        'Ball: +1 candy on goal days. Mouse: 6 pins on the Map. Feather: +1 '
+        'candy in the daily draw.',
+  ),
+  TestGuideItem(
+    feature: 'Reminders',
+    how:
+        'Open your first gift and allow notifications. Settings has the '
+        'Reminders switch.',
+    check:
+        'At about your usual walking time you get a nudge from '
+        'your cat, at most three a day, none once the goal is reached. Off '
+        'in Settings means none.',
+  ),
 ];
 
 /// What is not in this build, so a missing feature is not mistaken for a bug.
 const List<String> testGuideNotBuilt = [
-  'The lost cat coming back on the map',
-  'More than one cat, street cats and photos',
-  'Reminders and the weekly recap',
+  'Street cats and photos',
   'Friends, leaderboard and visiting rooms',
-  'Cat beds: buying a bed to get another cat',
 ];
 
 /// The “How to test” section at the bottom of Me.

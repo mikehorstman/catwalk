@@ -340,10 +340,10 @@ SLICES = [
     ("Rules change", "built", "Half a goal is a miss. Side quest off. 7-day recovery window, lost cat leaves, stray kitten arrives. The lost cat is remembered with its random return day; the return on the map needs beds (not built)."),
     ("First week and rewards", "built", "Gentle goal ramp, free first toy and freeze, streak prizes, a freeze every 7 days and the daily draw."),
     ("Candy replaces XP and level", "built", "XP and level are gone. Candy comes from the goal, pickups, the draw, streak prizes and step milestones. Total steps lead the Me tab. Side quests deleted. The daily draw and prizes come in a gift you open with a button on Home, grey until the goal is reached."),
-    ("5. Beds and more cats", "planned", "Cat beds in the shop with a rising price, a new cat on the map the next morning, street cat photos, a lost cat returning to an empty bed."),
-    ("Toy perks", "planned", "Each toy gets a small, visible perk: the ball pays +1 candy on goal days, the mouse adds a map pickup, the feather sweetens the daily gift."),
-    ("A Shop screen", "planned", "The shop becomes a whole screen of its own, not the small sheet on Home: toys and cat beds with their prices, what you own, and your candy. The sheet is a stopgap."),
-    ("Reminders and recap", "planned", "Reminders in the cat's voice, the weekly recap, the lower-goal offer, and analytics opt-out. Before outside testers."),
+    ("5. Beds and more cats", "built", "Cat beds in the shop with a rising price, a new cat on the map the next morning, (street cat photos are still to do) a lost cat returning to an empty bed."),
+    ("Toy perks", "built", "Each toy gets a small, visible perk: the ball pays +1 candy on goal days, the mouse adds a map pickup, the feather sweetens the daily gift."),
+    ("A Shop screen", "built", "The shop becomes a whole screen of its own, not the small sheet on Home: toys and cat beds with their prices, what you own, and your candy. The sheet is a stopgap."),
+    ("Reminders and recap", "built", "Reminders in the cat's voice, the weekly recap, the lower-goal offer, and analytics opt-out. Before outside testers."),
     ("6. Other people", "planned", "Account, friends, room visits, nudges, leaderboard."),
 ]
 
@@ -361,13 +361,13 @@ NEXT = [
 ]
 
 CHECK = [
-    ("each toy should have some value, for example ball -> more candy each day", "planned", "Yes. Each toy gets a small perk, shown in the shop (D24). They stay small so the goal still pays the most."),
+    ("each toy should have some value, for example ball -> more candy each day", "built", "Yes. Each toy gets a small perk, shown in the shop (D24). They stay small so the goal still pays the most."),
     ("stappendoel halen -> kat blij -> xp erbij", "built", "Built with candy: 1 per 1,000 steps of your goal (D8, D17)."),
     ("kijken op kaart -> naar snoepjes lopen -> beloning (extra xp, streak freeze, speeltje, nieuwe kat unlocken, iets sparen)", "partly", "Candy, freeze and toy are built. A new cat comes from a bed you buy (D5, not built yet). Candy is the thing to save (D4)."),
-    ("kat kan spawnen op de map na bepaald level/xp -> heenlopen en unlocken", "planned", "Changed by you: buy a cat bed, then the cat appears on the map the next morning and stays until fetched (D5, D19)."),
+    ("kat kan spawnen op de map na bepaald level/xp -> heenlopen en unlocken", "built", "Changed by you: buy a cat bed, then the cat appears on the map the next morning and stays until fetched (D5, D19)."),
     ("kattenkamer ... speeltjes en krabpalen ... (vinden op kaart of kopen met currency?)", "partly", "Room and toys are built. Toys can be found or bought with candy. Scratching posts are not built. Currency is now candy (D8)."),
-    ("each cat gets its own cat bed; buy/unlock a bed; currency (cat candy?) buys toys and beds", "planned", "Candy and toys are built. Cat beds come with the next slice (D8, D18)."),
-    ("the bed price goes up after each purchase, so cats cannot be unlocked too quickly", "planned", "Yes. 2nd 40, 3rd 90, 4th 160, 5th 250. The rising price is the cap on cats (D18)."),
+    ("each cat gets its own cat bed; buy/unlock a bed; currency (cat candy?) buys toys and beds", "built", "Candy and toys are built. Cat beds come with the next slice (D8, D18)."),
+    ("the bed price goes up after each purchase, so cats cannot be unlocked too quickly", "built", "Yes. 2nd 40, 3rd 90, 4th 160, 5th 250. The rising price is the cap on cats (D18)."),
     ("higher daily goal -> more rewards -> more cats faster", "built", "Candy is 1 per 1,000 steps of the goal, so a higher goal earns more a day (D6, D17). It unlocks cats faster once beds exist."),
     ("kat kan weglopen als doel aantal dagen niet behaald is", "built", "Built at 3 missed days. Half a goal also counts as missed."),
     ("terugkomen door weer veel te lopen", "built", "A target inside a 7-day window, then the map. If missed, the cat leaves and may come back on the map some random day later (D1, D2, D10)."),
@@ -377,7 +377,7 @@ CHECK = [
     ("voortgangsbalk voor stappen per dag", "built", "On Home."),
     ("streaks -> beloning voor behouden van streak", "partly", "Streak and prizes are built and pay candy and toys. They are in the daily gift."),
     ("vrienden toevoegen, elkaars kattenkamer bekijken, aanspreken op doel behalen", "planned", "Slice 6. Needs an account."),
-    ("veel meldingen, schuldgevoel", "planned", "At most 3 a day and none after the goal is met (D7)."),
+    ("veel meldingen, schuldgevoel", "built", "At most 3 a day and none after the goal is met (D7)."),
 ]
 
 DECISIONS = [
