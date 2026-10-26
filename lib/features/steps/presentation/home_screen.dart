@@ -11,7 +11,7 @@ import '../../daily_goal/domain/progress_milestones.dart';
 import '../../cat/presentation/cat_voice.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
 import 'home_controller.dart';
-import 'shop_sheet.dart';
+import 'shop_screen.dart';
 import 'step_auto_refresh.dart';
 
 /// Home answers one question: how far am I today?
@@ -30,7 +30,22 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () =>
                   ref.read(homeControllerProvider.notifier).refresh(),
             ),
-            data: (state) => _HomeBody(state: state),
+            data: (state) => Stack(
+              fit: StackFit.expand,
+              children: [
+                _HomeBody(state: state),
+                Positioned(
+                  top: 4,
+                  right: 8,
+                  child: IconButton(
+                    key: const Key('open-shop'),
+                    tooltip: 'Shop',
+                    icon: const Icon(Icons.storefront_outlined),
+                    onPressed: () => openShop(context),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -140,7 +155,7 @@ class _HomeBody extends ConsumerWidget {
             _Chip(
               icon: Icons.cookie_outlined,
               text: '${formatNumber(state.inventory.candy)} candy',
-              onTap: () => showShopSheet(context),
+              onTap: () => openShop(context),
             ),
           ],
         ),

@@ -7,74 +7,87 @@ import '../../daily_goal/domain/shop.dart';
 import '../../map/domain/toy_perks.dart';
 import 'home_controller.dart';
 
-/// Opens the shop: what the candy buys. For now that is the toys; cat beds
-/// come with more cats.
-void showShopSheet(BuildContext context) {
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    builder: (context) => const _ShopSheet(),
-  );
-}
+/// Opens the shop as a full screen: what the candy buys.
+Future<void> openShop(BuildContext context) =>
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const ShopScreen()));
 
-class _ShopSheet extends ConsumerWidget {
-  const _ShopSheet();
+/// The shop: cat beds, and toys with what each one does. Candy is the only
+/// currency.
+class ShopScreen extends ConsumerWidget {
+  const ShopScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final home = ref.watch(homeControllerProvider).value;
-    if (home == null) return const SizedBox(height: 120);
-    final inventory = home.inventory;
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );
-    final forSale = toysForSale(inventory);
-    return SafeArea(
-      child: ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        children: [
-          Text('Shop', style: theme.textTheme.titleLarge),
-          const SizedBox(height: 4),
-          Text(
-            'You have ${inventory.candy} candy. '
-            'Walk to your goal to earn more.',
-            style: muted,
-          ),
-          const SizedBox(height: 16),
-          if (forSale.isEmpty)
-            Text(
-              'You own every toy. Cat beds come with more cats.',
-              style: muted,
-            )
-          else
-            for (final id in forSale)
-              _ToyRow(
-                toyId: id,
-                affordable: inventory.candy >= AppConstants.toyPriceCandy,
-                onBuy: () =>
-                    ref.read(homeControllerProvider.notifier).buyToy(id),
-              ),
-          const SizedBox(height: 16),
-          _BedRow(
-            price: bedPrice(inventory.beds),
-            candy: inventory.candy,
-            freeBeds: home.freeBeds,
-            waiting: home.arrival != null,
-            onBuy: () => ref.read(homeControllerProvider.notifier).buyBed(),
-          ),
-          const SizedBox(height: 12),
-          if (inventory.toys.isEmpty)
-            Text('Toys you own: none yet.', style: muted)
-          else ...[
-            Text('Toys you own', style: muted),
-            for (final id in inventory.toys)
-              Text('${_titleCase(id)}: ${toyPerkText[id] ?? ''}', style: muted),
-          ],
-        ],
+    return Scaffold(
+      appBar: AppBar(title: const Text('Shop')),
+      body: SafeArea(
+        child: home == null
+            ? const Center(child: CircularProgressIndicator())
+            : _body(context, ref, home, theme, muted),
       ),
+    );
+  }
+
+  Widget _body(
+    BuildContext context,
+    WidgetRef ref,
+    HomeState home,
+    ThemeData theme,
+    TextStyle? muted,
+  ) {
+    final inventory = home.inventory;
+    final forSale = toysForSale(inventory);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      children: [
+        Text(
+          'You have ${inventory.candy} candy. '
+          'Walk to your goal to earn more.',
+          style: muted,
+        ),
+        const SizedBox(height: 24),
+        Text('Cat beds', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          '${home.cats.length} of ${inventory.beds} '
+          '${inventory.beds == 1 ? 'bed is' : 'beds are'} in use. '
+          'Each bed holds one cat, and the next one costs more.',
+          style: muted,
+        ),
+        const SizedBox(height: 12),
+        _BedRow(
+          price: bedPrice(inventory.beds),
+          candy: inventory.candy,
+          freeBeds: home.freeBeds,
+          waiting: home.arrival != null,
+          onBuy: () => ref.read(homeControllerProvider.notifier).buyBed(),
+        ),
+        const SizedBox(height: 28),
+        Text('Toys', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+        if (forSale.isEmpty)
+          Text('You own every toy.', style: muted)
+        else
+          for (final id in forSale)
+            _ToyRow(
+              toyId: id,
+              affordable: inventory.candy >= AppConstants.toyPriceCandy,
+              onBuy: () => ref.read(homeControllerProvider.notifier).buyToy(id),
+            ),
+        if (inventory.toys.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text('Toys you own', style: muted),
+          const SizedBox(height: 4),
+          for (final id in inventory.toys)
+            Text('${_titleCase(id)}: ${toyPerkText[id] ?? ''}', style: muted),
+        ],
+      ],
     );
   }
 }

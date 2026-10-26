@@ -89,6 +89,32 @@ void main() {
     expect(find.textContaining('You have 12 candy'), findsOneWidget);
   });
 
+  testWidgets('the shop icon at the top right opens the whole shop screen', (
+    tester,
+  ) async {
+    final store = await newPlayer();
+    await InventoryRepository(store).write(const Inventory(candy: 3));
+    await open(tester, store, 1000);
+
+    await tester.tap(find.byKey(const Key('open-shop')));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 30));
+    }
+
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.text('Shop'), findsOneWidget);
+    expect(find.text('Cat beds'), findsOneWidget);
+    expect(find.text('Toys'), findsOneWidget);
+    expect(find.textContaining('1 of 1 bed is in use'), findsOneWidget);
+    expect(find.textContaining('You have 3 candy'), findsOneWidget);
+
+    await tester.pageBack();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 30));
+    }
+    expect(find.text('Cat beds'), findsNothing);
+  });
+
   testWidgets('with too little candy the buy buttons are off', (tester) async {
     final store = await newPlayer();
     await InventoryRepository(store).write(const Inventory(candy: 5));
