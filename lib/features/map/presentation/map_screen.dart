@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/utils/format.dart';
+import '../../cat/presentation/widgets/cat_head_icon.dart';
 import '../data/location_service.dart';
 import '../domain/collect.dart';
 import '../domain/geo.dart';
@@ -106,6 +107,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
   /// The way you are facing, in radians clockwise from north.
   double _heading = 0;
 
+  /// How far the map is turned, in degrees. Two fingers turn it, as in Google
+  /// Maps; the compass button turns it back to north.
+  double _rotation = 0;
+
+  /// What you tapped on the map, or null. Pins and cats can be tapped; the
+  /// card at the bottom then shows how far away it is and how long to walk.
+  String? _selected;
+
   /// Glides the camera to your new position instead of jumping.
   late final AnimationController _glide = AnimationController(
     vsync: this,
@@ -120,6 +129,23 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _glide.dispose();
     _map.dispose();
     super.dispose();
+  }
+
+  /// What is selected right now, or null. A pin that was collected, or a cat
+  /// that came home, drops out by itself.
+  _Target? _selectedTarget(MapViewState view) {
+    final id = _selected;
+    if (id == null) return null;
+    if (id == 'waiting-cat' && view.arrival?.point != null) {
+      return _Target('A cat is waiting', view.arrival!.point!);
+    }
+    if (id == 'lost-cat' && view.recovery.isLocated) {
+      return _Target('${view.catName} is hiding here', view.recovery.catPoint!);
+    }
+    for (final pin in view.pins) {
+      if (id == 'pin-${pin.id}') return _Target('Pickup', pin.point);
+    }
+    return null;
   }
 
   /// Adds [point] to the trail and turns the avatar towards where you went.
@@ -220,8 +246,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
             minZoom: 10,
             maxZoom: 19,
             onMapReady: () => _mapReady = true,
+            onTap: (_, _) {
+              if (_selected != null) setState(() => _selected = null);
+            },
             onPositionChanged: (camera, hasGesture) {
               _zoom = camera.zoom;
+              if ((camera.rotation - _rotation).abs() > 0.5) {
+                setState(() => _rotation = camera.rotation);
+              }
               if (hasGesture && _following) setState(() => _following = false);
             },
           ),
@@ -246,6 +278,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                 ],
               ),
+            // A dashed line from you to what you tapped.
+            if (_selectedTarget(view) case final target?)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: [_ll(fix.point), _ll(target.point)],
+                    strokeWidth: 4,
+                    color: CatwalkColors.orange.withValues(alpha: 0.85),
+                    pattern: StrokePattern.dashed(segments: [10, 8]),
+                  ),
+                ],
+              ),
             // The circle you have to walk into to pick something up.
             CircleLayer(
               circles: [
@@ -266,10 +310,17 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     point: _ll(pin.point),
                     width: 56,
                     height: 56,
-                    child: _PinMarker(
-                      key: ValueKey('pin-${pin.id}'),
-                      near:
-                          distanceMeters(fix.point, pin.point) <= nearPinMeters,
+                    rotate: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _selected = 'pin-${pin.id}'),
+                      child: _PinMarker(
+                        key: ValueKey('pin-${pin.id}'),
+                        near:
+                            distanceMeters(fix.point, pin.point) <=
+                            nearPinMeters,
+                        selected: _selected == 'pin-${pin.id}',
+                      ),
                     ),
                   ),
                 if (view.arrival?.point case final spot?)
@@ -277,20 +328,33 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     point: _ll(spot),
                     width: 64,
                     height: 64,
-                    child: const _CatMarker(),
+                    rotate: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _selected = 'waiting-cat'),
+                      child: const _CatMarker(key: Key('waiting-cat')),
+                    ),
                   ),
                 if (view.recovery.isLocated)
                   Marker(
                     point: _ll(view.recovery.catPoint!),
-                    width: 52,
-                    height: 52,
-                    child: const _CatMarker(),
+                    width: 64,
+                    height: 64,
+                    rotate: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _selected = 'lost-cat'),
+                      child: const _CatMarker(key: Key('lost-cat')),
+                    ),
                   ),
                 Marker(
                   point: _ll(fix.point),
                   width: 64,
                   height: 64,
-                  child: _YouMarker(heading: _heading),
+                  rotate: true,
+                  child: _YouMarker(
+                    heading: _heading + _rotation * math.pi / 180,
+                  ),
                 ),
               ],
             ),
@@ -302,6 +366,39 @@ class _MapScreenState extends ConsumerState<MapScreen>
             child: _Banner(view: view),
           ),
         ),
+        if (_selectedTarget(view) case final target?)
+          Positioned(
+            left: 16,
+            right: 72,
+            bottom: 16,
+            child: _TargetCard(
+              key: const Key('target-card'),
+              title: target.title,
+              meters: distanceMeters(fix.point, target.point),
+              onClose: () => setState(() => _selected = null),
+            ),
+          ),
+        if (_rotation.abs() > 1)
+          Positioned(
+            right: 16,
+            bottom: 68,
+            child: FloatingActionButton.small(
+              key: const Key('compass'),
+              heroTag: 'compass',
+              tooltip: 'Face north',
+              onPressed: () {
+                if (_mapReady) _map.rotate(0);
+                setState(() => _rotation = 0);
+              },
+              child: Transform.rotate(
+                angle: -_rotation * math.pi / 180,
+                child: const Icon(
+                  Icons.navigation,
+                  color: CatwalkColors.orange,
+                ),
+              ),
+            ),
+          ),
         Positioned(
           right: 16,
           bottom: 16,
@@ -482,6 +579,86 @@ class _AccessCard extends ConsumerWidget {
 }
 
 /// The blue dot for your own position.
+/// Something on the map you tapped.
+class _Target {
+  const _Target(this.title, this.point);
+
+  /// What it is.
+  final String title;
+
+  /// Where it is.
+  final GeoPoint point;
+}
+
+/// The card at the bottom after tapping a pin or a cat: what it is, how far
+/// away, and how long the walk takes at an average pace.
+class _TargetCard extends StatelessWidget {
+  const _TargetCard({
+    super.key,
+    required this.title,
+    required this.meters,
+    required this.onClose,
+  });
+
+  /// What was tapped.
+  final String title;
+
+  /// Straight-line distance from you, in metres.
+  final double meters;
+
+  /// Closes the card.
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: CatwalkColors.card,
+      elevation: 3,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 6, 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.directions_walk,
+                        size: 18,
+                        color: CatwalkColors.teal,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '${walkingTimeText(meters)} · ${distanceText(meters)}',
+                          key: const Key('target-distance'),
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Close',
+              onPressed: onClose,
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// You: a cat face on a sage disc, a soft pulse around it and a pointer that
 /// turns the way you are walking.
 class _YouMarker extends StatefulWidget {
@@ -549,7 +726,7 @@ class _YouMarkerState extends State<_YouMarker>
                 BoxShadow(blurRadius: 5, color: Colors.black38),
               ],
             ),
-            child: const Icon(Icons.pets, color: Colors.white, size: 18),
+            child: const Center(child: CatHeadIcon(size: 20)),
           ),
         ],
       ),
@@ -560,7 +737,10 @@ class _YouMarkerState extends State<_YouMarker>
 /// A pickup: bobs gently, and glows and grows once it is close enough to walk
 /// onto.
 class _PinMarker extends StatefulWidget {
-  const _PinMarker({super.key, required this.near});
+  const _PinMarker({super.key, required this.near, this.selected = false});
+
+  /// True while this pin is the one you tapped.
+  final bool selected;
 
   /// True when you are within a few steps of it.
   final bool near;
@@ -592,13 +772,16 @@ class _PinMarkerState extends State<_PinMarker>
         child: child,
       ),
       child: AnimatedScale(
-        scale: widget.near ? 1.25 : 0.9,
+        scale: widget.near || widget.selected ? 1.25 : 0.9,
         duration: const Duration(milliseconds: 250),
         child: Container(
           decoration: BoxDecoration(
             color: CatwalkColors.orange,
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
+            border: Border.all(
+              color: widget.selected ? CatwalkColors.teal : Colors.white,
+              width: 3,
+            ),
             boxShadow: [
               BoxShadow(
                 blurRadius: widget.near ? 16 : 4,
@@ -622,7 +805,7 @@ class _PinMarkerState extends State<_PinMarker>
 
 /// A cat waiting on the map, with a ring that breathes so it is easy to spot.
 class _CatMarker extends StatefulWidget {
-  const _CatMarker();
+  const _CatMarker({super.key});
 
   @override
   State<_CatMarker> createState() => _CatMarkerState();
@@ -673,7 +856,13 @@ class _CatMarkerState extends State<_CatMarker>
                 BoxShadow(blurRadius: 5, color: Colors.black38),
               ],
             ),
-            child: const Icon(Icons.pets, color: Colors.white, size: 26),
+            child: const Center(
+              child: CatHeadIcon(
+                key: Key('cat-head'),
+                size: 30,
+                featureColor: CatwalkColors.orange,
+              ),
+            ),
           ),
         ],
       ),

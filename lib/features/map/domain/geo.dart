@@ -127,3 +127,37 @@ int stableSeed(String text) {
   }
   return hash;
 }
+
+/// How much longer a real walk is than the straight line to it. Streets and
+/// canals rarely run straight.
+const double walkingDetourFactor = 1.25;
+
+/// An average walking pace, in metres a minute (5 km/h).
+const double walkingMetersPerMinute = 5000 / 60;
+
+/// Whole minutes to walk to a place [meters] away in a straight line, at an
+/// average pace and allowing for the bends in the way. At least 1.
+int walkingMinutes(double meters) {
+  final minutes = meters * walkingDetourFactor / walkingMetersPerMinute;
+  final whole = minutes.ceil();
+  return whole < 1 ? 1 : whole;
+}
+
+/// "under a minute", "7 min", "1 h 5 min": how long the walk takes.
+String walkingTimeText(double meters) {
+  if (meters * walkingDetourFactor / walkingMetersPerMinute < 1) {
+    return 'under a minute';
+  }
+  final minutes = walkingMinutes(meters);
+  if (minutes < 60) return '$minutes min';
+  final hours = minutes ~/ 60;
+  final rest = minutes % 60;
+  return rest == 0 ? '$hours h' : '$hours h $rest min';
+}
+
+/// "45 m", "950 m", "1.2 km": how far away a place is.
+String distanceText(double meters) {
+  if (meters < 1000) return '${meters.round()} m';
+  final km = meters / 1000;
+  return '${km.toStringAsFixed(km < 10 ? 1 : 0)} km';
+}

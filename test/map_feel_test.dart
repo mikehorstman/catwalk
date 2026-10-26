@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:catwalk/features/cat/presentation/widgets/cat_head_icon.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
 import 'package:catwalk/features/map/domain/geo.dart';
 import 'package:catwalk/features/map/presentation/map_controller.dart';
@@ -177,5 +178,104 @@ void main() {
           .first,
     );
     expect(card.height, lessThan(120));
+  });
+
+  group('walking time and distance', () {
+    test('a short way is under a minute, then whole minutes', () {
+      expect(walkingTimeText(30), 'under a minute');
+      expect(walkingTimeText(66), 'under a minute');
+      expect(walkingTimeText(70), '2 min');
+      expect(walkingTimeText(250), '4 min');
+      expect(walkingTimeText(1000), '15 min');
+    });
+
+    test('a long way is told in hours', () {
+      expect(walkingTimeText(5000), '1 h 15 min');
+      expect(walkingTimeText(4000), '1 h');
+    });
+
+    test('allows for bends: 5 km an hour and a quarter more', () {
+      // 1 km straight is 1.25 km walked, at 83.3 m a minute: 15 minutes.
+      expect(walkingMinutes(1000), 15);
+      expect(walkingMinutes(0), 1);
+    });
+
+    test('distance is metres under a km and km above', () {
+      expect(distanceText(45.4), '45 m');
+      expect(distanceText(999.4), '999 m');
+      expect(distanceText(1200), '1.2 km');
+      expect(distanceText(12400), '12 km');
+    });
+  });
+
+  testWidgets('the cat is a head, not a paw', (tester) async {
+    await show(tester, FakeLocationService(start: fixAt(amsterdam)));
+    expect(find.byType(CatHeadIcon), findsWidgets);
+    expect(find.byIcon(Icons.pets), findsNothing);
+  });
+
+  testWidgets('tapping a pickup shows how far and how long to walk', (
+    tester,
+  ) async {
+    final location = FakeLocationService(start: fixAt(amsterdam));
+    final container = await show(tester, location);
+    final view = container.read(mapControllerProvider).requireValue;
+    final target = view.pins.first;
+    // Stand 100 m from it, so it is on screen and not yet collected.
+    location.move(fixAt(north(target.point, 100)));
+    await frames(tester, 25);
+    expect(find.byKey(const Key('target-card')), findsNothing);
+
+    await tester.tap(find.byKey(ValueKey('pin-${target.id}')));
+    await frames(tester);
+
+    expect(find.byKey(const Key('target-card')), findsOneWidget);
+    expect(find.text('Pickup'), findsOneWidget);
+    final text = tester
+        .widget<Text>(find.byKey(const Key('target-distance')))
+        .data!;
+    expect(text, matches(RegExp(r'^\d+ min · 1\d\d m$')));
+
+    await tester.tap(find.byTooltip('Close'));
+    await frames(tester);
+    expect(find.byKey(const Key('target-card')), findsNothing);
+  });
+
+  testWidgets('tapping empty map closes the card', (tester) async {
+    final location = FakeLocationService(start: fixAt(amsterdam));
+    final container = await show(tester, location);
+    final target = container
+        .read(mapControllerProvider)
+        .requireValue
+        .pins
+        .first;
+    location.move(fixAt(north(target.point, 100)));
+    await frames(tester, 25);
+    await tester.tap(find.byKey(ValueKey('pin-${target.id}')));
+    await frames(tester);
+    expect(find.byKey(const Key('target-card')), findsOneWidget);
+
+    await tester.tapAt(const Offset(60, 400));
+    await frames(tester);
+    expect(find.byKey(const Key('target-card')), findsNothing);
+  });
+
+  testWidgets('a collected pickup takes its card with it', (tester) async {
+    final location = FakeLocationService(start: fixAt(amsterdam));
+    final container = await show(tester, location);
+    final target = container
+        .read(mapControllerProvider)
+        .requireValue
+        .pins
+        .first;
+    location.move(fixAt(north(target.point, 100)));
+    await frames(tester, 25);
+    await tester.tap(find.byKey(ValueKey('pin-${target.id}')));
+    await frames(tester);
+    expect(find.byKey(const Key('target-card')), findsOneWidget);
+
+    location.move(fixAt(target.point));
+    await frames(tester, 25);
+    expect(find.byKey(const Key('target-card')), findsNothing);
   });
 }
