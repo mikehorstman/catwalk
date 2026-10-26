@@ -402,6 +402,8 @@ class _Banner extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Column(
+                // Without min the card grows to the whole screen.
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(text, style: theme.textTheme.bodyMedium),

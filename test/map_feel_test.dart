@@ -160,4 +160,22 @@ void main() {
     expect(mapStartZoom, greaterThanOrEqualTo(16));
     expect(find.byTooltip('Centre on me'), findsOneWidget);
   });
+
+  testWidgets('the banner is a slim card, not a panel over the map', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2600);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await show(tester, FakeLocationService(start: fixAt(amsterdam)));
+    final card = tester.getSize(
+      find
+          .ancestor(
+            of: find.text('5 pickups nearby.'),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(card.height, lessThan(120));
+  });
 }
