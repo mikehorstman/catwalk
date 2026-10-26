@@ -76,6 +76,10 @@ class _HomeBody extends ConsumerWidget {
           ),
           textAlign: TextAlign.center,
         ),
+        for (final line in state.weeklyLines) ...[
+          const SizedBox(height: 12),
+          _Notice(text: line),
+        ],
         if (state.catWalkedHome) ...[
           const SizedBox(height: 12),
           _Notice(
@@ -138,10 +142,15 @@ class _HomeBody extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 20),
-        _MoreRow(
-          todayCount: state.rewardLines.length,
-          onTap: () => _showMore(context, state, next),
+        _GiftButton(
+          goalReached: today.goalCompleted,
+          waiting: state.giftsWaiting,
+          onOpen: () => _openGift(context, ref),
         ),
+        if (next != null) ...[
+          const SizedBox(height: 4),
+          _NextLine(reward: next, onTap: () => _showMore(context, state, next)),
+        ],
         if (state.goalRaise case final raise?) ...[
           const SizedBox(height: 16),
           _GoalNudge(
@@ -386,42 +395,6 @@ class _Retry extends StatelessWidget {
   }
 }
 
-/// The one quiet row under the chips that opens everything else: rewards,
-/// the next prize and the first-week note. It keeps Home itself clean.
-class _MoreRow extends StatelessWidget {
-  const _MoreRow({required this.todayCount, required this.onTap});
-
-  /// How many rewards were paid today. More than zero adds a count.
-  final int todayCount;
-
-  /// Opens the details sheet.
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: TextButton.icon(
-        onPressed: onTap,
-        icon: Icon(
-          todayCount > 0 ? Icons.card_giftcard : Icons.expand_more,
-          size: 20,
-        ),
-        label: Text(
-          todayCount > 0
-              ? "Today's rewards · $todayCount"
-              : 'Rewards and progress',
-        ),
-        style: TextButton.styleFrom(
-          foregroundColor: todayCount > 0
-              ? CatwalkColors.teal
-              : theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
 /// Opens the sheet behind [_MoreRow]: today's rewards, the next prize, the
 /// halfway bonus, the length of a goal in minutes and the first-week note.
 void _showMore(BuildContext context, HomeState state, NextReward? next) {
@@ -439,10 +412,6 @@ void _showMore(BuildContext context, HomeState state, NextReward? next) {
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
           children: [
-            if (state.rewardLines.isNotEmpty) ...[
-              _RewardsToday(lines: state.rewardLines),
-              const SizedBox(height: 12),
-            ],
             if (next case final reward?) ...[
               _NextReward(reward: reward),
               const SizedBox(height: 12),
@@ -466,43 +435,6 @@ void _showMore(BuildContext context, HomeState state, NextReward? next) {
       );
     },
   );
-}
-
-/// What today's goal paid on top of the XP: gifts, prizes and the daily draw.
-class _RewardsToday extends StatelessWidget {
-  const _RewardsToday({required this.lines});
-
-  /// One line per reward, already worded for the player.
-  final List<String> lines;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.card_giftcard, size: 20),
-                const SizedBox(width: 8),
-                Text('Today\'s rewards', style: theme.textTheme.titleSmall),
-              ],
-            ),
-            const SizedBox(height: 6),
-            for (final line in lines)
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(line, style: theme.textTheme.bodyMedium),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 /// The one thing worth waiting for, and how far off it is.
@@ -598,6 +530,134 @@ class _GoalNudge extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Opens the waiting gift and shows what was inside.
+Future<void> _openGift(BuildContext context, WidgetRef ref) async {
+  final lines = await ref.read(homeControllerProvider.notifier).claimGift();
+  if (lines.isEmpty || !context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    builder: (context) => _GiftReveal(lines: lines),
+  );
+}
+
+/// The one button for today's reward: greyed out until the goal is reached,
+/// then a gift to open. Hidden once everything earned has been opened.
+class _GiftButton extends StatelessWidget {
+  const _GiftButton({
+    required this.goalReached,
+    required this.waiting,
+    required this.onOpen,
+  });
+
+  /// Whether today's goal is reached.
+  final bool goalReached;
+
+  /// How many gifts are waiting to be opened.
+  final int waiting;
+
+  /// Called when the player taps to open a gift.
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    if (waiting > 0) {
+      return Center(
+        child: FilledButton.icon(
+          key: const Key('open-gift'),
+          onPressed: onOpen,
+          icon: const Icon(Icons.card_giftcard),
+          label: Text(
+            waiting > 1 ? 'Open a gift ($waiting)' : 'Open your gift',
+          ),
+        ),
+      );
+    }
+    if (goalReached) return const SizedBox.shrink();
+    return Center(
+      child: FilledButton.icon(
+        key: const Key('gift-locked'),
+        onPressed: null,
+        icon: const Icon(Icons.card_giftcard),
+        label: const Text("Reach your goal to open today's gift"),
+      ),
+    );
+  }
+}
+
+/// A quiet line naming the next streak prize or step milestone. Tapping it
+/// opens the details.
+class _NextLine extends StatelessWidget {
+  const _NextLine({required this.reward, required this.onTap});
+
+  /// The reward to look forward to.
+  final NextReward reward;
+
+  /// Called when the line is tapped.
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          foregroundColor: theme.colorScheme.onSurfaceVariant,
+        ),
+        child: Text('Next: ${reward.title} · ${reward.detail}'),
+      ),
+    );
+  }
+}
+
+/// The reveal after tapping the gift: what was inside, one line each.
+class _GiftReveal extends StatelessWidget {
+  const _GiftReveal({required this.lines});
+
+  /// What the gift held, one line per thing.
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      icon: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.4, end: 1),
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.elasticOut,
+        builder: (context, scale, child) =>
+            Transform.scale(scale: scale, child: child),
+        child: const Icon(
+          Icons.card_giftcard,
+          size: 48,
+          color: CatwalkColors.teal,
+        ),
+      ),
+      title: const Text('Your gift'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final line in lines)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Text(
+                line,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Nice'),
+        ),
+      ],
     );
   }
 }

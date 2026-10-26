@@ -24,6 +24,7 @@ import '../../map/data/location_service.dart';
 import '../../map/data/lost_cat_repository.dart';
 import '../../map/domain/inventory.dart';
 import '../../map/domain/lost_cat.dart';
+import '../../daily_goal/domain/daily_gift.dart';
 import '../../daily_goal/domain/goal_range.dart';
 import '../../daily_goal/domain/shop.dart' as shop;
 import '../../map/domain/recovery.dart';
@@ -49,7 +50,8 @@ class HomeState {
     required this.currentStreak,
     this.stepSource,
     this.catWalkedHome = false,
-    this.rewardLines = const [],
+    this.weeklyLines = const [],
+    this.giftsWaiting = 0,
     this.gentleDay,
     this.fullGoal = 0,
     this.recovery,
@@ -84,10 +86,12 @@ class HomeState {
   /// was not needed to find it.
   final bool catWalkedHome;
 
-  /// What today's goal paid besides the goal XP, as lines to show: the first
-  /// goal gift, streak prizes, milestones, the daily draw and the weekly
-  /// freeze. Empty when nothing was paid.
-  final List<String> rewardLines;
+  /// Notes about things that arrived with time, such as the weekly freeze.
+  /// Shown once, on the open that paid them.
+  final List<String> weeklyLines;
+
+  /// How many gifts are earned and not opened yet.
+  final int giftsWaiting;
 
   /// Which day (1 to 7) of the gentle first week today is, or null when the
   /// first week is over or was switched off.
@@ -289,28 +293,36 @@ class HomeController extends AsyncNotifier<HomeState> {
     final goalsMet = allDays.where((day) => day.goalCompleted).length;
     final todayDate = CalendarDate.today();
 
-    // The goal's candy, then what today earned beyond it: gifts, prizes and the
-    // daily draw. Paid once a day and remembered, so reopening the app pays
-    // nothing more.
+    // The goal's candy is paid at once. The rest of the day's rewards wait in a
+    // gift that the player opens; only things that come with time, like the
+    // weekly freeze, are paid on their own.
     final ledgers = ref.read(rewardLedgerRepositoryProvider);
     final afterFreezes = frozen.isEmpty
         ? inventory
         : inventory.copyWith(freezes: inventory.freezes - frozen.length);
     final totalSteps = allDays.fold<int>(0, (sum, day) => sum + day.steps);
-    final settled = settleRewards(
+    final savedLedger = await ledgers.read();
+    final weekly = settleRewards(
       today: todayDate,
       startedOn: profile.startedOn,
-      goalCompleted: snapshot.today.goalCompleted,
+      goalCompleted: false,
       streak: streak,
       goalsMet: goalsMet,
       totalSteps: totalSteps,
       inventory: afterFreezes.copyWith(
         candy: afterFreezes.candy + snapshot.candyGainedToday,
       ),
-      ledger: await ledgers.read(),
+      ledger: savedLedger,
     );
-    await ledgers.write(settled.ledger);
-    await inventories.write(settled.inventory);
+    final ledger = queueTodaysGift(
+      ledger: weekly.ledger,
+      today: todayDate,
+      goalCompleted: snapshot.today.goalCompleted,
+      streak: streak,
+      goalsMet: goalsMet,
+    );
+    await ledgers.write(ledger);
+    await inventories.write(weekly.inventory);
     await store.write(
       OnboardingRepository.catKey,
       jsonEncode(catToJson(snapshot.cat)),
@@ -341,13 +353,14 @@ class HomeController extends AsyncNotifier<HomeState> {
       cat: snapshot.cat,
       today: todayProgress,
       candyGainedToday: snapshot.candyGainedToday,
-      inventory: settled.inventory,
+      inventory: weekly.inventory,
       totalSteps: totalSteps,
       stepsAvailable: available,
       stepsPermissionGranted: granted,
       stepSource: reading.source,
       catWalkedHome: snapshot.walkedHome,
-      rewardLines: settled.lines,
+      weeklyLines: savedLedger.settledOn == todayDate ? const [] : weekly.lines,
+      giftsWaiting: ledger.pending.length,
       gentleDay: gentleDayNumber(
         gentleStart: profile.gentleStart,
         startedOn: profile.startedOn,
@@ -362,6 +375,25 @@ class HomeController extends AsyncNotifier<HomeState> {
       showGoalTune: tuneOk,
       goalRaise: raiseOk ? raise : null,
     );
+  }
+
+  /// Opens the oldest waiting gift, pays what is inside and returns one line
+  /// for each thing in it. Returns an empty list when no gift is waiting.
+  Future<List<String>> claimGift() async {
+    final ledgers = ref.read(rewardLedgerRepositoryProvider);
+    final inventories = ref.read(inventoryRepositoryProvider);
+    final profile = await ref.read(profileRepositoryProvider).read();
+    final opened = openGift(
+      ledger: await ledgers.read(),
+      startedOn: profile.startedOn,
+      totalSteps: state.value?.totalSteps ?? 0,
+      inventory: await inventories.read(),
+    );
+    if (opened == null) return const [];
+    await ledgers.write(opened.ledger);
+    await inventories.write(opened.inventory);
+    await refreshSilently();
+    return opened.lines;
   }
 
   /// Buys the toy [toyId] with candy and reloads. Returns why it was refused,

@@ -54,18 +54,28 @@ const List<TestGuideItem> testGuideItems = [
         'Reopening does not pay again.',
   ),
   TestGuideItem(
-    feature: 'First goal gift',
-    how: 'Reach the goal for the very first time.',
+    feature: 'The daily gift',
+    how:
+        'Before the goal, look at the grey gift button on Home. Then reach '
+        'the goal and tap “Open your gift”.',
     check:
-        '“Today’s rewards” lists a free toy and a free streak freeze. It '
-        'never pays a second time.',
+        'The button is grey until the goal is reached, then it turns on. '
+        'Opening it shows what was inside, once. An unopened gift waits, '
+        'also after you close the app.',
+  ),
+  TestGuideItem(
+    feature: 'First goal gift',
+    how: 'Open the gift of your very first goal day.',
+    check:
+        'It holds a free toy and a free streak freeze. It never pays a '
+        'second time.',
   ),
   TestGuideItem(
     feature: 'Daily draw',
     how: 'Reach the goal on any day.',
     check:
-        'One surprise appears under “Today’s rewards”: 1 to 3 candy, a streak '
-        'freeze or a toy. It is the same when you reopen. At least every fifth goal day '
+        'One surprise is in the gift: 1 to 3 candy, a streak freeze or a toy. '
+        'It cannot be rerolled by closing the app. At least every fifth goal day '
         'gives a toy or freeze.',
   ),
   TestGuideItem(

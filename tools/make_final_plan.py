@@ -305,6 +305,7 @@ def pill(kind, text):
 
 RULES = [
     ("The goal", "Default 6,000 steps, from 3,000 to 30,000. Suggestions stay between 3,000 and 12,000. Today's goal is fixed once the day starts."),
+    ("The daily gift", "Reaching the goal pays its candy and earns a gift. Home shows one button, grey until then. Opening it reveals the draw and any prize from that day. It waits until opened."),
     ("What you see", "Steps today, your streak, total steps (on the Me tab) and candy. There is no XP and no level."),
     ("A good day", "Reach the goal: the cat is happy, you get candy once that day, the streak grows. Half the goal is not the goal."),
     ("Candy", "The one thing you spend. 1 candy per 1,000 steps of your goal when you reach it (at least 3, at most 15 a day). More comes from map pickups, the daily draw, streak prizes and total step milestones. A higher goal pays more candy a day."),
@@ -430,6 +431,9 @@ DECISIONS = [
     ("D20", "What happens to XP and level?",
      "Removed everywhere. Home shows steps today, the streak and the one row for details. Me shows total steps.",
      "Level did nothing and XP said the same thing twice. Too many numbers hide the one that matters."),
+    ("D22", "How is the daily reward given?",
+     "Reaching the goal pays its candy at once and earns a gift. A button on Home is grey until then. Tapping it reveals the draw, a first-goal gift, a streak prize or a step milestone in one go. An unopened gift waits and never expires; older gifts open first.",
+     "A surprise you open yourself is a small moment to come back for. The result is fixed by the day, so it only looks random to the player."),
     ("D21", "Treats, decorations and the side quest code?",
      "Not now. The side quest code is deleted. Toys and beds are the only things to buy.",
      "Keep it small. Each new item type is art and rules to build before it adds anything."),
