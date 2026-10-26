@@ -205,22 +205,23 @@ def chart_order_final():
         1000, 670,
     )
     done = [
-        ("1. The day", 75), ("2. Real steps", 235), ("3. The room", 395),
-        ("4. The map", 555), ("Rules change", 715), ("First week\nand rewards", 875),
+        ("1. The day", 65), ("2. Real steps", 205), ("3. The room", 345),
+        ("4. The map", 485), ("Rules\nchange", 625), ("First week\nand rewards", 765),
+        ("Candy, no XP\nand daily gift", 905),
     ]
     for i, (label, x) in enumerate(done):
-        c.node(f"n{i}", x, 50, 140, 54, "built", label)
+        c.node(f"n{i}", x, 50, 124, 54, "built", label)
         if i:
             c.edge(f"n{i - 1}", "r", f"n{i}", "l")
     todo = [
-        ("Candy replaces\nXP and level", 110), ("Beds and\nmore cats", 345),
+        ("Beds and\nmore cats", 110), ("A Shop\nscreen", 345),
         ("Reminders\nand recap", 580), ("6. Other\npeople", 840),
     ]
     for i, (label, x) in enumerate(todo):
         c.node(f"p{i}", x, 185, 190, 60, "plan", label)
         if i:
             c.edge(f"p{i - 1}", "r", f"p{i}", "l")
-    c.edge("n5", "b", "p0", "t", via=[(875, 120), (110, 120)])
+    c.edge("n6", "b", "p0", "t", via=[(905, 120), (110, 120)])
 
     c.node("acct", 700, 300, 440, 76, "plan", "An account\nThe phone stays the source of truth\nThe server only keeps a copy")
     c.node("friends", 90, 440, 160, 60, "plan", "Add friends")
@@ -309,7 +310,7 @@ RULES = [
     ("What you see", "Steps today, your streak, total steps (on the Me tab) and candy. There is no XP and no level."),
     ("A good day", "Reach the goal: the cat is happy, you get candy once that day, the streak grows. Half the goal is not the goal."),
     ("Candy", "The one thing you spend. 1 candy per 1,000 steps of your goal when you reach it (at least 3, at most 15 a day). More comes from map pickups, the daily draw, streak prizes and total step milestones. A higher goal pays more candy a day."),
-    ("The shop", "Candy buys toys (8 each) and cat beds. A cat bed costs more each time: 2nd 40, 3rd 90, 4th 160, 5th 250. The first bed is free. These numbers are mine."),
+    ("The shop", "Candy buys toys (8 each) and cat beds. A cat bed costs more each time: 2nd 40, 3rd 90, 4th 160, 5th 250. The first bed is free. These numbers are mine. Today the shop is a small sheet on Home (tap the candy chip). Later it becomes a whole screen of its own, see D23."),
     ("A missed day", "Any day without the goal. 1 day: sad. 2 days: neglected. 3 days: the cat runs away. Today does not count until it ends."),
     ("Streak freeze", "Found on the map, or given every 7 days. Saves one missed day, then it is gone. Hold at most 2. No streak credit. Cannot rescue a cat that has already run away."),
     ("Running away", "After 3 missed days a 7-day window opens. The cat's bed stays empty."),
@@ -333,27 +334,29 @@ SLICES = [
     ("3. The room", "built", "Cat walks, sits, sleeps, grooms, climbs, plays. Placeholder sprites in."),
     ("4. The map", "built", "Pickups, toys, freezes. Runaway recovery by step target, then the map."),
     ("Rules change", "built", "Half a goal is a miss. Side quest off. 7-day recovery window, lost cat leaves, stray kitten arrives. The lost cat is remembered with its random return day; the return on the map needs beds (not built)."),
-    ("First week and rewards", "built", "Gentle goal ramp, free first toy and freeze, streak prizes, a freeze every 7 days, the daily draw. These still pay XP today. They move to candy in the next step."),
-    ("Candy replaces XP and level", "built", "XP and level are gone. Candy comes from the goal, pickups, the draw, streak prizes and step milestones. The shop (tap the candy chip on Home) sells toys. Total steps lead the Me tab. Side quests deleted."),
+    ("First week and rewards", "built", "Gentle goal ramp, free first toy and freeze, streak prizes, a freeze every 7 days and the daily draw."),
+    ("Candy replaces XP and level", "built", "XP and level are gone. Candy comes from the goal, pickups, the draw, streak prizes and step milestones. Total steps lead the Me tab. Side quests deleted. The daily draw and prizes come in a gift you open with a button on Home, grey until the goal is reached."),
     ("5. Beds and more cats", "planned", "Cat beds in the shop with a rising price, a new cat on the map the next morning, street cat photos, a lost cat returning to an empty bed."),
+    ("A Shop screen", "planned", "The shop becomes a whole screen of its own, not the small sheet on Home: toys and cat beds with their prices, what you own, and your candy. The sheet is a stopgap."),
     ("Reminders and recap", "planned", "Reminders in the cat's voice, the weekly recap, the lower-goal offer, and analytics opt-out. Before outside testers."),
     ("6. Other people", "planned", "Account, friends, room visits, nudges, leaderboard."),
 ]
 
 NEXT = [
     ("1", "Rules change (done, except the return)", "Built and tested: half a goal is a miss, side quest off, 7-day window with a 10 x goal target, lost cat and stray kitten. The lost cat's return on the map waits for beds."),
-    ("2", "First week and rewards (done)", "Built and tested. They still pay XP today. Step 4 moves them to candy."),
+    ("2", "First week and rewards (done)", "Built and tested. Paid in candy since step 4."),
     ("3", "Try it on a real phone", "Install the APK, check Health Connect, the step sensor and GPS, and move the map to a production tile host. Nothing so far has run on hardware."),
-    ("4", "Candy replaces XP and level", "Remove XP and level. Home shows steps and the streak. Candy from the goal (1 per 1,000 of the goal), pickups, the draw and prizes. A small shop sells toys. Total steps on Me. About 7 commits."),
+    ("4", "Candy replaces XP and level (done)", "Built and tested. XP and level are gone, candy and a small toy shop are in, and the daily rewards come in a gift button on Home."),
     ("5", "Beds and more cats", "Cat beds with a rising price. After buying one, a new cat appears on the map the next morning and stays until fetched. Street cat photos and a returning lost cat use empty beds."),
-    ("6", "Reminders and recap", "Reminders in the cat's voice with an off switch, the weekly recap and personal bests, the lower-goal offer, and opt-out analytics. Before anyone outside tests it."),
-    ("7", "Other people", "Account, friends, a friends-only leaderboard and a shared weekly goal. Last. It is the only slice that needs an account."),
+    ("6", "A Shop screen", "Move the shop out of the bottom sheet into a full screen, reached from Home (the candy chip) and probably its own tab. It shows toys, cat beds with their rising prices, what you own and how much candy you have. Build it with the beds, so the beds have a place to be bought."),
+    ("7", "Reminders and recap", "Reminders in the cat's voice with an off switch, the weekly recap and personal bests, the lower-goal offer, and opt-out analytics. Before anyone outside tests it."),
+    ("8", "Other people", "Account, friends, a friends-only leaderboard and a shared weekly goal. Last. It is the only slice that needs an account."),
     ("Later", "Room events, decorations", "Small daily events in the room, and decorations. Wait for the real cat art."),
 ]
 
 CHECK = [
-    ("stappendoel halen -> kat blij -> xp erbij", "changing", "Built with XP. Becomes candy: 1 per 1,000 steps of your goal (D8, D17)."),
-    ("kijken op kaart -> naar snoepjes lopen -> beloning (extra xp, streak freeze, speeltje, nieuwe kat unlocken, iets sparen)", "partly", "Freeze and toy are built. Extra XP becomes candy. A new cat now comes from a bed you buy (D5). Candy is the thing to save (D4)."),
+    ("stappendoel halen -> kat blij -> xp erbij", "built", "Built with candy: 1 per 1,000 steps of your goal (D8, D17)."),
+    ("kijken op kaart -> naar snoepjes lopen -> beloning (extra xp, streak freeze, speeltje, nieuwe kat unlocken, iets sparen)", "partly", "Candy, freeze and toy are built. A new cat comes from a bed you buy (D5, not built yet). Candy is the thing to save (D4)."),
     ("kat kan spawnen op de map na bepaald level/xp -> heenlopen en unlocken", "planned", "Changed by you: buy a cat bed, then the cat appears on the map the next morning and stays until fetched (D5, D19)."),
     ("kattenkamer ... speeltjes en krabpalen ... (vinden op kaart of kopen met currency?)", "partly", "Room and toys are built. Toys can be found or bought with candy. Scratching posts are not built. Currency is now candy (D8)."),
     ("each cat gets its own cat bed; buy/unlock a bed; currency (cat candy?) buys toys and beds", "planned", "Candy and toys are built. Cat beds come with the next slice (D8, D18)."),
@@ -365,7 +368,7 @@ CHECK = [
     ("maximaal aantal katten op basis van doel?", "changing", "Replaced by beds: each bed costs more than the last (D18)."),
     ("statistieken, leaderboard", "partly", "Lifetime counters and the weekly card are built. Total steps becomes the headline on Me. The leaderboard is slice 6."),
     ("voortgangsbalk voor stappen per dag", "built", "On Home."),
-    ("streaks -> beloning voor behouden van streak", "partly", "Streak and prizes are built (paid in XP). They move to candy."),
+    ("streaks -> beloning voor behouden van streak", "partly", "Streak and prizes are built and pay candy and toys. They are in the daily gift."),
     ("vrienden toevoegen, elkaars kattenkamer bekijken, aanspreken op doel behalen", "planned", "Slice 6. Needs an account."),
     ("veel meldingen, schuldgevoel", "planned", "At most 3 a day and none after the goal is met (D7)."),
 ]
@@ -429,11 +432,14 @@ DECISIONS = [
      "The next morning after buying the bed, 250 to 900 m away, near where you are. It stays until fetched, in a new spot each morning if you moved. One at a time. With no usable location it comes straight home.",
      "No deadline, so nothing is lost. It gives you a reason to open the app the next day."),
     ("D20", "What happens to XP and level?",
-     "Removed everywhere. Home shows steps today, the streak and the one row for details. Me shows total steps.",
+     "Removed everywhere. Home shows steps today, the streak, candy and the gift button. Details sit behind the quiet Next line. Me shows total steps.",
      "Level did nothing and XP said the same thing twice. Too many numbers hide the one that matters."),
     ("D22", "How is the daily reward given?",
      "Reaching the goal pays its candy at once and earns a gift. A button on Home is grey until then. Tapping it reveals the draw, a first-goal gift, a streak prize or a step milestone in one go. An unopened gift waits and never expires; older gifts open first.",
      "A surprise you open yourself is a small moment to come back for. The result is fixed by the day, so it only looks random to the player."),
+    ("D23", "Where does the shop live?",
+     "Later a whole screen of its own: toys, cat beds with their prices, what you own and your candy. For now it is a sheet that opens from the candy chip on Home.",
+     "A shop with beds, prices and a wish to save needs room. A sheet is enough for three toys and no more."),
     ("D21", "Treats, decorations and the side quest code?",
      "Not now. The side quest code is deleted. Toys and beds are the only things to buy.",
      "Keep it small. Each new item type is art and rules to build before it adds anything."),
