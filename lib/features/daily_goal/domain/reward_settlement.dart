@@ -7,6 +7,7 @@ import '../../map/domain/collect.dart';
 import '../../map/domain/geo.dart';
 import '../../map/domain/inventory.dart';
 import '../../map/domain/reward.dart';
+import '../../map/domain/toy_perks.dart';
 import 'reward_ledger.dart';
 
 /// What streak prizes pay: candy, a toy, or both. A toy you already own turns
@@ -177,7 +178,11 @@ Settlement settleRewards({
     drawRandom,
     candyAmounts: AppConstants.drawCandyAmounts,
   );
-  final pity = nextLedger.drawsSinceItem >= AppConstants.drawPityAfter;
+  final perks = ToyPerks.of(nextInventory.toys);
+  if (draw is CandyReward && perks.drawCandy > 0) {
+    draw = CandyReward(draw.amount + perks.drawCandy);
+  }
+  final pity = nextLedger.drawsSinceItem >= perks.pityAfter;
   if (pity && draw is CandyReward) {
     final toysLeft = toyIds.any((id) => !nextInventory.toys.contains(id));
     draw = toysLeft ? newToy() : const FreezeReward();

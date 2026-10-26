@@ -68,6 +68,8 @@ class DaySnapshot {
 /// 7-day recovery window with a target of the goal x 10 steps; when it closes
 /// unmet, [DaySnapshot.windowClosed] is true.
 ///
+/// [goalBonus] is extra candy a toy adds when the goal is reached.
+///
 /// Calling this again on the same day cannot pay the goal's candy twice.
 /// Days before [today] that have no completed record count as misses. Today
 /// itself is still in progress.
@@ -81,6 +83,7 @@ DaySnapshot evaluateDay({
   int freezes = 0,
   bool homeWithoutMap = false,
   Map<CalendarDate, int> windowSteps = const {},
+  int goalBonus = 0,
 }) {
   final byDate = {for (final day in history) day.date: day};
   final previous = byDate[today];
@@ -138,7 +141,7 @@ DaySnapshot evaluateDay({
     missedDays = care.consecutiveMissedDays;
   }
 
-  final reward = candyForGoal(goal);
+  final reward = candyForGoal(goal) + goalBonus;
 
   final updatedCat = cat.copyWith(
     mood: mood,

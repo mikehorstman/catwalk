@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../daily_goal/domain/shop.dart';
+import '../../map/domain/toy_perks.dart';
 import 'home_controller.dart';
 
 /// Opens the shop: what the candy buys. For now that is the toys; cat beds
@@ -65,15 +66,21 @@ class _ShopSheet extends ConsumerWidget {
             onBuy: () => ref.read(homeControllerProvider.notifier).buyBed(),
           ),
           const SizedBox(height: 12),
-          Text(
-            'Toys you own: ${inventory.toys.isEmpty ? 'none yet' : inventory.toys.join(', ')}.',
-            style: muted,
-          ),
+          if (inventory.toys.isEmpty)
+            Text('Toys you own: none yet.', style: muted)
+          else ...[
+            Text('Toys you own', style: muted),
+            for (final id in inventory.toys)
+              Text('${_titleCase(id)}: ${toyPerkText[id] ?? ''}', style: muted),
+          ],
         ],
       ),
     );
   }
 }
+
+String _titleCase(String id) =>
+    id.isEmpty ? id : id[0].toUpperCase() + id.substring(1);
 
 /// The cat bed for sale: each bed holds one more cat, and costs more than the
 /// last.
@@ -182,8 +189,21 @@ class _ToyRow extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Text('$name toy', style: theme.textTheme.bodyLarge),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$name toy', style: theme.textTheme.bodyLarge),
+                  if (toyPerkText[toyId] case final perk?)
+                    Text(
+                      perk,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             FilledButton(
               onPressed: affordable ? onBuy : null,
               child: Text('${AppConstants.toyPriceCandy} candy'),

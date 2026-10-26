@@ -28,6 +28,7 @@ import '../../map/domain/inventory.dart';
 import '../../map/data/arrival_repository.dart';
 import '../../map/domain/arrival.dart';
 import '../../map/domain/lost_cat.dart';
+import '../../map/domain/toy_perks.dart';
 import '../../daily_goal/domain/daily_gift.dart';
 import '../../daily_goal/domain/goal_range.dart';
 import '../../daily_goal/domain/shop.dart' as shop;
@@ -240,6 +241,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     final lastEvaluated = await history.readLastEvaluated();
     DaySnapshot evaluate(Map<CalendarDate, int> windowSteps) => evaluateDay(
       freezes: inventory.freezes,
+      goalBonus: ToyPerks.of(inventory.toys).goalCandy,
       homeWithoutMap: withoutMap,
       windowSteps: windowSteps,
       cat: cat,

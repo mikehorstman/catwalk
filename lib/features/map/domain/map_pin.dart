@@ -1,3 +1,5 @@
+import '../../../core/constants/app_constants.dart';
+
 import 'dart:math' as math;
 
 import '../../../core/utils/calendar_date.dart';
@@ -31,7 +33,7 @@ class MapPin {
 }
 
 /// Most pins on the map in one day.
-const int maxPinsPerDay = 5;
+const int maxPinsPerDay = AppConstants.pinsPerDay;
 
 /// Closest a pin lands to the cell centre, in metres. Keeps pins from stacking
 /// on top of you.

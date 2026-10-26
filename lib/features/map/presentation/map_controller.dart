@@ -21,6 +21,7 @@ import '../data/location_service.dart';
 import '../data/map_state_repository.dart';
 import '../domain/arrival.dart';
 import '../domain/collect.dart';
+import '../domain/toy_perks.dart';
 import '../domain/geo.dart';
 import '../domain/inventory.dart';
 import '../domain/map_pin.dart';
@@ -275,7 +276,13 @@ class CatMapController extends AsyncNotifier<MapViewState> {
 
     var next = view.copyWith(fix: fix);
     var collectedIds = mapState.collectedOn(today);
-    var pins = spawnPins(cell: cell, date: today, collected: collectedIds);
+    final pinCount = ToyPerks.of(view.inventory.toys).pinsPerDay;
+    var pins = spawnPins(
+      cell: cell,
+      date: today,
+      count: pinCount,
+      collected: collectedIds,
+    );
     MapNotice? event;
 
     // Walking onto a pin picks it up. One at a time, so each gets its sheet.
@@ -293,7 +300,12 @@ class CatMapController extends AsyncNotifier<MapViewState> {
         break;
       }
     }
-    pins = spawnPins(cell: cell, date: today, collected: collectedIds);
+    pins = spawnPins(
+      cell: cell,
+      date: today,
+      count: pinCount,
+      collected: collectedIds,
+    );
 
     // A cat waiting for a bed: placed once, then walked to.
     final arrivals = ref.read(arrivalRepositoryProvider);

@@ -71,6 +71,12 @@ void main() {
     await openShop(tester, '20 candy');
     expect(find.text('Shop'), findsOneWidget);
     expect(find.textContaining('You have 20 candy'), findsOneWidget);
+    // Every toy says what it does.
+    expect(
+      find.textContaining('1 extra candy on every goal day'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('one more pin'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(FilledButton, '8 candy').first);
     for (var i = 0; i < 12; i++) {
