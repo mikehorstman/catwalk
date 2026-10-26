@@ -1,5 +1,6 @@
 import 'package:catwalk/app/app.dart';
 import 'package:catwalk/core/utils/calendar_date.dart';
+import 'package:catwalk/features/map/data/arrival_repository.dart';
 import 'package:catwalk/features/map/data/inventory_repository.dart';
 import 'package:catwalk/features/map/domain/inventory.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
@@ -93,6 +94,46 @@ void main() {
     );
     expect(button.onPressed, isNull);
     expect((await InventoryRepository(store).read()).toys, isEmpty);
+  });
+
+  testWidgets('a cat bed can be bought, and a cat is sent for tomorrow', (
+    tester,
+  ) async {
+    final store = await newPlayer();
+    await InventoryRepository(store).write(const Inventory(candy: 100));
+    await open(tester, store, 1000);
+
+    await openShop(tester, '100 candy');
+    expect(find.text('Cat bed'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('buy-bed')));
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+
+    final inventory = await InventoryRepository(store).read();
+    expect(inventory.candy, 60);
+    expect(inventory.beds, 2);
+    final arrival = (await ArrivalRepository(store).read())!;
+    expect(arrival.appearsOn, CalendarDate.today().addDays(1));
+    // A second bed is refused while that cat is on its way.
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('buy-bed'))).onPressed,
+      isNull,
+    );
+    expect(find.text('A cat is waiting for you on the map.'), findsOneWidget);
+  });
+
+  testWidgets('with too little candy the bed cannot be bought', (tester) async {
+    final store = await newPlayer();
+    await InventoryRepository(store).write(const Inventory(candy: 39));
+    await open(tester, store, 1000);
+
+    await openShop(tester, '39 candy');
+    expect(
+      tester.widget<FilledButton>(find.byKey(const Key('buy-bed'))).onPressed,
+      isNull,
+    );
+    expect(await ArrivalRepository(store).read(), isNull);
   });
 
   testWidgets('Home shows no XP or level', (tester) async {

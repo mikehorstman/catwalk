@@ -64,4 +64,24 @@ class LostCatRepository {
       ]),
     );
   }
+
+  /// Forgets the lost cat with [catId], because it came back.
+  Future<void> remove(String catId) async {
+    final all = await readAll();
+    final kept = [
+      for (final item in all)
+        if (item.cat.id != catId) item,
+    ];
+    await _store.write(
+      key,
+      jsonEncode([
+        for (final item in kept)
+          {
+            'cat': catToJson(item.cat),
+            'lostOn': item.lostOn.toIsoDate(),
+            'returnsOn': item.returnsOn.toIsoDate(),
+          },
+      ]),
+    );
+  }
 }

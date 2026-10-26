@@ -10,7 +10,9 @@ import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
 import '../../cat/domain/cat.dart';
+import '../../cat/data/cat_repository.dart';
 import '../../cat/domain/cat_status.dart';
+import '../../cat/domain/shared_mood.dart';
 import '../../daily_goal/data/history_repository.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/day_evaluation.dart';
@@ -23,6 +25,8 @@ import '../../map/data/inventory_repository.dart';
 import '../../map/data/location_service.dart';
 import '../../map/data/lost_cat_repository.dart';
 import '../../map/domain/inventory.dart';
+import '../../map/data/arrival_repository.dart';
+import '../../map/domain/arrival.dart';
 import '../../map/domain/lost_cat.dart';
 import '../../daily_goal/domain/daily_gift.dart';
 import '../../daily_goal/domain/goal_range.dart';
@@ -57,6 +61,10 @@ class HomeState {
     this.recovery,
     this.lostCatName,
     this.kittenName,
+    this.promotedName,
+    this.cats = const [],
+    this.freeBeds = 0,
+    this.arrival,
     this.goalsMet = 0,
     this.suggestedGoal,
     this.showGoalTune = false,
@@ -111,6 +119,19 @@ class HomeState {
   /// The stray kitten that took the lost cat's place. Null unless
   /// [lostCatName] is set.
   final String? kittenName;
+
+  /// When the home cat was lost and another cat took its place, that cat's
+  /// name. Null when a stray kitten came instead, or nobody was lost.
+  final String? promotedName;
+
+  /// Every cat in the room, the home cat first.
+  final List<Cat> cats;
+
+  /// Beds with nobody in them.
+  final int freeBeds;
+
+  /// The cat waiting on the map, if any.
+  final Arrival? arrival;
 
   /// Days the goal was completed, ever. Never goes down.
   final int goalsMet;
@@ -201,6 +222,8 @@ class HomeController extends AsyncNotifier<HomeState> {
     final history = ref.read(historyRepositoryProvider);
     final profile = await ref.read(profileRepositoryProvider).read();
     final cat = await _readCat(store);
+    final catRepo = ref.read(catRepositoryProvider);
+    var others = await catRepo.readOthers();
     final days = await history.readAll();
     final repository = ref.read(stepRepositoryProvider);
     final available = await repository.isAvailable();
@@ -246,22 +269,40 @@ class HomeController extends AsyncNotifier<HomeState> {
     }
     String? lostCatName;
     String? kittenName;
+    String? promotedName;
     if (snapshot.windowClosed) {
       // Not walked home in time. The cat leaves the room, remembered with the
       // day it may turn up on the map again, and a stray kitten arrives.
       final today = CalendarDate.today();
-      final kitten = strayKitten(lost: snapshot.cat, on: today);
       await ref
           .read(lostCatRepositoryProvider)
           .add(LostCat.leaving(snapshot.cat, today));
       lostCatName = snapshot.cat.name;
-      kittenName = kitten.name;
-      snapshot = DaySnapshot(
-        cat: kitten,
-        today: snapshot.today,
-        candyGainedToday: snapshot.candyGainedToday,
-        frozenDays: snapshot.frozenDays,
-      );
+      if (others.isNotEmpty) {
+        // Another cat is already in the room: it becomes the home cat.
+        final promoted = others.first.copyWith(
+          mood: snapshot.cat.mood,
+          status: CatStatus.active,
+          consecutiveMissedDays: 0,
+        );
+        others = others.sublist(1);
+        promotedName = promoted.name;
+        snapshot = DaySnapshot(
+          cat: promoted,
+          today: snapshot.today,
+          candyGainedToday: snapshot.candyGainedToday,
+          frozenDays: snapshot.frozenDays,
+        );
+      } else {
+        final kitten = strayKitten(lost: snapshot.cat, on: today);
+        kittenName = kitten.name;
+        snapshot = DaySnapshot(
+          cat: kitten,
+          today: snapshot.today,
+          candyGainedToday: snapshot.candyGainedToday,
+          frozenDays: snapshot.frozenDays,
+        );
+      }
     }
     final frozen = [
       for (final date in snapshot.frozenDays)
@@ -329,6 +370,24 @@ class HomeController extends AsyncNotifier<HomeState> {
     );
     final todayProgress = snapshot.today;
 
+    // The other cats share the day's mood. A lost cat that is due back waits
+    // on the map when a bed is free.
+    others = othersFollowHome(others, snapshot.cat);
+    await catRepo.writeOthers(others);
+    final arrivals = ref.read(arrivalRepositoryProvider);
+    var arrival = await arrivals.read();
+    final catCount = 1 + others.length;
+    final beds = weekly.inventory.beds;
+    if (arrival == null) {
+      arrival = returningArrival(
+        lost: await ref.read(lostCatRepositoryProvider).readAll(),
+        today: todayDate,
+        free: freeBeds(beds: beds, cats: catCount, arriving: false),
+        arriving: false,
+      );
+      if (arrival != null) await arrivals.write(arrival);
+    }
+
     // A goal that suits the person. The card shows once, and never in the same
     // open as a raise: one hint at a time.
     final stepDays = {for (final day in allDays) day.date: day.steps};
@@ -370,6 +429,10 @@ class HomeController extends AsyncNotifier<HomeState> {
       recovery: snapshot.recovery,
       lostCatName: lostCatName,
       kittenName: kittenName,
+      promotedName: promotedName,
+      cats: [snapshot.cat, ...others],
+      freeBeds: freeBeds(beds: beds, cats: catCount, arriving: arrival != null),
+      arrival: arrival,
       goalsMet: goalsMet,
       suggestedGoal: suggestion?.goal,
       showGoalTune: tuneOk,
@@ -404,6 +467,33 @@ class HomeController extends AsyncNotifier<HomeState> {
     final bought = result.inventory;
     if (bought == null) return result.refusal;
     await inventories.write(bought);
+    await refreshSilently();
+    return null;
+  }
+
+  /// Buys the next cat bed. A cat then appears on the map the next morning.
+  /// Returns why it was refused, or null when it was bought.
+  Future<shop.ShopRefusal?> buyBed() async {
+    final inventories = ref.read(inventoryRepositoryProvider);
+    final arrivals = ref.read(arrivalRepositoryProvider);
+    final inventory = await inventories.read();
+    final cats = (await ref.read(catRepositoryProvider).readAll()).length;
+    final arriving = await arrivals.read() != null;
+    final purchase = shop.buyBed(
+      inventory: inventory,
+      cats: cats,
+      arriving: arriving,
+      today: CalendarDate.today(),
+    );
+    if (purchase == null) {
+      return shop.bedRefusal(
+        inventory: inventory,
+        cats: cats,
+        arriving: arriving,
+      );
+    }
+    await inventories.write(purchase.inventory);
+    await arrivals.write(purchase.arrival);
     await refreshSilently();
     return null;
   }

@@ -91,10 +91,13 @@ class _HomeBody extends ConsumerWidget {
         if (state.lostCatName case final lost?) ...[
           const SizedBox(height: 12),
           _Notice(
-            text:
-                '$lost did not make it home in time and is gone for now. '
-                'A stray kitten, ${state.kittenName}, is at the door. '
-                '$lost may turn up on the map again someday.',
+            text: state.promotedName != null
+                ? '$lost did not make it home in time and is gone for now. '
+                      '${state.promotedName} is your home cat now. '
+                      '$lost may turn up on the map again someday.'
+                : '$lost did not make it home in time and is gone for now. '
+                      'A stray kitten, ${state.kittenName}, is at the door. '
+                      '$lost may turn up on the map again someday.',
           ),
         ],
         if (state.recovery case final recovery? when gone) ...[

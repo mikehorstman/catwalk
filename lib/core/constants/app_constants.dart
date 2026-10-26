@@ -34,6 +34,9 @@ abstract final class AppConstants {
   static const int goalCandyMin = 3;
   static const int goalCandyMax = 15;
 
+  /// What the 2nd, 3rd, 4th and 5th bed cost, in candy. The first is free.
+  static const List<int> bedPrices = [40, 90, 160, 250];
+
   /// A toy costs this much candy in the shop.
   static const int toyPriceCandy = 8;
 

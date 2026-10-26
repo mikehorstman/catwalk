@@ -10,7 +10,7 @@ import '../domain/room_cat.dart';
 final roomCatsProvider = Provider<List<RoomCat>>((ref) {
   final home = ref.watch(homeControllerProvider);
   return home.maybeWhen(
-    data: (state) => [RoomCat(state.cat)],
+    data: (state) => [for (final cat in state.cats) RoomCat(cat)],
     orElse: () => const <RoomCat>[],
   );
 });

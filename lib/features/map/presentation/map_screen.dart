@@ -129,6 +129,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     height: 44,
                     child: const _PinMarker(),
                   ),
+                if (view.arrival?.point case final spot?)
+                  Marker(
+                    point: _ll(spot),
+                    width: 56,
+                    height: 56,
+                    child: const _CatMarker(),
+                  ),
                 if (view.recovery.isLocated)
                   Marker(
                     point: _ll(view.recovery.catPoint!),
@@ -216,6 +223,15 @@ class _Banner extends StatelessWidget {
           '${view.recoveryDaysLeft == 1 ? 'day' : 'days'}, '
           'then look for them here.';
       icon = Icons.directions_walk;
+    } else if (view.arrival?.point != null) {
+      final fix = view.fix;
+      final away = fix == null
+          ? null
+          : distanceMeters(fix.point, view.arrival!.point!).round();
+      text = away == null
+          ? 'A cat is waiting nearby. Walk to the paw.'
+          : 'A cat is waiting ${formatNumber(away)} m away. Walk to the paw.';
+      icon = Icons.pets;
     } else if (view.pins.isEmpty) {
       text = 'Nothing left nearby today. New pickups tomorrow.';
       icon = Icons.check_circle_outline;
@@ -393,6 +409,13 @@ class _EventSheet extends StatelessWidget {
         '$catName is home',
         '$catName is back in the room.',
         Icons.favorite,
+      ),
+      CatJoined(:final catName, :final returning) => (
+        returning ? '$catName is back!' : '$catName joined you',
+        returning
+            ? '$catName found the way home. The bed is theirs again.'
+            : '$catName is in your room now, in the empty bed.',
+        Icons.pets,
       ),
       PinCollected(:final result) => _describe(result),
     };

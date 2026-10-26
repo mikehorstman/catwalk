@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
+import '../../steps/presentation/home_controller.dart';
 import '../data/room_cats_provider.dart';
 import '../domain/cat_action.dart';
 import '../domain/room_cat.dart';
@@ -115,6 +116,8 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
   @override
   Widget build(BuildContext context) {
     final cats = ref.watch(roomCatsProvider);
+    final bedCount =
+        ref.watch(homeControllerProvider).value?.inventory.beds ?? 0;
     // Reduce Motion is a device setting, and it can change while the app runs.
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
     final RoomLayout layout = widget.layout ?? ref.watch(roomLayoutProvider);
@@ -153,6 +156,12 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
                       onTap: () => CatDetailsSheet.show(context, cat),
                     ),
               if (cats.isEmpty) const _NoCats(),
+              if (bedCount > 1)
+                Positioned(
+                  right: 12,
+                  bottom: 12,
+                  child: _BedStrip(beds: bedCount, cats: cats.length),
+                ),
               if (kDebugMode)
                 const Positioned(
                   left: 4,
@@ -282,6 +291,39 @@ class _LabButton extends StatelessWidget {
       tooltip: 'Animation lab',
       onPressed: () => AnimationLabSheet.show(context),
       icon: const Icon(Icons.science_outlined),
+    );
+  }
+}
+
+/// One small bed for each bed owned, full for a bed with a cat and outlined for
+/// an empty one. A placeholder until the real room art exists.
+class _BedStrip extends StatelessWidget {
+  const _BedStrip({required this.beds, required this.cats});
+
+  /// Beds owned.
+  final int beds;
+
+  /// Cats in the room.
+  final int cats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$cats of $beds beds used',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < beds; i++)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Icon(
+                i < cats ? Icons.bed : Icons.bed_outlined,
+                size: 26,
+                color: i < cats ? CatwalkColors.teal : CatwalkColors.inkMuted,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -7,15 +7,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/calendar_date.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
+import '../../cat/data/cat_repository.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
 import '../../onboarding/data/onboarding_repository.dart';
 import '../../room/data/room_layout_provider.dart';
 import '../../steps/presentation/home_controller.dart';
+import '../data/arrival_repository.dart';
 import '../data/inventory_repository.dart';
+import '../data/lost_cat_repository.dart';
 import '../data/location_service.dart';
 import '../data/map_state_repository.dart';
+import '../domain/arrival.dart';
 import '../domain/collect.dart';
 import '../domain/geo.dart';
 import '../domain/inventory.dart';
@@ -45,6 +49,17 @@ class CatFound extends MapNotice {
 }
 
 /// Everything the map screen needs to draw, in one immutable snapshot.
+/// A cat reached the player and joined the room.
+class CatJoined extends MapNotice {
+  const CatJoined({required this.catName, required this.returning});
+
+  /// The new cat's name.
+  final String catName;
+
+  /// True when it is a lost cat that came back.
+  final bool returning;
+}
+
 class MapViewState {
   const MapViewState({
     required this.access,
@@ -56,6 +71,7 @@ class MapViewState {
     required this.recoveryStepsToGo,
     required this.recoveryDaysLeft,
     required this.inventory,
+    this.arrival,
     this.fix,
     this.event,
   });
@@ -90,6 +106,9 @@ class MapViewState {
   /// What you hold, for example streak freezes.
   final Inventory inventory;
 
+  /// The cat waiting on the map, once it can be seen. Null when none.
+  final Arrival? arrival;
+
   /// Shown once, then cleared by [CatMapController.dismissEvent].
   final MapNotice? event;
 
@@ -109,6 +128,8 @@ class MapViewState {
     int? recoveryStepsToGo,
     int? recoveryDaysLeft,
     Inventory? inventory,
+    Arrival? arrival,
+    bool clearArrival = false,
     MapNotice? event,
     bool clearEvent = false,
   }) => MapViewState(
@@ -122,6 +143,7 @@ class MapViewState {
     recoveryStepsToGo: recoveryStepsToGo ?? this.recoveryStepsToGo,
     recoveryDaysLeft: recoveryDaysLeft ?? this.recoveryDaysLeft,
     inventory: inventory ?? this.inventory,
+    arrival: clearArrival ? null : (arrival ?? this.arrival),
     event: clearEvent ? null : (event ?? this.event),
   );
 }
@@ -169,6 +191,16 @@ class CatMapController extends AsyncNotifier<MapViewState> {
       recoveryDaysLeft: home.recovery?.daysLeft ?? 0,
       inventory: inventory,
     );
+
+    // Without a usable location a waiting cat cannot be walked to, so it comes
+    // straight home, as a recovered runaway does.
+    final waiting = await ref.read(arrivalRepositoryProvider).read();
+    final today = CalendarDate.today();
+    if (waiting != null &&
+        waiting.isVisibleOn(today) &&
+        access != LocationAccess.granted) {
+      view = view.copyWith(event: await _join(waiting));
+    }
 
     if (access == LocationAccess.granted) {
       final fix = await location.current();
@@ -263,6 +295,20 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     }
     pins = spawnPins(cell: cell, date: today, collected: collectedIds);
 
+    // A cat waiting for a bed: placed once, then walked to.
+    final arrivals = ref.read(arrivalRepositoryProvider);
+    var arrival = await arrivals.read();
+    if (arrival != null && arrival.isVisibleOn(today)) {
+      arrival = placeArrival(arrival: arrival, from: fix.point, today: today);
+      await arrivals.write(arrival);
+      if (reached(fix: fix, target: arrival.point!, allowMocked: allowMocked)) {
+        event = await _join(arrival);
+        arrival = null;
+      }
+    } else {
+      arrival = null;
+    }
+
     var recovery = mapState.recovery;
     var runaway = next.runaway;
 
@@ -295,6 +341,8 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     }
 
     return next.copyWith(
+      arrival: arrival,
+      clearArrival: arrival == null,
       pins: pins,
       recovery: recovery,
       runaway: runaway,
@@ -316,6 +364,21 @@ class CatMapController extends AsyncNotifier<MapViewState> {
 
   /// The cat is back: active again, neutral mood, and no longer counting missed
   /// days. Saved, then the home screen is refreshed.
+  /// The waiting cat joins the room and takes its bed. A returning lost cat is
+  /// no longer lost.
+  Future<CatJoined> _join(Arrival arrival) async {
+    await ref.read(catRepositoryProvider).add(arrival.cat);
+    if (arrival.kind == ArrivalKind.returning) {
+      await ref.read(lostCatRepositoryProvider).remove(arrival.cat.id);
+    }
+    await ref.read(arrivalRepositoryProvider).write(null);
+    await ref.read(homeControllerProvider.notifier).refreshSilently();
+    return CatJoined(
+      catName: arrival.cat.name,
+      returning: arrival.kind == ArrivalKind.returning,
+    );
+  }
+
   Future<void> _bringHome() async {
     final cat = await _readCat();
     final home = cat.copyWith(
