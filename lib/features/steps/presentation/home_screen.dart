@@ -11,6 +11,7 @@ import '../../daily_goal/domain/progress_milestones.dart';
 import '../../cat/presentation/cat_voice.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
 import 'home_controller.dart';
+import '../../reminders/application/reminder_scheduler.dart';
 import 'shop_screen.dart';
 import 'step_auto_refresh.dart';
 
@@ -560,6 +561,11 @@ Future<void> _openGift(BuildContext context, WidgetRef ref) async {
     context: context,
     builder: (context) => _GiftReveal(lines: lines),
   );
+  // The first gift is a good moment to offer reminders, once.
+  final state = ref.read(homeControllerProvider).value;
+  if (state != null) {
+    await ref.read(reminderSchedulerProvider).askOnce(state);
+  }
 }
 
 /// The one button for today's reward: greyed out until the goal is reached,

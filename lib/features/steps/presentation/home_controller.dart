@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +26,8 @@ import '../../daily_goal/domain/streak.dart';
 import '../../map/data/inventory_repository.dart';
 import '../../map/data/location_service.dart';
 import '../../map/data/lost_cat_repository.dart';
+import '../../analytics/analytics_service.dart';
+import '../../reminders/application/reminder_scheduler.dart';
 import '../../map/domain/inventory.dart';
 import '../../map/data/arrival_repository.dart';
 import '../../map/domain/arrival.dart';
@@ -409,7 +413,7 @@ class HomeController extends AsyncNotifier<HomeState> {
             0.2;
     final tuneOk = farOff && !raiseOk && !await nudges.tuneDismissed();
 
-    return HomeState(
+    final result = HomeState(
       currentStreak: streak,
       cat: snapshot.cat,
       today: todayProgress,
@@ -440,6 +444,10 @@ class HomeController extends AsyncNotifier<HomeState> {
       showGoalTune: tuneOk,
       goalRaise: raiseOk ? raise : null,
     );
+
+    // The phone's reminders follow what happened today.
+    unawaited(ref.read(reminderSchedulerProvider).reschedule(result));
+    return result;
   }
 
   /// Opens the oldest waiting gift, pays what is inside and returns one line
@@ -457,6 +465,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     if (opened == null) return const [];
     await ledgers.write(opened.ledger);
     await inventories.write(opened.inventory);
+    await ref.read(analyticsProvider).log('gift_opened');
     await refreshSilently();
     return opened.lines;
   }
@@ -469,6 +478,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     final bought = result.inventory;
     if (bought == null) return result.refusal;
     await inventories.write(bought);
+    await ref.read(analyticsProvider).log('bed_bought');
     await refreshSilently();
     return null;
   }

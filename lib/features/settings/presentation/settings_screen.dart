@@ -13,6 +13,7 @@ import '../../onboarding/presentation/onboarding_controller.dart';
 import '../../steps/presentation/home_controller.dart';
 import '../data/profile_repository.dart';
 import 'daily_goal_field.dart';
+import 'prefs_section.dart';
 
 /// Settings page: change the daily goal, allow step access, or reset the app.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -179,7 +180,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 '${formatNumber(AppConstants.maxDailyStepGoal)} steps. Most of the '
                 'health benefit sits around '
                 '${formatNumber(AppConstants.benefitReferenceSteps)} steps, and a '
-                'higher goal lets you keep more cats.',
+                'higher goal earns more candy.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -215,6 +216,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: const Text('Save goal'),
                 ),
               ),
+              const SizedBox(height: 40),
+              const PrefsSection(),
               const SizedBox(height: 40),
               Text('Step access', style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),

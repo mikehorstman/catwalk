@@ -14,6 +14,7 @@ import '../../cat/domain/cat_status.dart';
 import '../../onboarding/data/onboarding_repository.dart';
 import '../../room/data/room_layout_provider.dart';
 import '../../steps/presentation/home_controller.dart';
+import '../../analytics/analytics_service.dart';
 import '../data/arrival_repository.dart';
 import '../data/inventory_repository.dart';
 import '../data/lost_cat_repository.dart';
@@ -384,6 +385,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
       await ref.read(lostCatRepositoryProvider).remove(arrival.cat.id);
     }
     await ref.read(arrivalRepositoryProvider).write(null);
+    await ref.read(analyticsProvider).log('cat_joined');
     await ref.read(homeControllerProvider.notifier).refreshSilently();
     return CatJoined(
       catName: arrival.cat.name,
