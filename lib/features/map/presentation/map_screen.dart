@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../../core/utils/format.dart';
 import '../data/location_service.dart';
 import '../domain/collect.dart';
 import '../domain/geo.dart';
+import '../domain/reach_rule.dart';
 import '../domain/reward.dart';
 import 'map_controller.dart';
 
@@ -20,6 +23,54 @@ const String mapTileUrl = String.fromEnvironment(
 
 /// Tests turn the tiles off so no widget test touches the network.
 final mapTilesEnabledProvider = Provider<bool>((ref) => true);
+
+/// How close the map starts, and returns to when you recentre.
+const double mapStartZoom = 17;
+
+/// A pickup this close (metres) glows: one more short walk and it is yours.
+const double nearPinMeters = 60;
+
+/// Steps shorter than this (metres) are GPS noise and do not move the trail.
+const double trailMinStepMeters = 4;
+
+/// The trail keeps this many points, about a long walk.
+const int trailMaxPoints = 120;
+
+/// Softens the map into the app's cream and sage: less colour, a warm tint.
+const ColorFilter mapTint = ColorFilter.matrix(<double>[
+  0.80,
+  0.14,
+  0.06,
+  0,
+  14,
+  0.10,
+  0.84,
+  0.06,
+  0,
+  12,
+  0.08,
+  0.14,
+  0.72,
+  0,
+  4,
+  0,
+  0,
+  0,
+  1,
+  0,
+]);
+
+/// The direction from [a] to [b], in radians clockwise from north.
+double headingBetween(LatLng a, LatLng b) {
+  final lat1 = a.latitudeInRad;
+  final lat2 = b.latitudeInRad;
+  final dLon = b.longitudeInRad - a.longitudeInRad;
+  final y = math.sin(dLon) * math.cos(lat2);
+  final x =
+      math.cos(lat1) * math.sin(lat2) -
+      math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
+  return math.atan2(y, x);
+}
 
 /// Converts our [GeoPoint] to the map package's [LatLng].
 LatLng _ll(GeoPoint p) => LatLng(p.lat, p.lon);
@@ -34,7 +85,8 @@ class MapScreen extends ConsumerStatefulWidget {
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends ConsumerState<MapScreen> {
+class _MapScreenState extends ConsumerState<MapScreen>
+    with SingleTickerProviderStateMixin {
   /// Moves and zooms the map from code.
   final MapController _map = MapController();
 
@@ -46,15 +98,76 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   bool _mapReady = false;
 
   /// Last zoom level, kept so following keeps the user's zoom.
-  double _zoom = 16;
+  double _zoom = mapStartZoom;
+
+  /// Where you have walked since the map opened, newest last.
+  final List<LatLng> _trail = [];
+
+  /// The way you are facing, in radians clockwise from north.
+  double _heading = 0;
+
+  /// Glides the camera to your new position instead of jumping.
+  late final AnimationController _glide = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
 
   /// True while a pickup sheet is open, so another does not stack on top.
   bool _showingEvent = false;
 
   @override
   void dispose() {
+    _glide.dispose();
     _map.dispose();
     super.dispose();
+  }
+
+  /// Adds [point] to the trail and turns the avatar towards where you went.
+  void _walked(LatLng point) {
+    if (_trail.isEmpty) {
+      _trail.add(point);
+      return;
+    }
+    final last = _trail.last;
+    final moved = distanceMeters(
+      GeoPoint(last.latitude, last.longitude),
+      GeoPoint(point.latitude, point.longitude),
+    );
+    if (moved < trailMinStepMeters) return;
+    setState(() {
+      _heading = headingBetween(last, point);
+      _trail.add(point);
+      if (_trail.length > trailMaxPoints) _trail.removeAt(0);
+    });
+  }
+
+  /// Slides the camera to [target] over a moment, keeping your zoom.
+  void _glideTo(LatLng target) {
+    final from = _map.camera.center;
+    _glide
+      ..removeListener(_onGlide)
+      ..reset();
+    _glideFrom = from;
+    _glideTarget = target;
+    _glide
+      ..addListener(_onGlide)
+      ..forward();
+  }
+
+  LatLng _glideFrom = const LatLng(0, 0);
+  LatLng _glideTarget = const LatLng(0, 0);
+
+  void _onGlide() {
+    if (!_mapReady) return;
+    final t = Curves.easeOut.transform(_glide.value);
+    _map.move(
+      LatLng(
+        _glideFrom.latitude + (_glideTarget.latitude - _glideFrom.latitude) * t,
+        _glideFrom.longitude +
+            (_glideTarget.longitude - _glideFrom.longitude) * t,
+      ),
+      _zoom,
+    );
   }
 
   @override
@@ -65,12 +178,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final event = view.event;
       if (event != null && !_showingEvent) _showEvent(event);
       final fix = view.fix;
-      // The map only takes commands once it has been drawn.
-      if (fix != null &&
-          _following &&
-          _mapReady &&
-          previous?.value?.fix != fix) {
-        _map.move(_ll(fix.point), _zoom);
+      if (fix != null && previous?.value?.fix != fix) {
+        _walked(_ll(fix.point));
+        // The map only takes commands once it has been drawn.
+        if (_following && _mapReady) _glideTo(_ll(fix.point));
       }
     });
 
@@ -105,7 +216,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           mapController: _map,
           options: MapOptions(
             initialCenter: _ll(fix.point),
-            initialZoom: 16,
+            initialZoom: mapStartZoom,
             minZoom: 10,
             maxZoom: 19,
             onMapReady: () => _mapReady = true,
@@ -119,21 +230,53 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               TileLayer(
                 urlTemplate: mapTileUrl,
                 userAgentPackageName: 'app.catwalk.catwalk',
+                // The same streets, softened into the app's cream and sage.
+                tileBuilder: (context, tile, _) =>
+                    ColorFiltered(colorFilter: mapTint, child: tile),
               ),
+            if (_trail.length > 1)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: List.of(_trail),
+                    strokeWidth: 5,
+                    color: CatwalkColors.teal.withValues(alpha: 0.45),
+                    strokeCap: StrokeCap.round,
+                    strokeJoin: StrokeJoin.round,
+                  ),
+                ],
+              ),
+            // The circle you have to walk into to pick something up.
+            CircleLayer(
+              circles: [
+                CircleMarker(
+                  point: _ll(fix.point),
+                  radius: reachRadiusMeters,
+                  useRadiusInMeter: true,
+                  color: CatwalkColors.teal.withValues(alpha: 0.14),
+                  borderColor: CatwalkColors.teal.withValues(alpha: 0.55),
+                  borderStrokeWidth: 2,
+                ),
+              ],
+            ),
             MarkerLayer(
               markers: [
                 for (final pin in view.pins)
                   Marker(
                     point: _ll(pin.point),
-                    width: 44,
-                    height: 44,
-                    child: const _PinMarker(),
+                    width: 56,
+                    height: 56,
+                    child: _PinMarker(
+                      key: ValueKey('pin-${pin.id}'),
+                      near:
+                          distanceMeters(fix.point, pin.point) <= nearPinMeters,
+                    ),
                   ),
                 if (view.arrival?.point case final spot?)
                   Marker(
                     point: _ll(spot),
-                    width: 56,
-                    height: 56,
+                    width: 64,
+                    height: 64,
                     child: const _CatMarker(),
                   ),
                 if (view.recovery.isLocated)
@@ -145,9 +288,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                 Marker(
                   point: _ll(fix.point),
-                  width: 28,
-                  height: 28,
-                  child: const _YouMarker(),
+                  width: 64,
+                  height: 64,
+                  child: _YouMarker(heading: _heading),
                 ),
               ],
             ),
@@ -166,8 +309,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             heroTag: 'recentre',
             tooltip: 'Centre on me',
             onPressed: () {
+              _zoom = mapStartZoom;
               setState(() => _following = true);
-              if (_mapReady) _map.move(_ll(fix.point), 16);
+              if (_mapReady) _glideTo(_ll(fix.point));
             },
             child: const Icon(Icons.my_location),
           ),
@@ -336,66 +480,205 @@ class _AccessCard extends ConsumerWidget {
 }
 
 /// The blue dot for your own position.
-class _YouMarker extends StatelessWidget {
-  const _YouMarker();
+/// You: a cat face on a sage disc, a soft pulse around it and a pointer that
+/// turns the way you are walking.
+class _YouMarker extends StatefulWidget {
+  const _YouMarker({required this.heading});
+
+  /// Radians clockwise from north.
+  final double heading;
+
+  @override
+  State<_YouMarker> createState() => _YouMarkerState();
+}
+
+class _YouMarkerState extends State<_YouMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Semantics(
     label: 'You',
-    child: Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF2F6FED),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)],
+    child: AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, _) => Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 30 + 34 * _pulse.value,
+            height: 30 + 34 * _pulse.value,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: CatwalkColors.teal.withValues(
+                alpha: 0.28 * (1 - _pulse.value),
+              ),
+            ),
+          ),
+          Transform.rotate(
+            angle: widget.heading,
+            child: const Align(
+              alignment: Alignment.topCenter,
+              child: Icon(
+                Icons.navigation,
+                key: Key('you-heading'),
+                size: 18,
+                color: CatwalkColors.teal,
+              ),
+            ),
+          ),
+          Container(
+            key: const Key('you-marker'),
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: CatwalkColors.teal,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: const [
+                BoxShadow(blurRadius: 5, color: Colors.black38),
+              ],
+            ),
+            child: const Icon(Icons.pets, color: Colors.white, size: 18),
+          ),
+        ],
       ),
     ),
   );
 }
 
-/// The orange gift icon for a pickup.
-class _PinMarker extends StatelessWidget {
-  const _PinMarker();
+/// A pickup: bobs gently, and glows and grows once it is close enough to walk
+/// onto.
+class _PinMarker extends StatefulWidget {
+  const _PinMarker({super.key, required this.near});
+
+  /// True when you are within a few steps of it.
+  final bool near;
+
+  @override
+  State<_PinMarker> createState() => _PinMarkerState();
+}
+
+class _PinMarkerState extends State<_PinMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _bob = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _bob.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Pickup',
-    child: Container(
-      decoration: BoxDecoration(
-        color: CatwalkColors.orange,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)],
+    label: widget.near ? 'Pickup, very close' : 'Pickup',
+    child: AnimatedBuilder(
+      animation: _bob,
+      builder: (context, child) => Transform.translate(
+        offset: Offset(0, -5 * Curves.easeInOut.transform(_bob.value)),
+        child: child,
       ),
-      child: const Icon(
-        Icons.card_giftcard,
-        color: CatwalkColors.ink,
-        size: 22,
+      child: AnimatedScale(
+        scale: widget.near ? 1.25 : 0.9,
+        duration: const Duration(milliseconds: 250),
+        child: Container(
+          decoration: BoxDecoration(
+            color: CatwalkColors.orange,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: widget.near ? 16 : 4,
+                spreadRadius: widget.near ? 3 : 0,
+                color: widget.near
+                    ? CatwalkColors.orange.withValues(alpha: 0.7)
+                    : Colors.black26,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.card_giftcard,
+            color: CatwalkColors.ink,
+            size: 24,
+          ),
+        ),
       ),
     ),
   );
 }
 
-/// The teal paw for the runaway cat, once the step target is met.
-class _CatMarker extends StatelessWidget {
+/// A cat waiting on the map, with a ring that breathes so it is easy to spot.
+class _CatMarker extends StatefulWidget {
   const _CatMarker();
+
+  @override
+  State<_CatMarker> createState() => _CatMarkerState();
+}
+
+class _CatMarkerState extends State<_CatMarker>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ring = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _ring.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Semantics(
     label: 'Your cat',
-    child: Container(
-      decoration: BoxDecoration(
-        color: CatwalkColors.teal,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)],
+    child: AnimatedBuilder(
+      animation: _ring,
+      builder: (context, _) => Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 40 + 24 * _ring.value,
+            height: 40 + 24 * _ring.value,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: CatwalkColors.orange.withValues(
+                  alpha: 0.7 * (1 - _ring.value),
+                ),
+                width: 3,
+              ),
+            ),
+          ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: CatwalkColors.orange,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: const [
+                BoxShadow(blurRadius: 5, color: Colors.black38),
+              ],
+            ),
+            child: const Icon(Icons.pets, color: Colors.white, size: 26),
+          ),
+        ],
       ),
-      child: const Icon(Icons.pets, color: Colors.white, size: 26),
     ),
   );
 }
 
-/// The bottom sheet that tells you what you just found or that the cat is home.
 class _EventSheet extends StatelessWidget {
   const _EventSheet({required this.event});
 
