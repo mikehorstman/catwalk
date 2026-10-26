@@ -24,9 +24,9 @@ def chart_loop():
     c.node("goal", 400, 135, 380, 54, "built", "Daily goal, 6,000 by default\nSet it yourself, or from your last week")
     c.node("d1", 400, 250, 250, 90, "dec", "Goal reached today?")
 
-    c.node("happy", 120, 250, 230, 60, "built", "The cat is happy\nXP once that day")
+    c.node("happy", 120, 250, 230, 60, "built", "The cat is happy\nCandy once that day")
     c.node("streak", 120, 350, 230, 54, "built", "The streak grows")
-    c.node("reward", 120, 445, 230, 60, "plan", "Streak prizes at 3, 7, 14, 30\nand 100 days: not paid yet")
+    c.node("reward", 120, 445, 230, 60, "plan", "Streak prizes at 3, 7, 14, 30\nand 100 days, paid in candy")
 
     c.node("end", 800, 250, 280, 64, "built", "The day ends without it\nHalf the goal counts as missed too")
     c.node("d2", 800, 365, 250, 88, "dec", "Streak freeze held?")
@@ -52,7 +52,7 @@ def chart_loop():
     c.edge("s3", "b", "rec", "t", via=[(960, 640), (920, 640)])
     c.note("Today does not count as missed until it ends.")
     c.note("A freeze saves the day but gives no streak credit. At most 2 can be held.")
-    c.note("A halfway snack (a little XP at 50%) stays. It does not change whether the goal was reached.")
+    c.note("Halfway pays nothing. The cat only reacts. It does not change whether the goal was reached.")
     return c
 
 
@@ -74,7 +74,7 @@ def chart_recovery():
     c.node("gone", 790, 265, 270, 64, "bad", "The window closes\nThe cat is gone from the room")
     c.node("d3", 790, 385, 200, 90, "dec", "Another cat?")
     c.node("other", 555, 385, 230, 60, "out", "The others stay\nThe room carries on")
-    c.node("kit", 790, 510, 340, 66, "plan", "A stray kitten arrives\nlevel 1, lifetime stats kept")
+    c.node("kit", 790, 510, 340, 66, "plan", "A stray kitten arrives\nit takes the empty bed, total steps kept")
     c.node("back", 790, 650, 420, 78, "plan", "Someday, on a random day 7 to 30 days later\nthe lost cat shows up on the map\nWalk to it and it comes home")
 
     c.edge("r0", "b", "win", "t")
@@ -93,80 +93,151 @@ def chart_recovery():
     c.note("Steps from before the cat ran away do not count.")
     c.note("Once the cat is on the map it stays until you find it. There is no second timer. The same goes for a lost cat that comes back.")
     c.note("A streak freeze never rescues a cat that has already run away.")
-    c.note("A lost cat that comes back is another cat in your room. If you are at the cap for your goal, it waits until there is room.")
+    c.note("A lost cat that comes back needs an empty bed. Its own bed stays reserved while it is lost, so there is always room.")
     return c
 
 
 def chart_goal():
     c = Chart(
         "3. Today's steps",
-        "Pays once a day. Opening the app again cannot pay it twice. The side quest is switched off for now.",
+        "Pays once a day. Opening the app again cannot pay it twice. The side quest is gone.",
         800, 540,
     )
     c.node("s", 300, 36, 220, 40, "term", "Steps so far today")
     c.node("d1", 300, 135, 270, 88, "dec", "50% of the goal reached?")
     c.node("w1", 650, 135, 260, 54, "out", "Keep walking")
-    c.node("b1", 300, 245, 270, 54, "built", "Halfway snack\na little XP, once")
+    c.node("b1", 300, 245, 270, 54, "plan", "Halfway\nthe cat reacts, nothing is paid")
     c.node("d2", 300, 350, 230, 88, "dec", "Goal reached?")
     c.node("w2", 640, 350, 300, 66, "built", "Not the goal\nHalf a goal is still a missed day")
-    c.node("b2", 300, 465, 320, 60, "good", "Goal reached\nFull XP once, cat happy, streak +1")
+    c.node("b2", 300, 465, 340, 60, "plan", "Goal reached\nCandy once, cat happy, streak +1")
     c.edge("s", "b", "d1", "t")
     c.edge("d1", "r", "w1", "l", "No")
     c.edge("d1", "b", "b1", "t", "Yes")
     c.edge("b1", "b", "d2", "t")
     c.edge("d2", "r", "w2", "l", "No")
     c.edge("d2", "b", "b2", "t", "Yes")
-    c.note("XP is proportional to the goal: 50 at 6,000 steps, 25 at 3,000, 100 at 12,000. A higher goal pays more a day, not more per step.")
+    c.note("Candy follows the goal: 1 candy per 1,000 steps of your goal, at least 3 and at most 15 a day. 6 at 6,000. A higher goal pays more a day, not more per step.")
+    c.note("There is no XP and no level. The numbers you see are steps today, your streak, total steps and candy.")
     return c
 
 
 def chart_map():
     c = Chart(
-        "4. The map, new cats and the room",
-        "Candy on the map. Walk to it. The map is for going somewhere, not a second step counter.",
-        1040, 900,
+        "4. The map",
+        "Pickups to walk to. The map is for going somewhere, not a second step counter.",
+        1040, 500,
     )
     c.node("map", 500, 36, 300, 44, "term", "Pickups appear near you")
     c.node("reach", 500, 118, 390, 56, "built", "Walk to the pin\nThe step record still decides the day")
     c.node("roll", 500, 205, 220, 44, "built", "A pickup is one of")
-    c.node("xp", 95, 310, 170, 56, "built", "Extra XP")
-    c.node("fz", 280, 310, 170, 56, "built", "A streak freeze")
-    c.node("toy", 465, 310, 170, 60, "built", "A toy or a\nscratching post")
-    c.node("prog", 700, 310, 190, 56, "plan", "Progress toward\na new cat")
-    c.node("save", 910, 310, 170, 56, "open", "Something to save\nundecided")
-
-    c.node("lvl", 95, 420, 170, 56, "built", "XP adds up\nthe level rises")
-    c.node("saved", 280, 420, 170, 70, "built", "Saves one missed\nday, then it\nis gone")
-    c.node("spawn", 700, 420, 230, 60, "plan", "Enough level, XP or\nprogress: a new cat\nappears on the map")
-    c.node("walk", 700, 510, 200, 44, "plan", "Walk there")
-    c.node("street", 925, 420, 170, 56, "plan", "Photograph a\nstreet cat")
-    c.node("same", 925, 510, 170, 60, "plan", "The same cat, seen\nenough times")
-    c.node("unlock", 700, 600, 220, 44, "plan", "A new cat unlocks")
-    c.node("cap", 700, 700, 230, 90, "dec", "Under the cap set by\nyour daily goal?")
-    c.node("block", 930, 700, 180, 74, "out", "Blocked until you raise\nthe goal or let a cat go")
-    c.node("room", 465, 790, 330, 66, "built", "The room\nUnlocked cats walk about\ntoys and posts stand in it")
-    c.node("buy", 110, 790, 190, 60, "open", "Buy things with\ncurrency? undecided")
-
+    c.node("candy", 130, 310, 190, 56, "plan", "A few pieces of candy\n2 to 4")
+    c.node("fz", 360, 310, 170, 56, "built", "A streak freeze")
+    c.node("toy", 580, 310, 170, 56, "built", "A toy")
+    c.node("street", 840, 310, 250, 64, "plan", "A street cat to photograph\nthe same cat, seen enough times")
+    c.node("mycandy", 130, 430, 190, 60, "plan", "Added to your candy\nsee chart 7")
+    c.node("saved", 360, 430, 170, 70, "built", "Saves one missed\nday, then it\nis gone")
+    c.node("room", 580, 430, 170, 70, "built", "In the room\nthe cat plays with it")
+    c.node("bed", 840, 430, 230, 64, "plan", "Needs an empty bed\nsee chart 7")
     c.edge("map", "b", "reach", "t")
     c.edge("reach", "b", "roll", "t")
-    for key in ("xp", "fz", "toy", "prog", "save"):
+    for key in ("candy", "fz", "toy", "street"):
         x = c.nodes[key][0]
         c.edge("roll", "b", key, "t", via=[(500, 262), (x, 262)])
-    c.edge("xp", "b", "lvl", "t")
+    c.edge("candy", "b", "mycandy", "t")
     c.edge("fz", "b", "saved", "t")
     c.edge("toy", "b", "room", "t")
-    c.edge("prog", "b", "spawn", "t")
-    c.edge("spawn", "b", "walk", "t")
-    c.edge("walk", "b", "unlock", "t")
-    c.edge("street", "b", "same", "t")
-    c.edge("same", "b", "unlock", "r", via=[(925, 600)])
-    c.edge("unlock", "b", "cap", "t")
-    c.edge("cap", "r", "block", "l", "No", label_at=(828, 692))
-    c.edge("cap", "b", "room", "r", "Yes", via=[(700, 790)], label_at=(712, 765))
-    c.note("Lowering the goal never deletes a cat. It only blocks new ones.")
+    c.edge("street", "b", "bed", "t")
+    c.note("Up to 5 pickups a day, 250 to 900 m away, collected within 30 m.")
     c.note("Scratching posts are drawn and unlocked like toys. They do not exist yet.")
     return c
 
+
+
+def chart_cats():
+    c = Chart(
+        "7. Candy, beds and new cats",
+        "Walk, earn candy, buy a cat bed. A cat then turns up on the map and stays until you fetch it. Each bed costs more than the last, which is the cap.",
+        1040, 930,
+    )
+    c.node("e1", 170, 40, 240, 56, "plan", "Goal reached\n1 candy per 1,000 of your goal")
+    c.node("e2", 500, 40, 240, 56, "plan", "Map pickups and\nthe daily draw")
+    c.node("e3", 830, 40, 240, 56, "plan", "Streak prizes and\ntotal step milestones")
+    c.node("candy", 500, 150, 280, 56, "plan", "Your candy\nthe one number you spend")
+    c.node("shop", 500, 245, 200, 44, "plan", "The shop")
+    c.node("toys", 220, 350, 220, 56, "plan", "Toys\nfor the room, cheap")
+    c.node("bed", 500, 350, 260, 64, "plan", "A cat bed\nthe price goes up each time")
+    c.node("prices", 825, 350, 260, 96, "open", "Bed prices, my numbers\n2nd 40  ·  3rd 90\n4th 160  ·  5th 250\nthe first bed is free")
+    c.node("d", 500, 480, 290, 90, "dec", "Is a cat already\nwaiting on the map?")
+    c.node("wait", 850, 480, 230, 60, "out", "Wait. One new cat\nat a time")
+    c.node("morn", 500, 600, 400, 66, "plan", "The next morning a cat appears on the map\n250 to 900 m away, near where you are")
+    c.node("stay", 500, 695, 340, 54, "plan", "It stays until you fetch it\nNo timer")
+    c.node("walk", 500, 775, 260, 44, "plan", "Walk to within 30 m")
+    c.node("street", 150, 695, 250, 64, "plan", "Photograph a street cat\nthe same cat, seen enough times")
+    c.node("lost", 850, 695, 230, 64, "plan", "A lost cat comes back\nsee chart 2")
+    c.node("join", 500, 865, 340, 60, "good", "The cat joins and takes the bed")
+
+    c.edge("e1", "b", "candy", "t", via=[(170, 100), (500, 100)])
+    c.edge("e2", "b", "candy", "t")
+    c.edge("e3", "b", "candy", "t", via=[(830, 100), (500, 100)])
+    c.edge("candy", "b", "shop", "t")
+    c.edge("shop", "b", "toys", "t", via=[(500, 295), (220, 295)])
+    c.edge("shop", "b", "bed", "t")
+    c.edge("bed", "r", "prices", "l")
+    c.edge("bed", "b", "d", "t")
+    c.edge("d", "r", "wait", "l", "Yes", label_at=(690, 472))
+    c.edge("d", "b", "morn", "t", "No")
+    c.edge("morn", "b", "stay", "t")
+    c.edge("stay", "b", "walk", "t")
+    c.edge("walk", "b", "join", "t")
+    c.edge("street", "b", "join", "l", via=[(150, 865)])
+    c.edge("lost", "b", "join", "r", via=[(850, 865)])
+    c.note("A street cat you photograph and a lost cat that returns also need an empty bed. The first free bed takes the first cat that arrives.")
+    c.note("A cat that runs away leaves its bed empty. The stray kitten, or the lost cat coming back, fills it.")
+    c.note("If you travel far from home, a waiting cat moves to a new spot near you the next morning.")
+    c.note("Toys cost 8 candy each. Decorations and treats are not planned for now.")
+    return c
+
+
+def chart_order_final():
+    c = Chart(
+        "The order, and the people part",
+        "Each slice is playable on its own. Everything before the last one works with the phone off the network.",
+        1000, 670,
+    )
+    done = [
+        ("1. The day", 75), ("2. Real steps", 235), ("3. The room", 395),
+        ("4. The map", 555), ("Rules change", 715), ("First week\nand rewards", 875),
+    ]
+    for i, (label, x) in enumerate(done):
+        c.node(f"n{i}", x, 50, 140, 54, "built", label)
+        if i:
+            c.edge(f"n{i - 1}", "r", f"n{i}", "l")
+    todo = [
+        ("Candy replaces\nXP and level", 110), ("Beds and\nmore cats", 345),
+        ("Reminders\nand recap", 580), ("6. Other\npeople", 840),
+    ]
+    for i, (label, x) in enumerate(todo):
+        c.node(f"p{i}", x, 185, 190, 60, "plan", label)
+        if i:
+            c.edge(f"p{i - 1}", "r", f"p{i}", "l")
+    c.edge("n5", "b", "p0", "t", via=[(875, 120), (110, 120)])
+
+    c.node("acct", 700, 300, 440, 76, "plan", "An account\nThe phone stays the source of truth\nThe server only keeps a copy")
+    c.node("friends", 90, 440, 160, 60, "plan", "Add friends")
+    c.node("visit", 270, 440, 170, 60, "plan", "Visit each\nother's cat room")
+    c.node("nudge", 465, 440, 190, 60, "plan", "Nudge a friend who\nmissed the goal")
+    c.node("stats", 670, 440, 190, 60, "plan", "Your statistics, then\na friends leaderboard")
+    c.node("notif", 890, 440, 190, 100, "plan", "Notifications\ngoal still open\nstreak at risk\ncat about to run\na friend nudged you")
+    c.node("open", 500, 610, 900, 110, "open",
+           "Left open on purpose\nCandy amounts, prices and the prize at each streak milestone  ·  How many photos unlock a street cat\n"
+           "Steps that count as the long walk home  ·  What a street cat photo looks like")
+    c.edge("p3", "b", "acct", "t", via=[(840, 250), (700, 250), (700, 262)])
+    for key in ("friends", "visit", "nudge", "stats", "notif"):
+        x = c.nodes[key][0]
+        c.edge("acct", "b", key, "t", via=[(700, 365), (x, 365)])
+    c.note("Friends, visiting rooms and a leaderboard need an account. The walking, the cat, the map and the room live on the phone first.")
+    c.note("Each notification is one of a few kinds, with no spam channel. At most 3 a day.")
+    return c
 
 
 def chart_first_week():
@@ -178,9 +249,9 @@ def chart_first_week():
     c.node("open", 330, 36, 220, 40, "term", "First open")
     c.node("d1", 330, 140, 270, 92, "dec", "Start gentle?\n(on by default)")
     c.node("own", 740, 140, 280, 60, "out", "Your chosen goal\nfrom day 1")
-    c.node("r1", 330, 270, 420, 76, "plan", "Days 1 to 3: goal 3,000\nFirst goal met: a free toy and a streak freeze\nDay 3 streak: the first streak prize")
-    c.node("r2", 330, 380, 420, 58, "plan", "Days 4 to 7: goal 4,500\nDay 7 streak: a prize and a freeze")
-    c.node("r3", 330, 480, 420, 58, "plan", "From day 8: your goal, 6,000 by default\nA freeze every 7 days after that")
+    c.node("r1", 330, 270, 420, 76, "built", "Days 1 to 3: goal 3,000\nFirst goal met: a free toy and a streak freeze\nDay 3 streak: the first streak prize")
+    c.node("r2", 330, 380, 420, 58, "built", "Days 4 to 7: goal 4,500\nDay 7 streak: a prize and a freeze")
+    c.node("r3", 330, 480, 420, 58, "built", "From day 8: your goal, 6,000 by default\nA freeze every 7 days after that")
     c.node("d2", 330, 595, 330, 84, "dec", "Fewer than 3 of the last 7 days met?")
     c.node("low", 790, 595, 330, 66, "plan", "Offer a lower goal, never forced\n1,000 less, never below 3,000")
     c.edge("open", "b", "d1", "t")
@@ -190,7 +261,7 @@ def chart_first_week():
     c.edge("r2", "b", "r3", "t")
     c.edge("r3", "b", "d2", "t")
     c.edge("d2", "r", "low", "l", "Yes")
-    c.note("Today the goal starts at 6,000 and the first streak prize at 3 days is not paid out yet.")
+    c.note("Built. The lower-goal offer after a bad week is not built yet.")
     c.note("After 5 of 7 days met the app may offer +500. It is always an offer.")
     return c
 
@@ -208,7 +279,7 @@ def chart_hooks():
     c.node("walk", 300, 360, 220, 44, "built", "You walk")
     c.node("d2", 300, 455, 250, 88, "dec", "Goal reached?")
     c.node("miss", 730, 455, 300, 66, "out", "Chart 1: a missed day\nthe cat gets sadder")
-    c.node("draw", 300, 575, 400, 78, "plan", "Daily draw: one small surprise\nA toy or a freeze within every\n5 goal days, bad luck protected")
+    c.node("draw", 300, 575, 400, 78, "built", "Daily draw: a little candy,\nor a toy or a freeze. One of the two\nwithin every 5 goal days")
     c.node("ev", 300, 700, 400, 62, "plan", "A small event in the room\na visitor, or a toy it likes (later)")
     c.node("sun", 790, 575, 220, 40, "term", "Every Sunday")
     c.node("recap", 790, 680, 360, 78, "plan", "Weekly recap\nsteps, days met and personal bests\nA monthly look back once a month")
@@ -234,98 +305,110 @@ def pill(kind, text):
 
 RULES = [
     ("The goal", "Default 6,000 steps, from 3,000 to 30,000. Suggestions stay between 3,000 and 12,000. Today's goal is fixed once the day starts."),
-    ("A good day", "Reach the goal: the cat is happy, XP once that day, the streak grows. Half the goal is not the goal."),
+    ("What you see", "Steps today, your streak, total steps (on the Me tab) and candy. There is no XP and no level."),
+    ("A good day", "Reach the goal: the cat is happy, you get candy once that day, the streak grows. Half the goal is not the goal."),
+    ("Candy", "The one thing you spend. 1 candy per 1,000 steps of your goal when you reach it (at least 3, at most 15 a day). More comes from map pickups, the daily draw, streak prizes and total step milestones. A higher goal pays more candy a day."),
+    ("The shop", "Candy buys toys (8 each) and cat beds. A cat bed costs more each time: 2nd 40, 3rd 90, 4th 160, 5th 250. The first bed is free. These numbers are mine."),
     ("A missed day", "Any day without the goal. 1 day: sad. 2 days: neglected. 3 days: the cat runs away. Today does not count until it ends."),
-    ("Streak freeze", "Found on the map. Saves one missed day, then it is gone. Hold at most 2. No streak credit. Cannot rescue a cat that has already run away."),
-    ("Running away", "After 3 missed days a 7-day window opens."),
-    ("Getting it back", "Reach the step target inside the window (goal × 10). The cat then appears on the map 250 to 900 m away. Walk to within 30 m. With no usable location the cat comes home as soon as the target is reached."),
-    ("Gone, and maybe back", "Window closes without the target: that cat leaves the room. If it was your only cat, a stray kitten arrives at level 1 and your lifetime stats stay. Some random day 7 to 30 days later the lost cat can show up on the map. Walk to it and it comes home."),
-    ("The map", "Up to 5 pickups a day: extra XP, a streak freeze, a toy or post, or progress toward a new cat. The map is for going somewhere; the phone's step record decides the day."),
-    ("New cats", "Enough level, XP or map progress and a new cat appears on the map. Walk there to unlock it. Street cats can be photographed; the same cat seen enough times may unlock."),
-    ("Cats you can keep", "Your daily goal sets the cap: 3,000 one cat, 6,000 two, 9,000 three, 12,000 four, 15,000 and up five (numbers can change). Lowering the goal never deletes a cat."),
-    ("The room", "One room where every unlocked cat walks about. Toys and scratching posts you find stand in it."),
+    ("Streak freeze", "Found on the map, or given every 7 days. Saves one missed day, then it is gone. Hold at most 2. No streak credit. Cannot rescue a cat that has already run away."),
+    ("Running away", "After 3 missed days a 7-day window opens. The cat's bed stays empty."),
+    ("Getting it back", "Reach the step target inside the window (goal x 10). The cat then appears on the map 250 to 900 m away. Walk to within 30 m. With no usable location the cat comes home as soon as the target is reached."),
+    ("Gone, and maybe back", "Window closes without the target: that cat leaves the room. If it was your only cat, a stray kitten arrives and your total steps stay. Some random day 7 to 30 days later the lost cat can show up on the map. Walk to it and it comes home to an empty bed."),
+    ("The map", "Up to 5 pickups a day: candy, a streak freeze or a toy. The map is for going somewhere; the phone's step record decides the day."),
+    ("New cats", "Buy a cat bed with candy. The next morning a new cat appears on the map and stays until you walk to it. One new cat at a time. A cat you photograph on the street, or a lost cat that returns, also needs an empty bed."),
+    ("How many cats", "One cat per bed. Each bed costs more than the last, so nobody gets many cats fast. A higher goal earns more candy, so it gets there faster. Nothing is ever taken away."),
+    ("The room", "One room where every cat walks about. Toys you find or buy stand in it. Each cat has its own bed."),
     ("First week", "Gentle start: goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. A free toy and freeze on the first goal met."),
-    ("Rewards", "Streak prizes at 3, 7, 14, 30 and 100 days, and a freeze every 7 days. A daily draw after a goal day, with a toy or a freeze guaranteed within every 5 goal days."),
+    ("Rewards", "Streak prizes in candy at 3, 7, 14, 30 and 100 days, and a freeze every 7 days. Total step milestones at 10,000, 100,000, 500,000 and 1,000,000. A daily draw after a goal day, with a toy or a freeze guaranteed within every 5 goal days."),
     ("Reminders", "One reminder from the cat, at the time you usually walk, only while the goal is open. At most 3 a day, none after the goal is met, off switch in Settings."),
     ("Progress", "A weekly recap with personal bests, and a monthly look back. After a bad week (fewer than 3 of 7 met) the app offers a lower goal. It is never forced."),
     ("Friends, later", "Friends-only leaderboard and a shared weekly goal. No global ranking."),
-    ("Not now", "Side quests (switched off), currency and shops, money stakes, a second scoreboard, more daily tasks."),
+    ("Not now", "XP and levels (removed), the side quest (removed), decorations and treats, money stakes, a second scoreboard, more daily tasks."),
 ]
 
 SLICES = [
-    ("1. The day", "built", "Goal, XP, mood, streak, history, Me tab."),
+    ("1. The day", "built", "Goal, mood, streak, history, Me tab."),
     ("2. Real steps", "built", "Apple Health and Health Connect, then the sensor. Untested on a real phone."),
     ("3. The room", "built", "Cat walks, sits, sleeps, grooms, climbs, plays. Placeholder sprites in."),
     ("4. The map", "built", "Pickups, toys, freezes. Runaway recovery by step target, then the map."),
-    ("Rules change", "built", "Half a goal is a miss. Side quest off. 7-day recovery window, lost cat leaves, stray kitten arrives. The lost cat is remembered with its random return day; the return on the map is not built yet (needs more than one cat in the room)."),
-    ("First week", "built", "Gentle goal ramp (3,000 then 4,500), free first toy and freeze. The lower-goal offer after a bad week is not built yet."),
-    ("Rewards", "built", "Streak prizes at 3, 7, 14, 30 and 100 days, goal milestones, a freeze every 7 days, the daily draw with a guarantee every fifth goal day."),
-    ("5. More cats", "planned", "New cat on the map, street cat photos, the goal cap. Needs D5 and D6."),
-    ("Reminders and recap", "planned", "Reminders in the cat's voice, the weekly recap, and analytics opt-out. Before outside testers."),
+    ("Rules change", "built", "Half a goal is a miss. Side quest off. 7-day recovery window, lost cat leaves, stray kitten arrives. The lost cat is remembered with its random return day; the return on the map needs beds (not built)."),
+    ("First week and rewards", "built", "Gentle goal ramp, free first toy and freeze, streak prizes, a freeze every 7 days, the daily draw. These still pay XP today. They move to candy in the next step."),
+    ("Candy replaces XP and level", "planned", "Remove XP and level everywhere. Candy from the goal, pickups, the draw and prizes. The shop sells toys. Total steps on the Me tab. See .hermes/plans/2026-10-26_122500-remove-xp-and-level.md (to be updated for candy)."),
+    ("5. Beds and more cats", "planned", "Cat beds in the shop with a rising price, a new cat on the map the next morning, street cat photos, a lost cat returning to an empty bed."),
+    ("Reminders and recap", "planned", "Reminders in the cat's voice, the weekly recap, the lower-goal offer, and analytics opt-out. Before outside testers."),
     ("6. Other people", "planned", "Account, friends, room visits, nudges, leaderboard."),
 ]
 
 NEXT = [
-    ("1", "Rules change (done, except the return)", "Built and tested: half a goal is a miss, side quest off, 7-day window with a 10 × goal target, lost cat and stray kitten. Still to build: the lost cat coming back on the map, which needs more than one cat in the room, so it goes with Slice 5."),
-    ("2", "First week and rewards (done)", "Built and tested. The gentle first week, the first free toy and freeze, streak prizes, a freeze every 7 days, the daily draw. This is the biggest retention gain for the least work."),
+    ("1", "Rules change (done, except the return)", "Built and tested: half a goal is a miss, side quest off, 7-day window with a 10 x goal target, lost cat and stray kitten. The lost cat's return on the map waits for beds."),
+    ("2", "First week and rewards (done)", "Built and tested. They still pay XP today. Step 4 moves them to candy."),
     ("3", "Try it on a real phone", "Install the APK, check Health Connect, the step sensor and GPS, and move the map to a production tile host. Nothing so far has run on hardware."),
-    ("4", "Reminders and recap", "Reminders in the cat's voice with an off switch, the weekly recap and personal bests, the lower-goal offer, and opt-out analytics. Before anyone outside tests it."),
-    ("5", "More cats", "After you choose what spawns a new cat (D5) and what a higher goal gives (D6)."),
-    ("6", "Other people", "Account, friends, a friends-only leaderboard and a shared weekly goal. Last. It is the only slice that needs an account."),
-    ("Later", "Room events", "Small daily events in the room. Wait for the real cat art."),
+    ("4", "Candy replaces XP and level", "Remove XP and level. Home shows steps and the streak. Candy from the goal (1 per 1,000 of the goal), pickups, the draw and prizes. A small shop sells toys. Total steps on Me. About 7 commits."),
+    ("5", "Beds and more cats", "Cat beds with a rising price. After buying one, a new cat appears on the map the next morning and stays until fetched. Street cat photos and a returning lost cat use empty beds."),
+    ("6", "Reminders and recap", "Reminders in the cat's voice with an off switch, the weekly recap and personal bests, the lower-goal offer, and opt-out analytics. Before anyone outside tests it."),
+    ("7", "Other people", "Account, friends, a friends-only leaderboard and a shared weekly goal. Last. It is the only slice that needs an account."),
+    ("Later", "Room events, decorations", "Small daily events in the room, and decorations. Wait for the real cat art."),
 ]
 
 CHECK = [
-    ("stappendoel halen -> kat blij -> xp erbij", "built", "Goal XP once a day, scaled to the goal."),
-    ("kijken op kaart -> naar snoepjes lopen -> beloning (extra xp, streak freeze, speeltje, nieuwe kat unlocken, iets sparen)", "partly", "XP, freeze and toy are built. New cat progress is in the reward table but pays nothing until slice 5. \"Iets sparen\" has no meaning yet: see D4."),
-    ("kat kan spawnen op de map na bepaald level/xp -> heenlopen en unlocken", "planned", "Slice 5. What triggers it is not chosen: D5."),
-    ("kattenkamer … speeltjes en krabpalen … (vinden op kaart of kopen met currency?)", "partly", "Room and toys are built. Scratching posts are not. Found on the map for now; currency is undecided (D8)."),
-    ("kat kan weglopen als doel aantal dagen niet behaald is", "changing", "Built at 3 missed days. Now half a goal also counts as missed."),
-    ("terugkomen door weer veel te lopen", "changing", "Now a target inside a window, then the map. If it is missed the cat leaves, and may come back on the map some random day later. See D1, D2 and D10."),
-    ("fotos maken van katten op straat -> meerdere keren zelfde kat -> kans op unlocken", "planned", "Slice 5. The camera is only for this. How many photos unlock a cat is open."),
-    ("beloning voor hoe hoog je doel is -> hoe hoger je stappendoel hoe meer voordeel", "partly", "A higher goal already pays more XP a day, in proportion. Extra advantage would be more cat slots and rarer pickups (D6)."),
-    ("maximaal aantal katten op basis van doel?", "planned", "A table exists in the code but does nothing until there are new cats. Numbers are open."),
-    ("statistieken, leaderboard", "partly", "Lifetime counters and the weekly card are built. The leaderboard is slice 6."),
+    ("stappendoel halen -> kat blij -> xp erbij", "changing", "Built with XP. Becomes candy: 1 per 1,000 steps of your goal (D8, D17)."),
+    ("kijken op kaart -> naar snoepjes lopen -> beloning (extra xp, streak freeze, speeltje, nieuwe kat unlocken, iets sparen)", "partly", "Freeze and toy are built. Extra XP becomes candy. A new cat now comes from a bed you buy (D5). Candy is the thing to save (D4)."),
+    ("kat kan spawnen op de map na bepaald level/xp -> heenlopen en unlocken", "planned", "Changed by you: buy a cat bed, then the cat appears on the map the next morning and stays until fetched (D5, D19)."),
+    ("kattenkamer ... speeltjes en krabpalen ... (vinden op kaart of kopen met currency?)", "partly", "Room and toys are built. Toys can be found or bought with candy. Scratching posts are not built. Currency is now candy (D8)."),
+    ("each cat gets its own cat bed; buy/unlock a bed; currency (cat candy?) buys toys and beds", "planned", "Yes. Candy is the currency; beds and toys are what it buys (D8, D18)."),
+    ("the bed price goes up after each purchase, so cats cannot be unlocked too quickly", "planned", "Yes. 2nd 40, 3rd 90, 4th 160, 5th 250. The rising price is the cap on cats (D18)."),
+    ("higher daily goal -> more rewards -> more cats faster", "planned", "Yes. Candy is 1 per 1,000 steps of the goal, so a higher goal earns more a day (D6, D17)."),
+    ("kat kan weglopen als doel aantal dagen niet behaald is", "built", "Built at 3 missed days. Half a goal also counts as missed."),
+    ("terugkomen door weer veel te lopen", "built", "A target inside a 7-day window, then the map. If missed, the cat leaves and may come back on the map some random day later (D1, D2, D10)."),
+    ("fotos maken van katten op straat -> meerdere keren zelfde kat -> kans op unlocken", "planned", "Stays. The photographed cat needs an empty bed. How many photos unlock a cat is open."),
+    ("maximaal aantal katten op basis van doel?", "changing", "Replaced by beds: each bed costs more than the last (D18)."),
+    ("statistieken, leaderboard", "partly", "Lifetime counters and the weekly card are built. Total steps becomes the headline on Me. The leaderboard is slice 6."),
     ("voortgangsbalk voor stappen per dag", "built", "On Home."),
-    ("streaks -> beloning voor behouden van streak", "partly", "Streak is built. The reward is not paid yet."),
+    ("streaks -> beloning voor behouden van streak", "partly", "Streak and prizes are built (paid in XP). They move to candy."),
     ("vrienden toevoegen, elkaars kattenkamer bekijken, aanspreken op doel behalen", "planned", "Slice 6. Needs an account."),
-    ("veel meldingen, schuldgevoel", "planned", "Earlier decision was at most 2 a day and none after the goal is met. \"Many\" needs a cap (D7)."),
+    ("veel meldingen, schuldgevoel", "planned", "At most 3 a day and none after the goal is met (D7)."),
 ]
 
 DECISIONS = [
     ("D1", "How big is the recovery target, and how long is the window?",
-     "7 days, goal × 10 steps (60,000 at a 6,000 goal).",
-     "A normal week is goal × 7, so this asks for about 40% more than usual. The old weekly walk asked for goal × 14, which is double a normal week."),
+     "7 days, goal x 10 steps (60,000 at a 6,000 goal).",
+     "A normal week is goal x 7, so this asks for about 40% more than usual. The old weekly walk asked for goal x 14, which is double a normal week."),
     ("D2", "What happens when the only cat is gone from the room?",
-     "A stray kitten arrives at level 1. Lifetime stats stay, the streak resets.",
-     "Otherwise the game ends with nothing to walk for. The loss still costs the cat's level and history."),
+     "A stray kitten arrives. Your total steps stay, the streak resets. Its bed is the one that was left empty.",
+     "Otherwise the game ends with nothing to walk for. The loss still costs the cat and the streak."),
     ("D3", "Does the cat on the map have its own timer?",
-     "No. It stays until you find it.",
+     "No. It stays until you find it. This holds for a recovered cat, a lost cat that returns and a new cat from a bed.",
      "The deadline is already the window. A second timer punishes a player who has done the hard part."),
     ("D4", "What does \"iets sparen\" (something to save) mean?",
-     "Pieces to collect, for example 5 treats make one rare toy.",
-     "It gives a pickup a reason to exist beyond today. Tell me if you meant something else."),
+     "Candy. You save it for the next cat bed.",
+     "Your decision. It gives every pickup and every goal day a reason to exist beyond today."),
     ("D5", "What makes a new cat appear on the map?",
-     "Reach level 3, then every third level after that.",
-     "Level is cumulative, so it rewards staying. Revisit it when slice 5 is built."),
-    ("D6", "What does a higher goal give besides more XP?",
-     "More cat slots and rarer pickups. XP per step stays the same.",
-     "More XP per step would make a hard goal always the better deal, and the research says higher goals mean fewer wins and more quitting."),
+     "Buying a cat bed. The next morning a cat appears and stays until you fetch it. One at a time.",
+     "Your decision. It replaces level and XP as the trigger, and it makes the cap something you can see."),
+    ("D6", "What does a higher goal give?",
+     "More candy a day (1 per 1,000 steps of the goal), so more beds sooner. Nothing per step.",
+     "Your decision. A higher goal is a real benefit, and missing it still costs you the cat."),
     ("D7", "How many notifications?",
      "At most 3 a day, none after the goal is met, off switch in Settings.",
      "That keeps the guilt but stays under the point where people turn all of them off."),
+    ("D8", "Currency?",
+     "Yes: candy. It is the only thing you spend. It replaces XP and level.",
+     "Your decision. Earlier it was \"none for now\"; it now has a purpose (toys and beds). One spendable number, not a second score."),
+    ("D9", "Keep the halfway snack?",
+     "No. Halfway pays nothing. The cat only reacts.",
+     "With XP gone it has nothing to pay. It never changed whether a day counted."),
     ("D10", "Is a lost cat gone for good, or can it come back?",
-     "It leaves the room, but some random day 7 to 30 days later it can show up on the map. Walk to it and it comes home.",
-     "Your decision. The 7 to 30 day range is my number to fill in: it keeps the loss real without making it final. A lost cat that returns is another cat in your room, so the cap applies."),
+     "It leaves the room, but some random day 7 to 30 days later it can show up on the map. Walk to it and it comes home to an empty bed.",
+     "Your decision. The 7 to 30 day range is my number to fill in. A returning cat needs an empty bed, so the bed it left stays reserved while it is lost."),
     ("D11", "A gentle first week?",
      "Yes, on by default: goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. Players who pick their own goal skip it.",
      "The first days decide whether people stay. A 6,000 goal on day 1 is the likeliest early miss."),
     ("D12", "What do new players get early?",
      "A free toy and a streak freeze on the first goal met, and the first streak prize on day 3.",
-     "A reward that arrives in the first days gives the loop a reason to continue. Streak prizes are promised today and not paid."),
+     "A reward that arrives in the first days gives the loop a reason to continue."),
     ("D13", "Daily draw rules?",
-     "One draw per goal day, from the same reward table as the pins, with a toy or a freeze guaranteed within every 5 goal days.",
-     "Unpredictable rewards hold attention, and the guarantee stops a long dry streak. One table, not a new system."),
+     "One draw per goal day: 1 to 3 candy about 60% of the time, otherwise a toy or a freeze, with a toy or a freeze guaranteed within every 5 goal days.",
+     "Unpredictable rewards hold attention, and the guarantee stops a long dry streak. A duplicate toy or a full freeze pouch turns into candy."),
     ("D14", "When and how do reminders and the recap arrive?",
      "In the cat's voice, at your usual walking time (17:00 until it learns it), only while the goal is open. A weekly recap on Sunday evening counts as one of the 3.",
      "Timing matters more than count. Usual walking time needs hourly data, so the first week falls back to a fixed time."),
@@ -335,12 +418,21 @@ DECISIONS = [
     ("D16", "What kind of social, when the account exists?",
      "A friends-only leaderboard and a shared weekly goal. No global ranking.",
      "A global board helps the top few and discourages the rest. A shared goal gives a reason to walk for someone else."),
-    ("D8", "Currency?",
-     "None until finding things is fun.",
-     "As in the existing plan. A shop can come later and spend only what walking earned."),
-    ("D9", "Keep the halfway snack?",
-     "Yes, as a small XP bonus only.",
-     "It does not change whether a day counts. Say if you want it removed too."),
+    ("D17", "How is candy earned?",
+     "1 candy per 1,000 steps of your goal on a goal day (at least 3, at most 15). Map pickups give 2 to 4. The draw gives 1 to 3 sometimes. Streak prizes: 3 days 5, 7 days 15 and a toy, 14 days 30, 30 days 60 and a toy, 100 days 200. Total steps: 10,000 gives 10, 100,000 gives 40, 500,000 gives 120, 1,000,000 gives 300.",
+     "The amounts are my numbers, built so a 6,000 goal earns about 8 to 10 candy a day. Tune them after your phone test."),
+    ("D18", "What does a bed cost?",
+     "The first bed is free. Then 40, 90, 160 and 250. Toys cost 8.",
+     "At about 8 to 10 candy a day the 2nd bed takes about 5 days, the 3rd about 10 more, the 4th about 18, the 5th about 4 weeks. My numbers; the shape (each bed dearer) is yours."),
+    ("D19", "How and when does a new cat arrive?",
+     "The next morning after buying the bed, 250 to 900 m away, near where you are. It stays until fetched, in a new spot each morning if you moved. One at a time. With no usable location it comes straight home.",
+     "No deadline, so nothing is lost. It gives you a reason to open the app the next day."),
+    ("D20", "What happens to XP and level?",
+     "Removed everywhere. Home shows steps today, the streak and the one row for details. Me shows total steps.",
+     "Level did nothing and XP said the same thing twice. Too many numbers hide the one that matters."),
+    ("D21", "Treats, decorations and the side quest code?",
+     "Not now. The side quest code is deleted. Toys and beds are the only things to buy.",
+     "Keep it small. Each new item type is art and rules to build before it adds anything."),
 ]
 
 
@@ -356,6 +448,7 @@ RETENTION = [
     ("R7", "A lower goal offered after a bad week", "Research: a goal that is too hard means fewer wins", "D15"),
     ("R8", "Friends-only leaderboard and a shared weekly goal", "Judgment", "D16"),
     ("R9", "Small daily events in the room", "Judgment", "later"),
+    ("R10", "Candy and a cat bed to save for", "Judgment: a reason to come back that is a goal, not a score", "D5, D8, D17, D18"),
 ]
 
 PAGE_CSS = """
@@ -414,15 +507,15 @@ def table(headers, rows, cls=None):
 
 
 def main():
-    charts = [chart_loop(), chart_recovery(), chart_goal(), chart_first_week(), chart_hooks(), chart_map(), chart_order()]
+    charts = [chart_loop(), chart_recovery(), chart_goal(), chart_first_week(), chart_hooks(), chart_map(), chart_cats(), chart_order_final()]
     charts[-1].title = "The order, and the people part"
     for i, c in enumerate(charts, 1):
         c.title = f"{i}. " + (c.title.split(". ", 1)[1] if c.title[:1].isdigit() else c.title)
     flow_html = "".join(c.html() for c in charts)
 
     overview = f"""
-<p class="lead"><b>Walk enough each day to keep your cat.</b> Reach the step goal and the cat is happy. Miss it and the cat gets sadder, then runs away. Getting it back takes a lot of walking in time, and then finding it on the map. Take too long and it is gone for good.</p>
-<div class="callout"><b>All decisions are made.</b> You decided D10: a lost cat leaves the room but can turn up on the map some random day later. D1 to D9 and D11 to D16 follow my recommendations. The one number still mine is the 7 to 30 day range for a lost cat to return. Half a goal counts as a miss, the side quest is off, and a runaway cat has a deadline. See <a href="#decisions" data-go="decisions">Decisions</a>.</div>
+<p class="lead"><b>Walk enough each day to keep your cat.</b> Reach the step goal and the cat is happy. Miss it and the cat gets sadder, then runs away. Getting it back takes a lot of walking in time, and then finding it on the map. Walking also earns candy, and candy buys cat beds, and each bed brings a new cat.</p>
+<div class="callout"><b>Changed in this version.</b> XP and level are gone. Candy replaces them: you earn it by walking and spend it on toys and cat beds. Each bed costs more than the last, so that is the cap on cats. A new cat appears on the map the next morning and stays until you fetch it (D5, D8, D17 to D21). The numbers (candy amounts, bed prices, prizes) are mine, to tune after your phone test. See <a href="#decisions" data-go="decisions">Decisions</a>.</div>
 <h2>The final rules</h2>
 {table(["Area", "Rule"], [(escape(a), escape(b)) for a, b in RULES], ["k", ""])}
 """
@@ -445,7 +538,7 @@ def main():
 <h2>Rules that do not move</h2>
 <ul>
   <li>The phone's step record decides the day. The app never invents a step count.</li>
-  <li>Daily goal XP is paid once per calendar day. Today is in progress until it ends.</li>
+  <li>Goal candy is paid once per calendar day. Today is in progress until it ends.</li>
   <li>Widgets show state; the day evaluation decides it.</li>
   <li>The local save is the source of truth. An account later only keeps a copy.</li>
 </ul>
@@ -456,14 +549,14 @@ def main():
 {table(["Your line", "Status", "Notes"], [(escape(a), pill(k, {"built": "built", "partly": "partly built", "planned": "planned", "changing": "changing now"}[k]), escape(n)) for a, k, n in CHECK], ["q", "", ""])}
 <h2>What I found</h2>
 <ul>
-  <li><b>Two lines conflict with the earlier plan.</b> "Hoe hoger je doel hoe meer voordeel" (more benefit for a higher goal) goes against "XP stays proportional". I kept XP proportional and put the extra benefit in cat slots and rarer pickups (D6). "Veel meldingen" goes against the earlier cap of 2 a day (D7).</li>
-  <li><b>Two lines were missing a meaning.</b> "Iets sparen" (D4) and what triggers a new cat (D5).</li>
+  <li><b>Your later ideas replace three earlier lines.</b> New cat by level or XP became new cat from a bed. The cap by goal became a rising bed price. "No currency for now" became candy (D5, D8, D18).</li>
+  <li><b>One tension to watch.</b> A higher goal earns more candy, so it unlocks cats sooner. That also makes a bigger goal easier to miss, and a miss costs the cat. This is a real trade, not a bug, but test it before you trust the numbers.</li>
   <li><b>Not in your list but in the plan:</b> the room's scratching posts have no art or unlock yet, and nothing has run on a real phone.</li>
 </ul>
 """
 
     decisions = f"""
-<p class="lead">All decided. D1 to D9 are the rules; D10 to D16 are the retention layer. D10 is your answer; the rest follow my recommendations, which you accepted. To change one, send the ID and a new value, for example D1: 10 days.</p>
+<p class="lead">D4, D5, D6, D8, D9, D10, D19 and D20 are your decisions. D17, D18 and D21 are built on them with my numbers. The rest follow my earlier recommendations. To change one, send the ID and a new value, for example D18: second bed 60.</p>
 {table(["ID", "Question", "Decision", "Why"], [(a, escape(q), f'<span class="rec">{pill("built", "decided")} {escape(r)}</span>', escape(w)) for a, q, r, w in DECISIONS], ["k", "", "", ""])}
 """
 
@@ -488,7 +581,7 @@ def main():
 </head>
 <body>
 <h1>Catwalk: the final plan</h1>
-<p class="sub">Rules, flowcharts, build order and open decisions on one page.</p>
+<p class="sub">Rules, flowcharts, build order and decisions on one page. Updated 2026-10-26 for candy and cat beds.</p>
 <nav class="tabs">{nav}</nav>
 {sections}
 <script>{JS}
