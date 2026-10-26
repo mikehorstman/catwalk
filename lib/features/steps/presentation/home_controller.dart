@@ -28,6 +28,7 @@ import '../../map/data/location_service.dart';
 import '../../map/data/lost_cat_repository.dart';
 import '../../analytics/analytics_service.dart';
 import '../../reminders/application/reminder_scheduler.dart';
+import '../../social/application/social_controller.dart';
 import '../../map/domain/inventory.dart';
 import '../../map/data/arrival_repository.dart';
 import '../../map/domain/arrival.dart';
@@ -447,6 +448,7 @@ class HomeController extends AsyncNotifier<HomeState> {
 
     // The phone's reminders follow what happened today.
     unawaited(ref.read(reminderSchedulerProvider).reschedule(result));
+    unawaited(ref.read(socialPublisherProvider).publish(result));
     return result;
   }
 

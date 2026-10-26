@@ -1,28 +1,37 @@
 rules_version = '2';
 
-// Catwalk. Local save is the source of truth for walking; Firestore only
-// holds the social layer (profiles, friends, nudges, leaderboard).
+// Catwalk. The local save is the source of truth for walking; Firestore only
+// holds the social layer: profiles, friend codes, friends and waves.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
-    // Anonymous accounts can keep their own data but stay out of the social graph.
+    // Anonymous accounts stay out of the social graph.
     function isRealUser() {
       return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous';
     }
+    // The id of the friendship between two accounts: both uids, sorted.
+    function pairId(a, b) { return a < b ? a + '_' + b : b + '_' + a; }
+    function areFriends(a, b) {
+      return exists(/databases/$(database)/documents/friendships/$(pairId(a, b)));
+    }
 
-    // Public profile: name, level, streak, today's steps, cat/room summary.
-    // Readable by real users (friends, leaderboard, room visits). Only the owner writes.
+    // The profile friends see: name, steps, streak, cats. Readable only by the
+    // owner and their friends. Only the owner writes.
     match /users/{uid} {
-      allow read: if isRealUser() || isOwner(uid);
-      allow create, update: if isOwner(uid)
+      allow read: if isOwner(uid) || (isRealUser() && areFriends(uid, request.auth.uid));
+      allow create, update: if isRealUser() && isOwner(uid)
         && request.resource.data.keys().hasOnly([
-          'displayName', 'photoUrl', 'level', 'xp', 'streak', 'bestStreak',
-          'todaySteps', 'dailyGoal', 'cats', 'room', 'updatedAt'])
-        && (!('displayName' in request.resource.data)
-            || (request.resource.data.displayName is string
-                && request.resource.data.displayName.size() <= 40));
+          'displayName', 'photoUrl', 'friendCode', 'streak', 'bestStreak',
+          'totalSteps', 'weekSteps', 'todaySteps', 'todayGoalMet', 'dailyGoal',
+          'cats', 'toys', 'beds', 'updatedAt'])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 40
+        && request.resource.data.friendCode is string
+        && request.resource.data.friendCode.size() == 6
+        && request.resource.data.cats is list
+        && request.resource.data.cats.size() <= 12;
       allow delete: if isOwner(uid);
 
       // Private to the owner: settings, push tokens, backups.
@@ -31,48 +40,72 @@ service cloud.firestore {
       }
     }
 
+    // Friend codes: code -> owner. Any real user may look one up; only the
+    // owner can claim or delete a code.
+    match /friendCodes/{code} {
+      allow read: if isRealUser();
+      allow create: if isRealUser()
+        && request.resource.data.keys().hasOnly(['uid', 'displayName'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 40;
+      allow update: if isRealUser()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'displayName'])
+        && request.resource.data.uid == request.auth.uid;
+      allow delete: if isRealUser() && resource.data.uid == request.auth.uid;
+    }
+
     // Friend requests. id = "<fromUid>_<toUid>".
     match /friendRequests/{id} {
-      allow read: if isRealUser()
+      allow get: if isRealUser() && request.auth.uid in id.split('_');
+      allow list: if isRealUser()
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
       allow create: if isRealUser()
         && request.resource.data.from == request.auth.uid
         && request.resource.data.to is string
         && request.resource.data.to != request.auth.uid
-        && request.resource.data.keys().hasOnly(['from', 'to', 'createdAt'])
+        && request.resource.data.fromName is string
+        && request.resource.data.fromName.size() <= 40
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'createdAt'])
         && id == request.auth.uid + '_' + request.resource.data.to;
-      // Either side may cancel/decline.
+      // Either side may cancel or decline.
       allow delete: if isRealUser()
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
     }
 
-    // Friendships. id = the two uids sorted, joined by "_". Created only by
-    // the recipient of a pending request, so nobody can add themselves to you.
+    // Friendships. id = the two uids sorted. Created only by the person who
+    // was asked, so nobody can add themselves to you.
     match /friendships/{id} {
-      allow read: if isRealUser() && request.auth.uid in resource.data.members;
+      allow get: if isRealUser() && request.auth.uid in id.split('_');
+      allow list: if isRealUser() && request.auth.uid in resource.data.members;
       allow create: if isRealUser()
         && request.resource.data.keys().hasOnly(['members', 'createdAt'])
         && request.resource.data.members.size() == 2
         && request.auth.uid in request.resource.data.members
+        && request.resource.data.members[0] != request.resource.data.members[1]
+        && id == pairId(request.resource.data.members[0], request.resource.data.members[1])
         && exists(/databases/$(database)/documents/friendRequests/
-             $(request.resource.data.members[0] == request.auth.uid
-                 ? request.resource.data.members[1] + '_' + request.auth.uid
-                 : request.resource.data.members[0] + '_' + request.auth.uid));
+             $((request.resource.data.members[0] == request.auth.uid
+                 ? request.resource.data.members[1]
+                 : request.resource.data.members[0]) + '_' + request.auth.uid));
       allow delete: if isRealUser() && request.auth.uid in resource.data.members;
     }
 
-    // Nudges to a friend who hasn't hit their goal. Recipient reads/clears.
+    // Waves to a friend who has not reached their goal. The recipient reads
+    // and clears them. Same id for the same day, so a second wave is refused.
     match /nudges/{id} {
-      allow read, delete: if isRealUser() && resource.data.to == request.auth.uid;
+      allow read: if isRealUser() && resource.data.to == request.auth.uid;
+      allow delete: if isRealUser()
+        && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
       allow create: if isRealUser()
         && request.resource.data.from == request.auth.uid
         && request.resource.data.to is string
-        && request.resource.data.keys().hasOnly(['from', 'to', 'createdAt'])
         && request.resource.data.to != request.auth.uid
-        && exists(/databases/$(database)/documents/friendships/
-             $(request.auth.uid < request.resource.data.to
-                 ? request.auth.uid + '_' + request.resource.data.to
-                 : request.resource.data.to + '_' + request.auth.uid));
+        && request.resource.data.fromName is string
+        && request.resource.data.fromName.size() <= 40
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'to', 'on', 'createdAt'])
+        && areFriends(request.auth.uid, request.resource.data.to);
       allow update: if false;
     }
 

@@ -7,6 +7,8 @@ import '../../../core/utils/calendar_date.dart';
 import '../../../core/utils/format.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/progress_milestones.dart';
+import '../../social/application/social_controller.dart';
+import '../../social/presentation/friends_screen.dart';
 import 'history_controller.dart';
 import 'test_guide.dart';
 
@@ -111,6 +113,8 @@ class _Me extends StatelessWidget {
             const SizedBox(height: 8),
           ],
         const SizedBox(height: 24),
+        const _FriendsCard(),
+        const SizedBox(height: 12),
         const TestGuide(),
       ],
     );
@@ -359,6 +363,32 @@ class _DayTile extends StatelessWidget {
               style: theme.textTheme.titleMedium,
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// The way into the Friends screen, with a badge for what is waiting.
+class _FriendsCard extends ConsumerWidget {
+  const _FriendsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(socialControllerProvider).value;
+    final waiting = (state?.requests.length ?? 0) + (state?.nudges.length ?? 0);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        key: const Key('friends-card'),
+        leading: const Icon(Icons.group_outlined),
+        title: const Text('Friends and leaderboard'),
+        subtitle: Text(
+          state?.user == null
+              ? 'Sign in to walk with friends'
+              : (waiting == 0 ? 'This week and your friends' : '$waiting new'),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => openFriends(context),
       ),
     );
   }

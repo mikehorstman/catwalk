@@ -344,7 +344,7 @@ SLICES = [
     ("Toy perks", "built", "Each toy gets a small, visible perk: the ball pays +1 candy on goal days, the mouse adds a map pickup, the feather sweetens the daily gift."),
     ("A Shop screen", "built", "The shop becomes a whole screen of its own, not the small sheet on Home: toys and cat beds with their prices, what you own, and your candy. The sheet is a stopgap."),
     ("Reminders and recap", "built", "Reminders in the cat's voice, the weekly recap, the lower-goal offer, and analytics opt-out. Before outside testers."),
-    ("6. Other people", "planned", "Account, friends, room visits, nudges, leaderboard."),
+    ("6. Other people", "built", "Account, friends, room visits, nudges, leaderboard."),
 ]
 
 NEXT = [
@@ -376,7 +376,7 @@ CHECK = [
     ("statistieken, leaderboard", "partly", "Lifetime counters and the weekly card are built. Total steps becomes the headline on Me. The leaderboard is slice 6."),
     ("voortgangsbalk voor stappen per dag", "built", "On Home."),
     ("streaks -> beloning voor behouden van streak", "partly", "Streak and prizes are built and pay candy and toys. They are in the daily gift."),
-    ("vrienden toevoegen, elkaars kattenkamer bekijken, aanspreken op doel behalen", "planned", "Slice 6. Needs an account."),
+    ("vrienden toevoegen, elkaars kattenkamer bekijken, aanspreken op doel behalen", "built", "Slice 6. Needs an account."),
     ("veel meldingen, schuldgevoel", "built", "At most 3 a day and none after the goal is met (D7)."),
 ]
 

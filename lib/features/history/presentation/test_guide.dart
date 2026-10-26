@@ -188,13 +188,20 @@ const List<TestGuideItem> testGuideItems = [
         'your cat, at most three a day, none once the goal is reached. Off '
         'in Settings means none.',
   ),
+  TestGuideItem(
+    feature: 'Friends',
+    how:
+        'On Me, open Friends and leaderboard. Sign in with Google, then share '
+        'your code with a second person who also has the app.',
+    check:
+        'They type your code, you accept the request, and both of you show on '
+        'the leaderboard with this week\'s steps. Tap a friend to see their '
+        'cats and send a wave. Delete my online data removes it all.',
+  ),
 ];
 
 /// What is not in this build, so a missing feature is not mistaken for a bug.
-const List<String> testGuideNotBuilt = [
-  'Street cats and photos',
-  'Friends, leaderboard and visiting rooms',
-];
+const List<String> testGuideNotBuilt = ['Street cats and photos'];
 
 /// The “How to test” section at the bottom of Me.
 ///
