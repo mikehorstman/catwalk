@@ -61,7 +61,7 @@ td.q { font-style: italic; max-width: 330px; }
 <nav class="tabs"><button data-tab="overview">Overview</button><button data-tab="flow">Flowcharts</button><button data-tab="plan">Plan</button><button data-tab="check">Your list</button><button data-tab="decisions">Decisions</button></nav>
 <div class="panel" id="overview" hidden>
 <p class="lead"><b>Walk enough each day to keep your cat.</b> Reach the step goal and the cat is happy. Miss it and the cat gets sadder, then runs away. Getting it back takes a lot of walking in time, and then finding it on the map. Walking also earns candy, and candy buys cat beds, and each bed brings a new cat.</p>
-<div class="callout"><b>Changed in this version.</b> XP and level are gone. Candy replaces them: you earn it by walking and spend it on toys and cat beds. Each bed costs more than the last, so that is the cap on cats. A new cat appears on the map the next morning and stays until you fetch it (D5, D8, D17 to D21). The numbers (candy amounts, bed prices, prizes) are mine, to tune after your phone test. See <a href="#decisions" data-go="decisions">Decisions</a>.</div>
+<div class="callout"><b>Changed in this version.</b> XP and level are gone. Candy replaces them: you earn it by walking and spend it on toys and cat beds. Each bed costs more than the last, so that is the cap on cats. The daily rewards come in a gift you open with a button on Home, grey until the goal is reached (D22). A new cat appears on the map the next morning and stays until you fetch it (D5, D8, D17 to D21). The numbers (candy amounts, bed prices, prizes) are mine, to tune after your phone test. See <a href="#decisions" data-go="decisions">Decisions</a>.</div>
 <h2>The final rules</h2>
 <table><thead><tr><th>Area</th><th>Rule</th></tr></thead><tbody><tr><td class="k">The goal</td><td>Default 6,000 steps, from 3,000 to 30,000. Suggestions stay between 3,000 and 12,000. Today&#x27;s goal is fixed once the day starts.</td></tr><tr><td class="k">The daily gift</td><td>Reaching the goal pays its candy and earns a gift. Home shows one button, grey until then. Opening it reveals the draw and any prize from that day. It waits until opened.</td></tr><tr><td class="k">What you see</td><td>Steps today, your streak, total steps (on the Me tab) and candy. There is no XP and no level.</td></tr><tr><td class="k">A good day</td><td>Reach the goal: the cat is happy, you get candy once that day, the streak grows. Half the goal is not the goal.</td></tr><tr><td class="k">Candy</td><td>The one thing you spend. 1 candy per 1,000 steps of your goal when you reach it (at least 3, at most 15 a day). More comes from map pickups, the daily draw, streak prizes and total step milestones. A higher goal pays more candy a day.</td></tr><tr><td class="k">The shop</td><td>Candy buys toys (8 each) and cat beds. A cat bed costs more each time: 2nd 40, 3rd 90, 4th 160, 5th 250. The first bed is free. These numbers are mine. Today the shop is a small sheet on Home (tap the candy chip). Later it becomes a whole screen of its own, see D23.</td></tr><tr><td class="k">A missed day</td><td>Any day without the goal. 1 day: sad. 2 days: neglected. 3 days: the cat runs away. Today does not count until it ends.</td></tr><tr><td class="k">Streak freeze</td><td>Found on the map, or given every 7 days. Saves one missed day, then it is gone. Hold at most 2. No streak credit. Cannot rescue a cat that has already run away.</td></tr><tr><td class="k">Running away</td><td>After 3 missed days a 7-day window opens. The cat&#x27;s bed stays empty.</td></tr><tr><td class="k">Getting it back</td><td>Reach the step target inside the window (goal x 10). The cat then appears on the map 250 to 900 m away. Walk to within 30 m. With no usable location the cat comes home as soon as the target is reached.</td></tr><tr><td class="k">Gone, and maybe back</td><td>Window closes without the target: that cat leaves the room. If it was your only cat, a stray kitten arrives and your total steps stay. Some random day 7 to 30 days later the lost cat can show up on the map. Walk to it and it comes home to an empty bed.</td></tr><tr><td class="k">The map</td><td>Up to 5 pickups a day: candy, a streak freeze or a toy. The map is for going somewhere; the phone&#x27;s step record decides the day.</td></tr><tr><td class="k">New cats</td><td>Buy a cat bed with candy. The next morning a new cat appears on the map and stays until you walk to it. One new cat at a time. A cat you photograph on the street, or a lost cat that returns, also needs an empty bed.</td></tr><tr><td class="k">How many cats</td><td>One cat per bed. Each bed costs more than the last, so nobody gets many cats fast. A higher goal earns more candy, so it gets there faster. Nothing is ever taken away.</td></tr><tr><td class="k">The room</td><td>One room where every cat walks about. Toys you find or buy stand in it. Each cat has its own bed.</td></tr><tr><td class="k">First week</td><td>Gentle start: goal 3,000 on days 1 to 3, 4,500 on days 4 to 7, then your goal. A free toy and freeze on the first goal met.</td></tr><tr><td class="k">Rewards</td><td>Streak prizes in candy at 3, 7, 14, 30 and 100 days, and a freeze every 7 days. Total step milestones at 10,000, 100,000, 500,000 and 1,000,000. A daily draw after a goal day, with a toy or a freeze guaranteed within every 5 goal days.</td></tr><tr><td class="k">Reminders</td><td>One reminder from the cat, at the time you usually walk, only while the goal is open. At most 3 a day, none after the goal is met, off switch in Settings.</td></tr><tr><td class="k">Progress</td><td>A weekly recap with personal bests, and a monthly look back. After a bad week (fewer than 3 of 7 met) the app offers a lower goal. It is never forced.</td></tr><tr><td class="k">Friends, later</td><td>Friends-only leaderboard and a shared weekly goal. No global ranking.</td></tr><tr><td class="k">Not now</td><td>XP and levels (removed), the side quest (removed), decorations and treats, money stakes, a second scoreboard, more daily tasks.</td></tr></tbody></table>
 </div><div class="panel" id="flow" hidden><div class="key"><span><i style="background:rgba(31,122,122,.4)"></i>built</span><span><i style="background:rgba(74,110,224,.35)"></i>changing now</span><span><i style="border:1.5px dashed #f69337"></i>planned, not built</span><span><i style="border:1.5px dotted #7c5cd6"></i>undecided</span><span><i style="background:rgba(214,84,58,.35)"></i>bad outcome</span></div>
@@ -87,7 +87,7 @@ td.q { font-style: italic; max-width: 330px; }
 <text x="120" y="264.5" text-anchor="middle">Candy once that day</text>
 <rect class="built" x="5.0" y="323.0" width="230" height="54" rx="12"/>
 <text x="120" y="355.0" text-anchor="middle">The streak grows</text>
-<rect class="plan" x="5.0" y="415.0" width="230" height="60" rx="12"/>
+<rect class="built" x="5.0" y="415.0" width="230" height="60" rx="12"/>
 <text x="120" y="440.5" text-anchor="middle">Streak prizes at 3, 7, 14, 30</text>
 <text x="120" y="459.5" text-anchor="middle">and 100 days, paid in candy</text>
 <rect class="built" x="660.0" y="218.0" width="280" height="64" rx="12"/>
@@ -204,7 +204,7 @@ td.q { font-style: italic; max-width: 330px; }
 <section>
   <h2>3. Today&#x27;s steps</h2>
   <p class="sub">Pays once a day. Opening the app again cannot pay it twice. The side quest is gone.</p>
-  <svg viewBox="0 0 800 540" role="img" aria-label="3. Today&#x27;s steps">
+  <svg viewBox="0 0 800 650" role="img" aria-label="3. Today&#x27;s steps">
     <defs>
       <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
         <path d="M 0 0 L 10 5 L 0 10 z" class="head"/>
@@ -216,7 +216,7 @@ td.q { font-style: italic; max-width: 330px; }
 <text x="300" y="140.0" text-anchor="middle">50% of the goal reached?</text>
 <rect class="out" x="520.0" y="108.0" width="260" height="54" rx="12"/>
 <text x="650" y="140.0" text-anchor="middle">Keep walking</text>
-<rect class="plan" x="165.0" y="218.0" width="270" height="54" rx="12"/>
+<rect class="built" x="165.0" y="218.0" width="270" height="54" rx="12"/>
 <text x="300" y="240.5" text-anchor="middle">Halfway</text>
 <text x="300" y="259.5" text-anchor="middle">the cat reacts, nothing is paid</text>
 <polygon class="dec" points="300,306.0 415.0,350 300,394.0 185.0,350"/>
@@ -224,7 +224,7 @@ td.q { font-style: italic; max-width: 330px; }
 <rect class="built" x="490.0" y="317.0" width="300" height="66" rx="12"/>
 <text x="640" y="345.5" text-anchor="middle">Not the goal</text>
 <text x="640" y="364.5" text-anchor="middle">Half a goal is still a missed day</text>
-<rect class="plan" x="130.0" y="435.0" width="340" height="60" rx="12"/>
+<rect class="built" x="130.0" y="435.0" width="340" height="60" rx="12"/>
 <text x="300" y="460.5" text-anchor="middle">Goal reached</text>
 <text x="300" y="479.5" text-anchor="middle">Candy once, cat happy, streak +1</text>
 <path class="edge" d="M 300,56.0 L 300,91.0" marker-end="url(#arrow)"/>
@@ -237,8 +237,13 @@ td.q { font-style: italic; max-width: 330px; }
 <text class="lbl" x="452.5" y="342.0" text-anchor="middle">No</text>
 <path class="edge" d="M 300,394.0 L 300,435.0" marker-end="url(#arrow)"/>
 <text class="lbl" x="310.0" y="414.5" text-anchor="start">Yes</text>
+<rect class="built" x="100.0" y="547.0" width="400" height="66" rx="12"/>
+<text x="300" y="566.0" text-anchor="middle">The gift button turns on</text>
+<text x="300" y="585.0" text-anchor="middle">Open it: the daily draw, the first-goal</text>
+<text x="300" y="604.0" text-anchor="middle">gift, a streak prize or a step milestone</text>
+<path class="edge" d="M 300,495.0 L 300,547.0" marker-end="url(#arrow)"/>
   </svg>
-  <ul class='notes'><li>Candy follows the goal: 1 candy per 1,000 steps of your goal, at least 3 and at most 15 a day. 6 at 6,000. A higher goal pays more a day, not more per step.</li><li>There is no XP and no level. The numbers you see are steps today, your streak, total steps and candy.</li></ul>
+  <ul class='notes'><li>Candy follows the goal: 1 candy per 1,000 steps of your goal, at least 3 and at most 15 a day. 6 at 6,000. A higher goal pays more a day, not more per step.</li><li>The gift waits until you open it and never expires. What is inside is fixed by the day, so closing the app cannot reroll it.</li><li>There is no XP and no level. The numbers you see are steps today, your streak, total steps and candy.</li></ul>
 </section>
 <section>
   <h2>4. First week</h2>
@@ -357,7 +362,7 @@ td.q { font-style: italic; max-width: 330px; }
 <text x="500" y="132.5" text-anchor="middle">The step record still decides the day</text>
 <rect class="built" x="390.0" y="183.0" width="220" height="44" rx="12"/>
 <text x="500" y="210.0" text-anchor="middle">A pickup is one of</text>
-<rect class="plan" x="35.0" y="282.0" width="190" height="56" rx="12"/>
+<rect class="built" x="35.0" y="282.0" width="190" height="56" rx="12"/>
 <text x="130" y="305.5" text-anchor="middle">A few pieces of candy</text>
 <text x="130" y="324.5" text-anchor="middle">2 to 4</text>
 <rect class="built" x="275.0" y="282.0" width="170" height="56" rx="12"/>
@@ -367,7 +372,7 @@ td.q { font-style: italic; max-width: 330px; }
 <rect class="plan" x="715.0" y="278.0" width="250" height="64" rx="12"/>
 <text x="840" y="305.5" text-anchor="middle">A street cat to photograph</text>
 <text x="840" y="324.5" text-anchor="middle">the same cat, seen enough times</text>
-<rect class="plan" x="35.0" y="400.0" width="190" height="60" rx="12"/>
+<rect class="built" x="35.0" y="400.0" width="190" height="60" rx="12"/>
 <text x="130" y="425.5" text-anchor="middle">Added to your candy</text>
 <text x="130" y="444.5" text-anchor="middle">see chart 7</text>
 <rect class="built" x="275.0" y="395.0" width="170" height="70" rx="12"/>
@@ -402,21 +407,21 @@ td.q { font-style: italic; max-width: 330px; }
         <path d="M 0 0 L 10 5 L 0 10 z" class="head"/>
       </marker>
     </defs>
-    <rect class="plan" x="50.0" y="12.0" width="240" height="56" rx="12"/>
+    <rect class="built" x="50.0" y="12.0" width="240" height="56" rx="12"/>
 <text x="170" y="35.5" text-anchor="middle">Goal reached</text>
 <text x="170" y="54.5" text-anchor="middle">1 candy per 1,000 of your goal</text>
-<rect class="plan" x="380.0" y="12.0" width="240" height="56" rx="12"/>
+<rect class="built" x="380.0" y="12.0" width="240" height="56" rx="12"/>
 <text x="500" y="35.5" text-anchor="middle">Map pickups and</text>
 <text x="500" y="54.5" text-anchor="middle">the daily draw</text>
-<rect class="plan" x="710.0" y="12.0" width="240" height="56" rx="12"/>
+<rect class="built" x="710.0" y="12.0" width="240" height="56" rx="12"/>
 <text x="830" y="35.5" text-anchor="middle">Streak prizes and</text>
 <text x="830" y="54.5" text-anchor="middle">total step milestones</text>
-<rect class="plan" x="360.0" y="122.0" width="280" height="56" rx="12"/>
+<rect class="built" x="360.0" y="122.0" width="280" height="56" rx="12"/>
 <text x="500" y="145.5" text-anchor="middle">Your candy</text>
 <text x="500" y="164.5" text-anchor="middle">the one number you spend</text>
-<rect class="plan" x="400.0" y="223.0" width="200" height="44" rx="12"/>
+<rect class="built" x="400.0" y="223.0" width="200" height="44" rx="12"/>
 <text x="500" y="250.0" text-anchor="middle">The shop</text>
-<rect class="plan" x="110.0" y="322.0" width="220" height="56" rx="12"/>
+<rect class="built" x="110.0" y="322.0" width="220" height="56" rx="12"/>
 <text x="220" y="345.5" text-anchor="middle">Toys</text>
 <text x="220" y="364.5" text-anchor="middle">for the room, cheap</text>
 <rect class="plan" x="370.0" y="318.0" width="260" height="64" rx="12"/>

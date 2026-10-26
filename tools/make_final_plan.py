@@ -26,7 +26,7 @@ def chart_loop():
 
     c.node("happy", 120, 250, 230, 60, "built", "The cat is happy\nCandy once that day")
     c.node("streak", 120, 350, 230, 54, "built", "The streak grows")
-    c.node("reward", 120, 445, 230, 60, "plan", "Streak prizes at 3, 7, 14, 30\nand 100 days, paid in candy")
+    c.node("reward", 120, 445, 230, 60, "built", "Streak prizes at 3, 7, 14, 30\nand 100 days, paid in candy")
 
     c.node("end", 800, 250, 280, 64, "built", "The day ends without it\nHalf the goal counts as missed too")
     c.node("d2", 800, 365, 250, 88, "dec", "Streak freeze held?")
@@ -101,22 +101,25 @@ def chart_goal():
     c = Chart(
         "3. Today's steps",
         "Pays once a day. Opening the app again cannot pay it twice. The side quest is gone.",
-        800, 540,
+        800, 650,
     )
     c.node("s", 300, 36, 220, 40, "term", "Steps so far today")
     c.node("d1", 300, 135, 270, 88, "dec", "50% of the goal reached?")
     c.node("w1", 650, 135, 260, 54, "out", "Keep walking")
-    c.node("b1", 300, 245, 270, 54, "plan", "Halfway\nthe cat reacts, nothing is paid")
+    c.node("b1", 300, 245, 270, 54, "built", "Halfway\nthe cat reacts, nothing is paid")
     c.node("d2", 300, 350, 230, 88, "dec", "Goal reached?")
     c.node("w2", 640, 350, 300, 66, "built", "Not the goal\nHalf a goal is still a missed day")
-    c.node("b2", 300, 465, 340, 60, "plan", "Goal reached\nCandy once, cat happy, streak +1")
+    c.node("b2", 300, 465, 340, 60, "built", "Goal reached\nCandy once, cat happy, streak +1")
     c.edge("s", "b", "d1", "t")
     c.edge("d1", "r", "w1", "l", "No")
     c.edge("d1", "b", "b1", "t", "Yes")
     c.edge("b1", "b", "d2", "t")
     c.edge("d2", "r", "w2", "l", "No")
     c.edge("d2", "b", "b2", "t", "Yes")
+    c.node("g", 300, 580, 400, 66, "built", "The gift button turns on\nOpen it: the daily draw, the first-goal\ngift, a streak prize or a step milestone")
+    c.edge("b2", "b", "g", "t")
     c.note("Candy follows the goal: 1 candy per 1,000 steps of your goal, at least 3 and at most 15 a day. 6 at 6,000. A higher goal pays more a day, not more per step.")
+    c.note("The gift waits until you open it and never expires. What is inside is fixed by the day, so closing the app cannot reroll it.")
     c.note("There is no XP and no level. The numbers you see are steps today, your streak, total steps and candy.")
     return c
 
@@ -130,11 +133,11 @@ def chart_map():
     c.node("map", 500, 36, 300, 44, "term", "Pickups appear near you")
     c.node("reach", 500, 118, 390, 56, "built", "Walk to the pin\nThe step record still decides the day")
     c.node("roll", 500, 205, 220, 44, "built", "A pickup is one of")
-    c.node("candy", 130, 310, 190, 56, "plan", "A few pieces of candy\n2 to 4")
+    c.node("candy", 130, 310, 190, 56, "built", "A few pieces of candy\n2 to 4")
     c.node("fz", 360, 310, 170, 56, "built", "A streak freeze")
     c.node("toy", 580, 310, 170, 56, "built", "A toy")
     c.node("street", 840, 310, 250, 64, "plan", "A street cat to photograph\nthe same cat, seen enough times")
-    c.node("mycandy", 130, 430, 190, 60, "plan", "Added to your candy\nsee chart 7")
+    c.node("mycandy", 130, 430, 190, 60, "built", "Added to your candy\nsee chart 7")
     c.node("saved", 360, 430, 170, 70, "built", "Saves one missed\nday, then it\nis gone")
     c.node("room", 580, 430, 170, 70, "built", "In the room\nthe cat plays with it")
     c.node("bed", 840, 430, 230, 64, "plan", "Needs an empty bed\nsee chart 7")
@@ -159,12 +162,12 @@ def chart_cats():
         "Walk, earn candy, buy a cat bed. A cat then turns up on the map and stays until you fetch it. Each bed costs more than the last, which is the cap.",
         1040, 930,
     )
-    c.node("e1", 170, 40, 240, 56, "plan", "Goal reached\n1 candy per 1,000 of your goal")
-    c.node("e2", 500, 40, 240, 56, "plan", "Map pickups and\nthe daily draw")
-    c.node("e3", 830, 40, 240, 56, "plan", "Streak prizes and\ntotal step milestones")
-    c.node("candy", 500, 150, 280, 56, "plan", "Your candy\nthe one number you spend")
-    c.node("shop", 500, 245, 200, 44, "plan", "The shop")
-    c.node("toys", 220, 350, 220, 56, "plan", "Toys\nfor the room, cheap")
+    c.node("e1", 170, 40, 240, 56, "built", "Goal reached\n1 candy per 1,000 of your goal")
+    c.node("e2", 500, 40, 240, 56, "built", "Map pickups and\nthe daily draw")
+    c.node("e3", 830, 40, 240, 56, "built", "Streak prizes and\ntotal step milestones")
+    c.node("candy", 500, 150, 280, 56, "built", "Your candy\nthe one number you spend")
+    c.node("shop", 500, 245, 200, 44, "built", "The shop")
+    c.node("toys", 220, 350, 220, 56, "built", "Toys\nfor the room, cheap")
     c.node("bed", 500, 350, 260, 64, "plan", "A cat bed\nthe price goes up each time")
     c.node("prices", 825, 350, 260, 96, "open", "Bed prices, my numbers\n2nd 40  ·  3rd 90\n4th 160  ·  5th 250\nthe first bed is free")
     c.node("d", 500, 480, 290, 90, "dec", "Is a cat already\nwaiting on the map?")
@@ -525,7 +528,7 @@ def main():
 
     overview = f"""
 <p class="lead"><b>Walk enough each day to keep your cat.</b> Reach the step goal and the cat is happy. Miss it and the cat gets sadder, then runs away. Getting it back takes a lot of walking in time, and then finding it on the map. Walking also earns candy, and candy buys cat beds, and each bed brings a new cat.</p>
-<div class="callout"><b>Changed in this version.</b> XP and level are gone. Candy replaces them: you earn it by walking and spend it on toys and cat beds. Each bed costs more than the last, so that is the cap on cats. A new cat appears on the map the next morning and stays until you fetch it (D5, D8, D17 to D21). The numbers (candy amounts, bed prices, prizes) are mine, to tune after your phone test. See <a href="#decisions" data-go="decisions">Decisions</a>.</div>
+<div class="callout"><b>Changed in this version.</b> XP and level are gone. Candy replaces them: you earn it by walking and spend it on toys and cat beds. Each bed costs more than the last, so that is the cap on cats. The daily rewards come in a gift you open with a button on Home, grey until the goal is reached (D22). A new cat appears on the map the next morning and stays until you fetch it (D5, D8, D17 to D21). The numbers (candy amounts, bed prices, prizes) are mine, to tune after your phone test. See <a href="#decisions" data-go="decisions">Decisions</a>.</div>
 <h2>The final rules</h2>
 {table(["Area", "Rule"], [(escape(a), escape(b)) for a, b in RULES], ["k", ""])}
 """
