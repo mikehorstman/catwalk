@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "64019969968-s7n1qi4fu4kjdc0l0pp3ufhj7q6t5iu4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "app.catwalk.catwalk",
+            "certificate_hash": "751b4a7a83c7d33a1b740ff87a94687ea34af5ab"
+          }
+        },
+        {
           "client_id": "64019969968-j288heikjqsgr71digk3iha1ftvlhm7e.apps.googleusercontent.com",
           "client_type": 3
         }
