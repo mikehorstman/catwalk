@@ -105,7 +105,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 20));
       }
 
-      expect(find.text('about 60 min of walking'), findsOneWidget);
+      // The minutes line is behind the details row, not on Home itself.
+      expect(find.text('about 60 min of walking'), findsNothing);
 
       // Side quests are switched off for now: no card, and no quest XP.
       expect(AppConstants.sideQuestsEnabled, isFalse);

@@ -6,7 +6,7 @@ import 'package:catwalk/features/onboarding/data/onboarding_repository.dart';
 import 'package:catwalk/services/health/mock_step_repository.dart';
 import 'package:catwalk/services/health/step_repository_provider.dart';
 import 'package:catwalk/services/storage/local_store_provider.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,10 +50,11 @@ Future<void> open(WidgetTester tester, MemoryStore store, int steps) async {
   }
 }
 
-/// The cards sit below the ring, so drag the list up to them.
-Future<void> scrollDown(WidgetTester tester) async {
-  await tester.drag(find.byType(ListView).first, const Offset(0, -700));
-  for (var i = 0; i < 6; i++) {
+/// Home stays clean: the details sit behind one row, so open it.
+Future<void> openDetails(WidgetTester tester) async {
+  await tester.scrollUntilVisible(find.bySubtype<TextButton>(), 200);
+  await tester.tap(find.bySubtype<TextButton>());
+  for (var i = 0; i < 12; i++) {
     await tester.pump(const Duration(milliseconds: 20));
   }
 }
@@ -62,7 +63,7 @@ void main() {
   testWidgets('day one asks for 3,000 and says so', (tester) async {
     final store = await newPlayer();
     await open(tester, store, 1000);
-    await scrollDown(tester);
+    await openDetails(tester);
 
     expect(find.textContaining('of 3,000 steps'), findsOneWidget);
     expect(find.textContaining('Gentle start, day 1 of 7'), findsOneWidget);
@@ -75,7 +76,7 @@ void main() {
   testWidgets('the first goal pays a gift and the draw, once', (tester) async {
     final store = await newPlayer();
     await open(tester, store, 3000);
-    await scrollDown(tester);
+    await openDetails(tester);
 
     expect(find.text("Today's rewards"), findsOneWidget);
     expect(find.textContaining('First goal'), findsWidgets);
@@ -87,7 +88,7 @@ void main() {
     // Closing and reopening the app pays nothing more.
     await tester.pumpWidget(const SizedBox());
     await open(tester, store, 3000);
-    await scrollDown(tester);
+    await openDetails(tester);
     final again = await InventoryRepository(store).read();
     expect(again.toJson(), inventory.toJson());
     expect(store.values[OnboardingRepository.catKey], cat);
@@ -97,8 +98,8 @@ void main() {
   testWidgets('no rewards card before the goal is met', (tester) async {
     final store = await newPlayer();
     await open(tester, store, 500);
-    await scrollDown(tester);
 
-    expect(find.text("Today's rewards"), findsNothing);
+    await tester.scrollUntilVisible(find.text('Rewards and progress'), 200);
+    expect(find.textContaining("Today's rewards"), findsNothing);
   });
 }

@@ -54,12 +54,7 @@ class _HomeBody extends ConsumerWidget {
     final today = state.today;
     final gone = cat.status == CatStatus.runaway;
     final progress = today.stepGoal == 0 ? 0.0 : today.steps / today.stepGoal;
-    final levelStart = xpToReachLevel(cat.level);
     final levelEnd = xpToReachLevel(cat.level + 1);
-    final span = levelEnd - levelStart;
-    final levelProgress = span == 0
-        ? 0.0
-        : ((cat.xp - levelStart) / span).clamp(0.0, 1.0);
     // One thing to look forward to, not a wall of progress.
     final next = nextReward(
       xp: cat.xp,
@@ -85,17 +80,6 @@ class _HomeBody extends ConsumerWidget {
           ),
           textAlign: TextAlign.center,
         ),
-        if (state.snackXpToday > 0) ...[
-          const SizedBox(height: 10),
-          Text(
-            'Halfway there: +${state.snackXpToday} XP',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: CatwalkColors.teal,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
         if (state.catWalkedHome) ...[
           const SizedBox(height: 12),
           _Notice(
@@ -135,16 +119,6 @@ class _HomeBody extends ConsumerWidget {
                 : CatArt(appearance: cat.appearance, mood: cat.mood, size: 200),
           ),
         ),
-        const SizedBox(height: 12),
-        Center(
-          child: Text(
-            catSound(mood: cat.mood, status: cat.status),
-            style: theme.textTheme.bodyLarge?.copyWith(
-              fontStyle: FontStyle.italic,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
         const SizedBox(height: 20),
         _Steps(state: state),
         const SizedBox(height: 16),
@@ -160,44 +134,18 @@ class _HomeBody extends ConsumerWidget {
                   : '${state.currentStreak} day streak',
               strong: state.currentStreak > 0,
             ),
-            _Chip(icon: Icons.star_outline, text: 'Level ${cat.level}'),
+            _Chip(
+              icon: Icons.star_outline,
+              text:
+                  'Level ${cat.level} · ${formatNumber(cat.xp)}/${formatNumber(levelEnd)} XP',
+            ),
           ],
         ),
-        const SizedBox(height: 16),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: LinearProgressIndicator(value: levelProgress, minHeight: 6),
+        const SizedBox(height: 20),
+        _MoreRow(
+          todayCount: state.rewardLines.length,
+          onTap: () => _showMore(context, state, next),
         ),
-        const SizedBox(height: 6),
-        Text(
-          '${formatNumber(cat.xp)} / ${formatNumber(levelEnd)} XP',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        if (state.rewardLines.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _RewardsToday(lines: state.rewardLines),
-        ],
-        if (next case final reward?) ...[
-          const SizedBox(height: 12),
-          _NextReward(reward: reward),
-        ],
-        if (state.gentleDay case final day?) ...[
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              'Gentle start, day $day of 7: today\'s goal is '
-              '${formatNumber(state.today.stepGoal)}. '
-              '${state.fullGoal > state.today.stepGoal ? 'Your goal of ${formatNumber(state.fullGoal)} starts on day 8.' : ''}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
         if (state.quest case final quest?) ...[
           const SizedBox(height: 16),
           _QuestLine(
@@ -313,13 +261,6 @@ class _Steps extends ConsumerWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          'about ${goalInMinutes(today.stepGoal)} min of walking',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
         if (state.stepsFromSensor) ...[
           const SizedBox(height: 4),
           Text(
@@ -337,14 +278,6 @@ class _Steps extends ConsumerWidget {
             style: theme.textTheme.titleMedium?.copyWith(
               color: CatwalkColors.teal,
               fontWeight: FontWeight.w700,
-            ),
-          ),
-        ] else if (!today.goalCompleted) ...[
-          const SizedBox(height: 2),
-          Text(
-            '${formatNumber(today.stepsRemaining)} to go',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -448,6 +381,92 @@ class _Retry extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The one quiet row under the chips that opens everything else: rewards,
+/// the next prize and the first-week note. It keeps Home itself clean.
+class _MoreRow extends StatelessWidget {
+  const _MoreRow({required this.todayCount, required this.onTap});
+
+  /// How many rewards were paid today. More than zero adds a count.
+  final int todayCount;
+
+  /// Opens the details sheet.
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: Icon(
+          todayCount > 0 ? Icons.card_giftcard : Icons.expand_more,
+          size: 20,
+        ),
+        label: Text(
+          todayCount > 0
+              ? "Today's rewards · $todayCount"
+              : 'Rewards and progress',
+        ),
+        style: TextButton.styleFrom(
+          foregroundColor: todayCount > 0
+              ? CatwalkColors.teal
+              : theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens the sheet behind [_MoreRow]: today's rewards, the next prize, the
+/// halfway bonus, the length of a goal in minutes and the first-week note.
+void _showMore(BuildContext context, HomeState state, NextReward? next) {
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (context) {
+      final theme = Theme.of(context);
+      final muted = theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      );
+      return SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          children: [
+            if (state.rewardLines.isNotEmpty) ...[
+              _RewardsToday(lines: state.rewardLines),
+              const SizedBox(height: 12),
+            ],
+            if (state.snackXpToday > 0) ...[
+              Text('Halfway bonus: +${state.snackXpToday} XP', style: muted),
+              const SizedBox(height: 12),
+            ],
+            if (next case final reward?) ...[
+              _NextReward(reward: reward),
+              const SizedBox(height: 12),
+            ],
+            Text(
+              "Today's goal is about ${goalInMinutes(state.today.stepGoal)} "
+              'min of walking.',
+              style: muted,
+            ),
+            if (state.gentleDay case final day?) ...[
+              const SizedBox(height: 12),
+              Text(
+                "Gentle start, day $day of 7: today's goal is "
+                '${formatNumber(state.today.stepGoal)}. '
+                '${state.fullGoal > state.today.stepGoal ? 'Your goal of ${formatNumber(state.fullGoal)} starts on day 8.' : ''}',
+                style: muted,
+              ),
+            ],
+          ],
+        ),
+      );
+    },
+  );
 }
 
 /// What today's goal paid on top of the XP: gifts, prizes and the daily draw.
