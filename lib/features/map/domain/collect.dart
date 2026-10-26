@@ -1,86 +1,63 @@
-import '../../cat/domain/cat.dart';
-import '../../cat/domain/xp_curve.dart';
+import '../../../core/constants/app_constants.dart';
 import 'inventory.dart';
 import 'reward.dart';
 
-/// XP a pin pays when what it held is no use to you any more.
-const int consolationXp = 15;
-
-/// The outcome of picking up a pin: what it held and the new state of the
-/// inventory and the cat.
+/// What happened when a [Reward] was collected: the new [inventory], and
+/// whether the reward turned into candy because it would have been wasted.
 class Collected {
   const Collected({
     required this.reward,
     required this.inventory,
-    required this.cat,
-    this.xpGained = 0,
+    this.candyGained = 0,
     this.converted = false,
   });
 
-  /// What the pin held.
+  /// The reward that was collected.
   final Reward reward;
 
-  /// The inventory after the pickup.
+  /// The inventory after collecting it.
   final Inventory inventory;
 
-  /// The cat after the pickup (more XP and maybe a new level).
-  final Cat cat;
+  /// Candy added by this reward (its amount, or the consolation).
+  final int candyGained;
 
-  /// XP the cat got, from an XP pin or as a consolation.
-  final int xpGained;
-
-  /// The pin held something you could not take, so it paid XP instead.
+  /// True when the reward could not be kept and paid
+  /// [AppConstants.consolationCandy] instead: a freeze while holding the most
+  /// freezes, or a toy you already own.
   final bool converted;
 }
 
-/// Takes [reward] into the inventory or the cat.
+/// Applies [reward] to [inventory].
 ///
-/// Nothing is ever wasted without saying so: a freeze when you hold the most
-/// you can, or a toy you already own, becomes a little XP instead and says so.
-Collected collect({
-  required Reward reward,
-  required Inventory inventory,
-  required Cat cat,
-}) {
-  Collected xp(int amount, {bool converted = false}) {
-    final total = cat.xp + amount;
-    return Collected(
-      reward: reward,
-      inventory: inventory,
-      cat: cat.copyWith(xp: total, level: levelForXp(total)),
-      xpGained: amount,
-      converted: converted,
-    );
-  }
+/// Candy is added. A freeze is kept up to [maxFreezes]; a toy is kept once.
+/// Anything that cannot be kept pays [AppConstants.consolationCandy] instead,
+/// so a pickup is never worth nothing.
+Collected collect({required Reward reward, required Inventory inventory}) {
+  Collected candy(int amount, {bool converted = false}) => Collected(
+    reward: reward,
+    inventory: inventory.copyWith(candy: inventory.candy + amount),
+    candyGained: amount,
+    converted: converted,
+  );
 
   switch (reward) {
-    case XpReward(:final amount):
-      return xp(amount);
+    case CandyReward(:final amount):
+      return candy(amount);
     case FreezeReward():
       if (inventory.freezes >= maxFreezes) {
-        return xp(consolationXp, converted: true);
+        return candy(AppConstants.consolationCandy, converted: true);
       }
       return Collected(
         reward: reward,
         inventory: inventory.copyWith(freezes: inventory.freezes + 1),
-        cat: cat,
       );
     case ToyReward(:final toyId):
       if (inventory.toys.contains(toyId)) {
-        return xp(consolationXp, converted: true);
+        return candy(AppConstants.consolationCandy, converted: true);
       }
       return Collected(
         reward: reward,
         inventory: inventory.copyWith(toys: [...inventory.toys, toyId]),
-        cat: cat,
-      );
-    case CatProgressReward(:final points):
-      return Collected(
-        reward: reward,
-        inventory: inventory.copyWith(
-          catProgress: inventory.catProgress + points,
-        ),
-        cat: cat,
       );
   }
 }

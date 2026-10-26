@@ -1,55 +1,40 @@
 import '../../../core/utils/calendar_date.dart';
 
-/// One calendar day of walking: the goal that applied, the steps, and what was paid.
-///
-/// The goal is stored per day so changing the goal later never rewrites the past.
+/// One calendar day of walking: how many steps, against which goal, and what
+/// the goal paid. Saved once per day in the history.
 class DailyProgress {
   const DailyProgress({
     required this.date,
     required this.stepGoal,
     required this.steps,
     required this.goalCompleted,
-    required this.xpAwarded,
-    this.xpEarned = 0,
+    required this.goalPaid,
+    this.candyEarned = 0,
     this.frozen = false,
-    this.snackAwarded = false,
-    this.questAwarded = false,
-    this.questXp = 0,
   });
 
   /// The calendar day this record is for.
   final CalendarDate date;
 
-  /// The goal for that day, in steps.
+  /// The goal that applied on [date], in steps. Fixed once the day starts, so
+  /// changing the goal later never rewrites a past day.
   final int stepGoal;
 
-  /// Steps walked that day.
+  /// The steps the phone counted on [date].
   final int steps;
 
-  /// True when [steps] reached the whole [stepGoal]. Half a goal does not count.
+  /// True once [steps] reached [stepGoal]. Half a goal is not the goal.
   final bool goalCompleted;
 
-  /// True once the completion reward has been granted for [date].
-  final bool xpAwarded;
+  /// True once the goal's candy was paid for this day. It guards against
+  /// paying twice when the app is opened again.
+  final bool goalPaid;
 
-  /// How much XP the completion reward was worth. Zero when not completed.
-  final int xpEarned;
+  /// The candy the goal paid for this day (0 until it is paid).
+  final int candyEarned;
 
-  /// A streak freeze covered this day. It was not walked, but it did not break
-  /// the streak either.
+  /// True when a streak freeze covered this day, so it did not count as missed.
   final bool frozen;
-
-  /// The halfway XP snack has been paid for this day. Paid once, at half the
-  /// goal, and never taken back. It is only a small bonus: half a goal is still
-  /// a missed day.
-  final bool snackAwarded;
-
-  /// Today's side quest has been paid for this day. Quests pay once a day.
-  /// Always false while side quests are switched off.
-  final bool questAwarded;
-
-  /// What the quest paid. Zero until it is done.
-  final int questXp;
 
   /// Steps still to walk to reach the goal, never below zero.
   int get stepsRemaining {
@@ -57,29 +42,23 @@ class DailyProgress {
     return remaining < 0 ? 0 : remaining;
   }
 
-  /// A copy with only the given fields changed. [date] cannot change.
+  /// A copy with the given fields changed.
   DailyProgress copyWith({
     int? stepGoal,
     int? steps,
     bool? goalCompleted,
-    bool? xpAwarded,
-    int? xpEarned,
+    bool? goalPaid,
+    int? candyEarned,
     bool? frozen,
-    bool? snackAwarded,
-    bool? questAwarded,
-    int? questXp,
   }) {
     return DailyProgress(
       date: date,
       stepGoal: stepGoal ?? this.stepGoal,
       steps: steps ?? this.steps,
       goalCompleted: goalCompleted ?? this.goalCompleted,
-      xpAwarded: xpAwarded ?? this.xpAwarded,
-      xpEarned: xpEarned ?? this.xpEarned,
+      goalPaid: goalPaid ?? this.goalPaid,
+      candyEarned: candyEarned ?? this.candyEarned,
       frozen: frozen ?? this.frozen,
-      snackAwarded: snackAwarded ?? this.snackAwarded,
-      questAwarded: questAwarded ?? this.questAwarded,
-      questXp: questXp ?? this.questXp,
     );
   }
 }

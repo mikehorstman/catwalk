@@ -1,4 +1,3 @@
-import 'package:catwalk/core/utils/format.dart';
 import 'package:catwalk/features/cat/domain/cat.dart';
 import 'package:catwalk/features/cat/domain/cat_appearance.dart';
 import 'package:catwalk/features/cat/domain/cat_mood.dart';
@@ -18,15 +17,12 @@ RoomCat catOf({
   String name = 'Jip',
   CatMood mood = CatMood.neutral,
   CatStatus status = CatStatus.active,
-  int xp = 240,
 }) {
   return RoomCat(
     Cat(
       id: id,
       name: name,
       appearance: CatAppearance.ginger,
-      level: 2,
-      xp: xp,
       mood: mood,
       status: status,
       consecutiveMissedDays: 0,
@@ -92,7 +88,9 @@ void main() {
 
     expect(find.text('Mood'), findsOneWidget);
     expect(find.text('Status'), findsOneWidget);
-    expect(find.textContaining(formatNumber(240)), findsOneWidget);
+    expect(find.text('Jip'), findsOneWidget);
+    expect(find.text(CatAppearance.ginger.label), findsOneWidget);
+    expect(find.textContaining('Level'), findsNothing);
 
     await disposeRoom(tester);
     handle.dispose();

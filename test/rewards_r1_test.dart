@@ -6,7 +6,7 @@ import 'package:catwalk/features/cat/domain/cat_status.dart';
 import 'package:catwalk/features/daily_goal/domain/daily_progress.dart';
 import 'package:catwalk/features/daily_goal/domain/day_evaluation.dart';
 import 'package:catwalk/features/daily_goal/domain/progress_milestones.dart';
-import 'package:catwalk/features/daily_goal/domain/xp_for_goal.dart';
+import 'package:catwalk/features/daily_goal/domain/goal_candy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final today = CalendarDate(2026, 10, 20);
@@ -21,17 +21,15 @@ DailyProgress day(
   stepGoal: goal,
   steps: steps,
   goalCompleted: steps >= goal,
-  xpAwarded: steps >= goal,
-  xpEarned: steps >= goal ? xpForGoal(goal) : 0,
+  goalPaid: steps >= goal,
+  candyEarned: steps >= goal ? candyForGoal(goal) : 0,
   frozen: frozen,
 );
 
-Cat catOf({int xp = 0}) => Cat(
+Cat catOf() => Cat(
   id: '1',
   name: 'Jip',
   appearance: CatAppearance.ginger,
-  level: 1,
-  xp: xp,
   mood: CatMood.neutral,
   status: CatStatus.active,
   consecutiveMissedDays: 0,
@@ -79,6 +77,8 @@ void main() {
       expect(week.steps, 18000);
       expect(week.bestDaySteps, 9000);
       expect(week.averageSteps, 6000);
+      // Only the two goal days in the window paid candy: 6 each.
+      expect(week.candyEarned, 6 + 6);
     });
 
     test('a frozen day is a day on record, not a goal met', () {
@@ -111,119 +111,74 @@ void main() {
   });
 
   group('the next reward', () {
-    NextReward? next({int xp = 0, int streak = 0, int goalsMet = 0}) =>
-        nextReward(
-          xp: xp,
-          currentStreak: streak,
-          goalsMet: goalsMet,
-          xpToNextLevel: xpForGoal(6000) - xp % 50,
-          nextLevel: 2,
-        );
+    NextReward? next({
+      int streak = 0,
+      int totalSteps = 0,
+      int dailyGoal = 3000,
+    }) => nextReward(
+      currentStreak: streak,
+      totalSteps: totalSteps,
+      dailyGoal: dailyGoal,
+    );
 
-    test('a streak prize two days away beats a level 45 XP away', () {
-      final reward = next(streak: 1, xp: 5);
-      expect(reward!.title, 'a 20 XP bonus');
+    test('a streak prize two days away beats a step milestone further off', () {
+      final reward = next(streak: 1);
+      expect(reward!.title, '5 candy');
       expect(reward.detail, '2 more days of walking');
       expect(reward.remaining, 2);
     });
 
-    test('the next milestone is named for the first one', () {
-      final reward = next(goalsMet: 9);
-      expect(reward!.title, 'a 50 XP reward for ten goals');
-      expect(reward.detail, '1 more goal met');
+    test('the last day before a prize says one day, not days', () {
+      final reward = next(streak: 6);
+      expect(reward!.title, '15 candy and a toy');
+      expect(reward.detail, '1 more day of walking');
+      expect(reward.remaining, 1);
     });
 
-    test('with nothing else close, it is the next level', () {
-      final reward = nextReward(
-        xp: 0,
-        currentStreak: 50,
-        goalsMet: 60,
-        xpToNextLevel: 3,
-        nextLevel: 4,
-      );
-      expect(reward!.title, 'level 4');
-      expect(reward.detail, '3 more XP');
+    test('a step milestone that is nearer than any streak prize wins', () {
+      final reward = next(totalSteps: 8000, dailyGoal: 6000);
+      expect(reward!.title, '10 candy');
+      expect(reward.detail, '2,000 more steps');
+      // 2,000 steps is less than one day at a goal of 6,000.
+      expect(reward.remaining, 1);
     });
 
-    test('it always returns the closest thing, and only one', () {
-      final reward = next(streak: 6, goalsMet: 99);
-      // One day to the 7-day prize, and one goal to the 100th.
-      expect(reward!.remaining, 1);
-      expect(reward.title, isNotNull);
+    test('step days are counted at the pace of the daily goal', () {
+      // 10,000 steps to go: ten days at 1,000 a day, but a streak prize of
+      // 100 days is further, and the 3-day prize is nearer.
+      final slow = next(dailyGoal: 1000);
+      expect(slow!.title, '5 candy');
+      final far = next(streak: 99, totalSteps: 0, dailyGoal: 1000);
+      expect(far!.title, '200 candy');
+      expect(far.remaining, 1);
+    });
+
+    test('milestones already passed are not offered again', () {
+      final reward = next(streak: 100, totalSteps: 100000, dailyGoal: 6000);
+      expect(reward!.title, '120 candy');
     });
 
     test('a finished player has nothing left to be told', () {
-      expect(
-        nextReward(
-          xp: 0,
-          currentStreak: 500,
-          goalsMet: 5000,
-          xpToNextLevel: 0,
-          nextLevel: 99,
-        ),
-        isNull,
-      );
+      expect(next(streak: 500, totalSteps: 2000000), isNull);
     });
   });
 
-  group('the halfway bonus', () {
-    test('is a tenth of the day reward, at least 2', () {
-      expect(snackForGoal(6000), 5);
-      expect(snackForGoal(12000), 10);
-      expect(snackForGoal(100), 2);
-    });
-
-    test('is paid once, at halfway, while the goal is still ahead', () {
-      final first = evaluateDay(
+  group('the halfway mark pays nothing', () {
+    test('half the goal is no reward, and the day is still open', () {
+      final result = evaluateDay(
         cat: catOf(),
         dailyStepGoal: 6000,
         stepsToday: 3000,
         today: today,
         history: const [],
       );
-      expect(first.snackXp, 5);
-      expect(first.cat.xp, 5);
-      expect(first.today.snackAwarded, isTrue);
-      expect(first.xpGainedToday, 0);
-
-      // Opening again does not pay it twice.
-      final again = evaluateDay(
-        cat: first.cat,
-        dailyStepGoal: 6000,
-        stepsToday: 3200,
-        today: today,
-        history: [first.today],
-      );
-      expect(again.snackXp, 0);
-      expect(again.cat.xp, 5);
+      expect(result.candyGainedToday, 0);
+      expect(result.today.goalCompleted, isFalse);
+      expect(result.today.goalPaid, isFalse);
+      expect(result.today.candyEarned, 0);
     });
 
-    test('below halfway there is nothing', () {
-      final result = evaluateDay(
-        cat: catOf(),
-        dailyStepGoal: 6000,
-        stepsToday: 2000,
-        today: today,
-        history: const [],
-      );
-      expect(result.snackXp, 0);
-      expect(result.today.snackAwarded, isFalse);
-    });
-
-    test('finishing the day in one go pays the goal, not the bonus too', () {
-      final result = evaluateDay(
-        cat: catOf(),
-        dailyStepGoal: 6000,
-        stepsToday: 6000,
-        today: today,
-        history: const [],
-      );
-      expect(result.snackXp, 0);
-      expect(result.xpGainedToday, 50);
-      expect(result.cat.xp, 50);
-    });
-
-    test('a half day already paid keeps its XP when the goal is missed', () {
+    test('walking on past halfway to the goal pays the goal candy once', () {
       final half = evaluateDay(
         cat: catOf(),
         dailyStepGoal: 6000,
@@ -231,16 +186,48 @@ void main() {
         today: today,
         history: const [],
       );
-      // The day ends at 3,000: no goal XP, but the bonus stays earned.
-      final evening = evaluateDay(
+      final done = evaluateDay(
         cat: half.cat,
         dailyStepGoal: 6000,
-        stepsToday: 3400,
+        stepsToday: 6000,
         today: today,
         history: [half.today],
       );
-      expect(evening.cat.xp, 5);
-      expect(evening.xpGainedToday, 0);
+      expect(done.candyGainedToday, 6);
+      expect(done.today.goalPaid, isTrue);
+      expect(done.today.candyEarned, 6);
+
+      final again = evaluateDay(
+        cat: done.cat,
+        dailyStepGoal: 6000,
+        stepsToday: 6500,
+        today: today,
+        history: [done.today],
+      );
+      expect(again.candyGainedToday, 0);
+      expect(again.today.goalPaid, isTrue);
     });
+
+    test(
+      'a day that ends past halfway but short of the goal earns nothing',
+      () {
+        final half = evaluateDay(
+          cat: catOf(),
+          dailyStepGoal: 6000,
+          stepsToday: 3000,
+          today: today,
+          history: const [],
+        );
+        final evening = evaluateDay(
+          cat: half.cat,
+          dailyStepGoal: 6000,
+          stepsToday: 5900,
+          today: today,
+          history: [half.today],
+        );
+        expect(evening.candyGainedToday, 0);
+        expect(evening.today.candyEarned, 0);
+      },
+    );
   });
 }

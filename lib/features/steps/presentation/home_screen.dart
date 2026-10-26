@@ -6,13 +6,12 @@ import '../../../core/utils/format.dart';
 import '../../../core/widgets/progress_ring.dart';
 import '../../../services/health/step_repository_provider.dart';
 import '../../cat/domain/cat_status.dart';
-import '../../cat/domain/xp_curve.dart';
 import '../../daily_goal/domain/goal_suggestion.dart';
 import '../../daily_goal/domain/progress_milestones.dart';
-import '../../daily_goal/domain/side_quest.dart';
 import '../../cat/presentation/cat_voice.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
 import 'home_controller.dart';
+import 'shop_sheet.dart';
 import 'step_auto_refresh.dart';
 
 /// Home answers one question: how far am I today?
@@ -54,14 +53,11 @@ class _HomeBody extends ConsumerWidget {
     final today = state.today;
     final gone = cat.status == CatStatus.runaway;
     final progress = today.stepGoal == 0 ? 0.0 : today.steps / today.stepGoal;
-    final levelEnd = xpToReachLevel(cat.level + 1);
     // One thing to look forward to, not a wall of progress.
     final next = nextReward(
-      xp: cat.xp,
       currentStreak: state.currentStreak,
-      goalsMet: state.goalsMet,
-      xpToNextLevel: xpUntilNextLevel(cat.xp),
-      nextLevel: cat.level + 1,
+      totalSteps: state.totalSteps,
+      dailyGoal: today.stepGoal,
     );
 
     return ListView(
@@ -135,9 +131,9 @@ class _HomeBody extends ConsumerWidget {
               strong: state.currentStreak > 0,
             ),
             _Chip(
-              icon: Icons.star_outline,
-              text:
-                  'Level ${cat.level} · ${formatNumber(cat.xp)}/${formatNumber(levelEnd)} XP',
+              icon: Icons.cookie_outlined,
+              text: '${formatNumber(state.inventory.candy)} candy',
+              onTap: () => showShopSheet(context),
             ),
           ],
         ),
@@ -146,14 +142,6 @@ class _HomeBody extends ConsumerWidget {
           todayCount: state.rewardLines.length,
           onTap: () => _showMore(context, state, next),
         ),
-        if (state.quest case final quest?) ...[
-          const SizedBox(height: 16),
-          _QuestLine(
-            quest: quest,
-            done: state.questDoneToday,
-            xp: state.questXpToday,
-          ),
-        ],
         if (state.goalRaise case final raise?) ...[
           const SizedBox(height: 16),
           _GoalNudge(
@@ -271,10 +259,10 @@ class _Steps extends ConsumerWidget {
             ),
           ),
         ],
-        if (today.goalCompleted && state.xpGainedToday > 0) ...[
+        if (today.goalCompleted && state.candyGainedToday > 0) ...[
           const SizedBox(height: 4),
           Text(
-            '+${state.xpGainedToday} XP',
+            '+${state.candyGainedToday} candy',
             style: theme.textTheme.titleMedium?.copyWith(
               color: CatwalkColors.teal,
               fontWeight: FontWeight.w700,
@@ -322,7 +310,12 @@ class _Notice extends StatelessWidget {
 
 /// A small rounded pill with an icon and a short label, such as the streak.
 class _Chip extends StatelessWidget {
-  const _Chip({required this.icon, required this.text, this.strong = false});
+  const _Chip({
+    required this.icon,
+    required this.text,
+    this.strong = false,
+    this.onTap,
+  });
 
   /// Icon shown before the text.
   final IconData icon;
@@ -333,12 +326,15 @@ class _Chip extends StatelessWidget {
   /// Teal filled pill when true, soft orange when false.
   final bool strong;
 
+  /// Called when the pill is tapped. Null makes it a plain label.
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fill = strong ? CatwalkColors.teal : CatwalkColors.orangeSoft;
     final ink = strong ? Colors.white : CatwalkColors.ink;
-    return Container(
+    final pill = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: fill,
@@ -359,6 +355,13 @@ class _Chip extends StatelessWidget {
         ],
       ),
     );
+    return onTap == null
+        ? pill
+        : GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: pill,
+          );
   }
 }
 
@@ -438,10 +441,6 @@ void _showMore(BuildContext context, HomeState state, NextReward? next) {
           children: [
             if (state.rewardLines.isNotEmpty) ...[
               _RewardsToday(lines: state.rewardLines),
-              const SizedBox(height: 12),
-            ],
-            if (state.snackXpToday > 0) ...[
-              Text('Halfway bonus: +${state.snackXpToday} XP', style: muted),
               const SizedBox(height: 12),
             ],
             if (next case final reward?) ...[
@@ -531,68 +530,6 @@ class _NextReward extends StatelessWidget {
             child: Text(
               'Next: ${reward.title} · ${reward.detail}',
               style: theme.textTheme.bodyMedium,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// One optional challenge for the day, never a second score. Only shown when
-/// side quests are switched on ([AppConstants.sideQuestsEnabled]).
-class _QuestLine extends StatelessWidget {
-  const _QuestLine({required this.quest, required this.done, required this.xp});
-
-  /// Which quest is on offer today.
-  final SideQuest quest;
-
-  /// True once the quest has been met.
-  final bool done;
-
-  /// XP paid for it on this open, in XP. Zero when nothing was paid.
-  final int xp;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final info = sideQuestInfo[quest]!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            done ? Icons.check_circle : Icons.directions_walk,
-            size: 20,
-            color: done
-                ? CatwalkColors.teal
-                : theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  info.title,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  done && xp > 0 ? '+$xp XP' : info.detail,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: done
-                        ? CatwalkColors.teal
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
             ),
           ),
         ],

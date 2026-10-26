@@ -9,8 +9,8 @@ DailyProgress _day(CalendarDate date, {required bool completed}) {
     stepGoal: 6000,
     steps: completed ? 6000 : 0,
     goalCompleted: completed,
-    xpAwarded: completed,
-    xpEarned: completed ? 50 : 0,
+    goalPaid: completed,
+    candyEarned: completed ? 6 : 0,
   );
 }
 
@@ -65,7 +65,7 @@ void main() {
         stepGoal: 6000,
         steps: 0,
         goalCompleted: false,
-        xpAwarded: false,
+        goalPaid: false,
         frozen: true,
       ),
       _day(today.addDays(-3), completed: true),

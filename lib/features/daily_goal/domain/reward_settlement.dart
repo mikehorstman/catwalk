@@ -2,45 +2,41 @@ import 'dart:math' as math;
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/calendar_date.dart';
-import '../../cat/domain/cat.dart';
+import '../../../core/utils/format.dart';
 import '../../map/domain/collect.dart';
 import '../../map/domain/geo.dart';
 import '../../map/domain/inventory.dart';
 import '../../map/domain/reward.dart';
 import 'reward_ledger.dart';
 
-/// What streak prizes pay: XP, a toy, or both. A toy you already own turns into
-/// XP, like any other reward.
+/// What streak prizes pay: candy, a toy, or both. A toy you already own turns
+/// into consolation candy, like any other reward.
 const Map<int, List<Reward>> streakPrizes = {
-  3: [XpReward(20)],
-  7: [ToyReward('')],
-  14: [XpReward(50)],
-  30: [ToyReward(''), XpReward(100)],
-  100: [XpReward(250)],
+  3: [CandyReward(5)],
+  7: [CandyReward(15), ToyReward('')],
+  14: [CandyReward(30)],
+  30: [CandyReward(60), ToyReward('')],
+  100: [CandyReward(200)],
 };
 
-/// What reaching 10, 25, 50, 100 and 250 goals in total pays, in XP.
-const Map<int, int> milestoneXp = {
-  10: 50,
-  25: 100,
-  50: 200,
-  100: 400,
-  250: 1000,
+/// What reaching a total number of steps pays, in candy. Total steps never go
+/// down, so each milestone is paid once, ever.
+const Map<int, int> stepMilestoneCandy = {
+  10000: 10,
+  100000: 40,
+  500000: 120,
+  1000000: 300,
 };
 
 /// The outcome of paying out today's rewards.
 class Settlement {
   const Settlement({
-    required this.cat,
     required this.inventory,
     required this.ledger,
     required this.lines,
   });
 
-  /// The cat with any XP from rewards added.
-  final Cat cat;
-
-  /// The inventory with any freezes and toys added.
+  /// The inventory with any candy, freezes and toys added.
   final Inventory inventory;
 
   /// The updated memory of what has been paid.
@@ -53,36 +49,33 @@ class Settlement {
 /// Pays what [today] has earned, once.
 ///
 /// Two things can pay: the weekly freeze, which needs no goal, and the goal
-/// day rewards (the first-goal gift, streak prizes, goal milestones and the
+/// day rewards (the first-goal gift, streak prizes, step milestones and the
 /// daily draw), which need [goalCompleted]. Everything is remembered in
 /// [ledger], so calling this again on the same day returns the same lines and
 /// pays nothing more.
 ///
-/// [streak] counts today, and [goalsMet] is the lifetime number of goal days
-/// including today. [startedOn] is the day the player began.
+/// The goal's own candy is not paid here: the day evaluation pays it.
+///
+/// [streak] counts today, [goalsMet] is the lifetime number of goal days
+/// including today, and [totalSteps] is every step walked, today's included.
+/// [startedOn] is the day the player began.
 Settlement settleRewards({
   required CalendarDate today,
   required CalendarDate? startedOn,
   required bool goalCompleted,
   required int streak,
   required int goalsMet,
-  required Cat cat,
+  required int totalSteps,
   required Inventory inventory,
   required RewardLedger ledger,
 }) {
-  var nextCat = cat;
   var nextInventory = inventory;
   var nextLedger = ledger;
   final lines = <String>[];
   final alreadyToday = ledger.settledOn == today;
 
   Collected apply(Reward reward) {
-    final result = collect(
-      reward: reward,
-      inventory: nextInventory,
-      cat: nextCat,
-    );
-    nextCat = result.cat;
+    final result = collect(reward: reward, inventory: nextInventory);
     nextInventory = result.inventory;
     return result;
   }
@@ -104,7 +97,6 @@ Settlement settleRewards({
 
   if (!goalCompleted) {
     return Settlement(
-      cat: nextCat,
       inventory: nextInventory,
       ledger: nextLedger,
       lines: alreadyToday ? ledger.lines : lines,
@@ -114,7 +106,6 @@ Settlement settleRewards({
     // Today's goal rewards were paid on an earlier open. The weekly freeze
     // above is already in the ledger too, so it cannot be paid twice.
     return Settlement(
-      cat: nextCat,
       inventory: nextInventory,
       ledger: nextLedger,
       lines: [...ledger.lines, ...lines],
@@ -126,16 +117,15 @@ Settlement settleRewards({
 
   String describe(Reward reward, Collected result) {
     return switch (reward) {
-      XpReward() => '+${result.xpGained} XP',
+      CandyReward() => '+${result.candyGained} candy',
       FreezeReward() =>
         result.converted
-            ? '+${result.xpGained} XP (freezes are full)'
+            ? '+${result.candyGained} candy (freezes are full)'
             : 'a streak freeze',
       ToyReward(:final toyId) =>
         result.converted
-            ? '+${result.xpGained} XP (you have that toy)'
+            ? '+${result.candyGained} candy (you have that toy)'
             : 'a $toyId toy',
-      CatProgressReward() => 'progress towards a new cat',
     };
   }
 
@@ -173,17 +163,22 @@ Settlement settleRewards({
     }
   }
 
-  // 3. A goals milestone, once ever.
-  if (milestoneXp.containsKey(goalsMet) && claimed.add('goals-$goalsMet')) {
-    pay('$goalsMet goals met', XpReward(milestoneXp[goalsMet]!));
+  // 3. Total step milestones, once ever each.
+  for (final entry in stepMilestoneCandy.entries) {
+    if (totalSteps >= entry.key && claimed.add('steps-${entry.key}')) {
+      pay('${formatNumber(entry.key)} steps walked', CandyReward(entry.value));
+    }
   }
 
   // 4. The daily draw, with a guarantee: a toy or freeze at least every
   // drawPityAfter + 1 goal days.
   final drawRandom = math.Random(stableSeed('draw:${today.toIsoDate()}'));
-  var draw = pickReward(drawRandom);
+  var draw = pickReward(
+    drawRandom,
+    candyAmounts: AppConstants.drawCandyAmounts,
+  );
   final pity = nextLedger.drawsSinceItem >= AppConstants.drawPityAfter;
-  if (pity && (draw is XpReward)) {
+  if (pity && draw is CandyReward) {
     final toysLeft = toyIds.any((id) => !nextInventory.toys.contains(id));
     draw = toysLeft ? newToy() : const FreezeReward();
   }
@@ -195,7 +190,6 @@ Settlement settleRewards({
   );
 
   return Settlement(
-    cat: nextCat,
     inventory: nextInventory,
     ledger: nextLedger.copyWith(
       claimed: claimed,

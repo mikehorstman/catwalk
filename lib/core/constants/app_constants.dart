@@ -6,16 +6,13 @@ abstract final class AppConstants {
   /// The goal a new player starts with, in steps per day.
   static const int defaultDailyStepGoal = 6000;
 
-  /// XP paid for completing the daily goal.
-  static const int dailyGoalXp = 50;
-
   /// Bounds for the daily goal, in steps. Enforced in onboarding, in Settings,
-  /// and when a saved profile is read, so a tiny goal cannot buy cheap XP.
+  /// and when a saved profile is read.
   static const int minDailyStepGoal = 3000;
   static const int maxDailyStepGoal = 30000;
 
-  /// Share of the goal (0.5 = half) that pays the small halfway XP snack. It
-  /// does not change whether the day counts: only the whole goal does.
+  /// Share of the goal (0.5 = half) at which the cat reacts. Nothing is paid
+  /// and it does not change whether the day counts: only the whole goal does.
   static const double halfwayFraction = 0.5;
 
   /// Suggesting a goal stops here, so the app never proposes a number that the
@@ -29,17 +26,26 @@ abstract final class AppConstants {
   /// the goal may be lower or higher.
   static const int benefitReferenceSteps = 7000;
 
-  /// Daily side quests are built but switched off (false). The step goal is
-  /// the only daily target.
-  static const bool sideQuestsEnabled = false;
+  /// Candy paid for reaching the goal: one per this many steps of the goal.
+  /// 6,000 steps pays 6 candy.
+  static const int goalCandyStepsPer = 1000;
 
-  /// A daily quest pays this share of the day's goal reward (0.05 = 5%).
-  /// Unused while [sideQuestsEnabled] is false.
-  static const double questXpShare = 0.05;
+  /// The least and the most candy a goal day can pay, however the goal is set.
+  static const int goalCandyMin = 3;
+  static const int goalCandyMax = 15;
 
-  /// A day may pay out this much of its goal reward in total, bonuses included
-  /// (1.2 = at most 120%, so 60 XP when the goal pays 50).
-  static const double dailyXpCeilingShare = 1.2;
+  /// A toy costs this much candy in the shop.
+  static const int toyPriceCandy = 8;
+
+  /// Candy a pickup turns into when the item would be wasted: a freeze while
+  /// holding the most freezes, or a toy you already own.
+  static const int consolationCandy = 3;
+
+  /// A map pickup of candy pays one of these amounts.
+  static const List<int> pickupCandyAmounts = [2, 3, 4];
+
+  /// A candy result from the daily draw pays one of these amounts.
+  static const List<int> drawCandyAmounts = [1, 2, 3];
 
   /// A cat that ran away has this many days to be walked home.
   static const int recoveryWindowDays = 7;

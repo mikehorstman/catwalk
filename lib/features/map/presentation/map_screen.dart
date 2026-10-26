@@ -431,17 +431,25 @@ class _EventSheet extends StatelessWidget {
   }
 
   /// Title, body and icon for a collected pin. When the pin was [Collected.converted]
-  /// the text says it paid XP instead.
+  /// the text says it paid candy instead.
   (String, String, IconData) _describe(Collected result) {
     final extra = result.converted
-        ? ' You already had ${result.reward is FreezeReward ? 'the most freezes you can hold' : 'this toy'}, so it paid XP instead.'
+        ? ' You already had ${result.reward is FreezeReward ? 'the most freezes you can hold' : 'this toy'}, so it paid candy instead.'
         : '';
     switch (result.reward) {
-      case XpReward(:final amount):
-        return ('+$amount XP', 'A bit of XP for your cat.', Icons.star);
+      case CandyReward(:final amount):
+        return (
+          '+$amount candy',
+          'Spend it in the shop on Home.',
+          Icons.cookie,
+        );
       case FreezeReward():
         return result.converted
-            ? ('+${result.xpGained} XP', 'A streak freeze.$extra', Icons.star)
+            ? (
+                '+${result.candyGained} candy',
+                'A streak freeze.$extra',
+                Icons.cookie,
+              )
             : (
                 'Streak freeze',
                 'It covers one missed day, then it is gone.',
@@ -449,10 +457,8 @@ class _EventSheet extends StatelessWidget {
               );
       case ToyReward(:final toyId):
         return result.converted
-            ? ('+${result.xpGained} XP', 'A $toyId.$extra', Icons.star)
+            ? ('+${result.candyGained} candy', 'A $toyId.$extra', Icons.cookie)
             : ('A $toyId', 'It is in the room now.', Icons.toys);
-      case CatProgressReward():
-        return ('A step towards a new cat', 'Keep going.', Icons.pets);
     }
   }
 }

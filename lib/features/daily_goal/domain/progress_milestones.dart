@@ -1,4 +1,6 @@
 import '../../../core/utils/calendar_date.dart';
+import '../../../core/utils/format.dart';
+import 'reward_settlement.dart';
 import 'daily_progress.dart';
 import 'streak.dart';
 
@@ -9,9 +11,8 @@ const int weekDays = 7;
 /// The prizes a streak pays out, in days of walking.
 const List<int> streakPrizeDays = [3, 7, 14, 30, 100];
 
-/// A milestone on the total number of goals met, which a missed day can never
-/// take away.
-const List<int> goalMilestones = [10, 25, 50, 100, 250];
+/// Total steps that pay candy, in order. See [stepMilestoneCandy].
+const List<int> stepMilestones = [10000, 100000, 500000, 1000000];
 
 /// Counts that only ever go up, so a bad week cannot erase them.
 class LifetimeStats {
@@ -61,7 +62,7 @@ class WeekSummary {
     required this.goalsMet,
     required this.steps,
     required this.bestDaySteps,
-    required this.xpEarned,
+    required this.candyEarned,
   });
 
   /// Days in the window that have a record (0 to 7).
@@ -76,8 +77,8 @@ class WeekSummary {
   /// Steps on the best day in the window.
   final int bestDaySteps;
 
-  /// XP the completed days paid.
-  final int xpEarned;
+  /// Candy the goals paid over those days.
+  final int candyEarned;
 
   /// Average steps per recorded day (not per calendar day), 0 when none.
   int get averageSteps => days == 0 ? 0 : (steps / days).round();
@@ -100,19 +101,19 @@ WeekSummary weekSummary({
   var goals = 0;
   var steps = 0;
   var best = 0;
-  var xp = 0;
+  var candy = 0;
   for (final day in week) {
     if (day.goalCompleted) goals += 1;
     steps += day.steps;
     if (day.steps > best) best = day.steps;
-    xp += day.xpEarned;
+    candy += day.candyEarned;
   }
   return WeekSummary(
     days: week.length,
     goalsMet: goals,
     steps: steps,
     bestDaySteps: best,
-    xpEarned: xp,
+    candyEarned: candy,
   );
 }
 
@@ -136,25 +137,24 @@ class NextReward {
 
 /// Name of the prize paid for a streak of [days].
 String _streakPrizeName(int days) => switch (days) {
-  3 => 'a 20 XP bonus',
-  7 => 'a toy',
-  14 => 'a 50 XP bonus',
-  30 => 'a toy and 100 XP',
-  _ => 'a 250 XP bonus',
+  3 => '5 candy',
+  7 => '15 candy and a toy',
+  14 => '30 candy',
+  30 => '60 candy and a toy',
+  _ => '200 candy',
 };
 
-/// The closest of the three things worth waiting for: the next streak prize,
-/// the next lifetime milestone, or the next level.
+/// The one reward nearest to being earned: the next streak prize or the next
+/// total step milestone, whichever is closer. Null when everything is done.
 ///
-/// Returning one thing is deliberate. A screen full of progress bars tells a
-/// player nothing about what to do next.
+/// Steps and days cannot be compared, so a milestone counts as `remaining`
+/// days at the pace of [dailyGoal] steps a day.
 NextReward? nextReward({
-  required int xp,
   required int currentStreak,
-  required int goalsMet,
-  required int xpToNextLevel,
-  required int nextLevel,
+  required int totalSteps,
+  required int dailyGoal,
 }) {
+  final pace = dailyGoal <= 0 ? 1 : dailyGoal;
   final candidates = <NextReward>[
     for (final days in streakPrizeDays)
       if (days > currentStreak)
@@ -165,25 +165,21 @@ NextReward? nextReward({
               : '${days - currentStreak} more days of walking',
           remaining: days - currentStreak,
         ),
-    for (final milestone in goalMilestones)
-      if (milestone > goalsMet)
+    for (final milestone in stepMilestones)
+      if (milestone > totalSteps)
         NextReward(
-          title: milestone == goalMilestones.first
-              ? 'a 50 XP reward for ten goals'
-              : 'a milestone reward',
-          detail: milestone - goalsMet == 1
-              ? '1 more goal met'
-              : '${milestone - goalsMet} more goals met',
-          remaining: milestone - goalsMet,
+          title: '${stepMilestoneCandy[milestone]} candy',
+          detail: milestone - totalSteps == 1
+              ? '1 more step'
+              : '${formatNumber(milestone - totalSteps)} more steps',
+          remaining: ((milestone - totalSteps) / pace).ceil(),
         ),
-    if (xpToNextLevel > 0)
-      NextReward(
-        title: 'level $nextLevel',
-        detail: '$xpToNextLevel more XP',
-        remaining: xpToNextLevel,
-      ),
   ];
   if (candidates.isEmpty) return null;
-  candidates.sort((a, b) => a.remaining.compareTo(b.remaining));
-  return candidates.first;
+  // The first of equals wins: streak prizes come before step milestones.
+  var best = candidates.first;
+  for (final c in candidates) {
+    if (c.remaining < best.remaining) best = c;
+  }
+  return best;
 }

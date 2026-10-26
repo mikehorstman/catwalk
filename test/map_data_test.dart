@@ -1,7 +1,4 @@
-import 'package:catwalk/features/cat/domain/cat.dart';
-import 'package:catwalk/features/cat/domain/cat_appearance.dart';
-import 'package:catwalk/features/cat/domain/cat_mood.dart';
-import 'package:catwalk/features/cat/domain/cat_status.dart';
+import 'package:catwalk/core/constants/app_constants.dart';
 import 'package:catwalk/features/map/data/inventory_repository.dart';
 import 'package:catwalk/features/map/data/map_state_repository.dart';
 import 'package:catwalk/features/map/domain/collect.dart';
@@ -14,78 +11,57 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/memory_store.dart';
 
-final cat = Cat(
-  id: '1',
-  name: 'Jip',
-  appearance: CatAppearance.ginger,
-  level: 1,
-  xp: 90,
-  mood: CatMood.neutral,
-  status: CatStatus.active,
-  consecutiveMissedDays: 0,
-  createdAt: DateTime(2026, 10, 1),
-);
-
 void main() {
   group('collecting', () {
-    test('XP goes to the cat and can level it up', () {
+    test('candy goes in the inventory', () {
       final result = collect(
-        reward: const XpReward(25),
-        inventory: const Inventory(),
-        cat: cat,
+        reward: const CandyReward(3),
+        inventory: const Inventory(candy: 5),
       );
-      expect(result.cat.xp, 115);
-      expect(result.cat.level, 2);
-      expect(result.xpGained, 25);
+      expect(result.inventory.candy, 8);
+      expect(result.candyGained, 3);
       expect(result.converted, isFalse);
     });
 
     test('a freeze goes in the inventory', () {
       final result = collect(
         reward: const FreezeReward(),
-        inventory: const Inventory(freezes: 1),
-        cat: cat,
+        inventory: const Inventory(freezes: 1, candy: 4),
       );
       expect(result.inventory.freezes, 2);
-      expect(result.cat.xp, 90);
+      expect(result.inventory.candy, 4);
+      expect(result.candyGained, 0);
+      expect(result.converted, isFalse);
     });
 
-    test('a freeze past the limit turns into XP and says so', () {
+    test('a freeze past the limit turns into candy and says so', () {
       final result = collect(
         reward: const FreezeReward(),
-        inventory: const Inventory(freezes: maxFreezes),
-        cat: cat,
+        inventory: const Inventory(freezes: maxFreezes, candy: 1),
       );
       expect(result.inventory.freezes, maxFreezes);
-      expect(result.xpGained, consolationXp);
+      expect(result.candyGained, AppConstants.consolationCandy);
+      expect(result.inventory.candy, 1 + AppConstants.consolationCandy);
       expect(result.converted, isTrue);
     });
 
-    test('a new toy is kept, a toy you own turns into XP', () {
+    test('a new toy is kept, a toy you own turns into candy', () {
       final first = collect(
         reward: const ToyReward('ball'),
         inventory: const Inventory(),
-        cat: cat,
       );
       expect(first.inventory.toys, ['ball']);
+      expect(first.converted, isFalse);
+      expect(first.inventory.candy, 0);
 
       final again = collect(
         reward: const ToyReward('ball'),
         inventory: first.inventory,
-        cat: first.cat,
       );
       expect(again.inventory.toys, ['ball']);
       expect(again.converted, isTrue);
-      expect(again.xpGained, consolationXp);
-    });
-
-    test('cat progress is stored for later', () {
-      final result = collect(
-        reward: const CatProgressReward(2),
-        inventory: const Inventory(catProgress: 1),
-        cat: cat,
-      );
-      expect(result.inventory.catProgress, 3);
+      expect(again.candyGained, AppConstants.consolationCandy);
+      expect(again.inventory.candy, AppConstants.consolationCandy);
     });
   });
 
@@ -94,8 +70,9 @@ void main() {
       final repo = InventoryRepository(MemoryStore());
       expect((await repo.read()).freezes, 0);
 
-      await repo.write(const Inventory(freezes: 2, toys: ['mouse']));
+      await repo.write(const Inventory(candy: 7, freezes: 2, toys: ['mouse']));
       final back = await repo.read();
+      expect(back.candy, 7);
       expect(back.freezes, 2);
       expect(back.toys, ['mouse']);
     });

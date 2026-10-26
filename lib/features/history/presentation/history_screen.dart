@@ -51,11 +51,28 @@ class _Me extends StatelessWidget {
     final theme = Theme.of(context);
     final met = view.days.where((d) => d.goalCompleted).length;
     final totalSteps = view.days.fold<int>(0, (sum, d) => sum + d.steps);
-    final totalXp = view.days.fold<int>(0, (sum, d) => sum + d.xpEarned);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
       children: [
+        Center(
+          child: Text(
+            formatNumber(totalSteps),
+            style: theme.textTheme.displayMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1.5,
+            ),
+          ),
+        ),
+        Center(
+          child: Text(
+            'total steps',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
         Row(
           children: [
             Expanded(
@@ -74,19 +91,6 @@ class _Me extends StatelessWidget {
         const SizedBox(height: 20),
         _WeekStrip(days: view.days),
         const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: _Stat(
-                label: 'Total steps',
-                value: formatNumber(totalSteps),
-              ),
-            ),
-            Expanded(
-              child: _Stat(label: 'Total XP', value: formatNumber(totalXp)),
-            ),
-          ],
-        ),
         const SizedBox(height: 24),
         Text('Days', style: theme.textTheme.titleLarge),
         const SizedBox(height: 10),
@@ -310,7 +314,7 @@ class _DayDot extends StatelessWidget {
   }
 }
 
-/// One row in the Days list: date, steps against goal, and XP earned.
+/// One row in the Days list: date, steps against goal, and the candy it paid.
 class _DayTile extends StatelessWidget {
   const _DayTile({required this.day});
 
@@ -349,8 +353,11 @@ class _DayTile extends StatelessWidget {
               ],
             ),
           ),
-          if (day.xpEarned > 0)
-            Text('+${day.xpEarned} XP', style: theme.textTheme.titleMedium),
+          if (day.candyEarned > 0)
+            Text(
+              '+${day.candyEarned} candy',
+              style: theme.textTheme.titleMedium,
+            ),
         ],
       ),
     );

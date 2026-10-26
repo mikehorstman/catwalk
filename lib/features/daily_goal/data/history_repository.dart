@@ -72,12 +72,9 @@ Map<String, Object> progressToJson(DailyProgress progress) {
     'stepGoal': progress.stepGoal,
     'steps': progress.steps,
     'goalCompleted': progress.goalCompleted,
-    'xpAwarded': progress.xpAwarded,
-    'xpEarned': progress.xpEarned,
+    'goalPaid': progress.goalPaid,
+    'candyEarned': progress.candyEarned,
     if (progress.frozen) 'frozen': true,
-    if (progress.snackAwarded) 'snackAwarded': true,
-    if (progress.questAwarded) 'questAwarded': true,
-    if (progress.questXp > 0) 'questXp': progress.questXp,
   };
 }
 
@@ -89,11 +86,10 @@ DailyProgress progressFromJson(Map<String, dynamic> json) {
     stepGoal: json['stepGoal'] as int,
     steps: json['steps'] as int,
     goalCompleted: json['goalCompleted'] == true,
-    xpAwarded: json['xpAwarded'] == true,
-    xpEarned: (json['xpEarned'] as int?) ?? 0,
+    // An older save called this xpAwarded, and paid XP. The day was paid
+    // either way, so it must not pay again.
+    goalPaid: json['goalPaid'] == true || json['xpAwarded'] == true,
+    candyEarned: (json['candyEarned'] as num?)?.toInt() ?? 0,
     frozen: json['frozen'] == true,
-    snackAwarded: json['snackAwarded'] == true,
-    questAwarded: json['questAwarded'] == true,
-    questXp: (json['questXp'] as num?)?.toInt() ?? 0,
   );
 }

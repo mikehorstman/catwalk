@@ -38,7 +38,7 @@ class OnboardingRepository {
 
   /// Turns the player's [draft] into a saved profile and a brand-new cat.
   ///
-  /// The cat starts at level 1 with 0 XP, a neutral mood, active status and no
+  /// The cat starts with a neutral mood, active status and no
   /// missed days. Its id is the creation time in microseconds, which is unique
   /// enough for one local cat. The name is trimmed.
   Future<void> complete(OnboardingDraft draft) async {
@@ -55,8 +55,6 @@ class OnboardingRepository {
       id: now.microsecondsSinceEpoch.toString(),
       name: draft.name.trim(),
       appearance: draft.appearance,
-      level: 1,
-      xp: 0,
       mood: CatMood.neutral,
       status: CatStatus.active,
       consecutiveMissedDays: 0,
@@ -72,8 +70,6 @@ class OnboardingRepository {
       'id': cat.id,
       'name': cat.name,
       'appearance': cat.appearance.name,
-      'level': cat.level,
-      'xp': cat.xp,
       'mood': cat.mood.name,
       'status': cat.status.name,
       'consecutiveMissedDays': cat.consecutiveMissedDays,

@@ -13,15 +13,13 @@ void main() {
     id: '1',
     name: 'Mimi',
     appearance: CatAppearance.cream,
-    level: 1,
-    xp: 0,
     mood: CatMood.neutral,
     status: CatStatus.active,
     consecutiveMissedDays: 0,
     createdAt: DateTime(2026, 10, 5),
   );
 
-  test('reaching the goal awards 50 XP once', () {
+  test('reaching the goal pays the goal candy once', () {
     final first = evaluateDay(
       cat: cat,
       dailyStepGoal: 6000,
@@ -30,8 +28,9 @@ void main() {
       history: const [],
     );
     expect(first.today.goalCompleted, isTrue);
-    expect(first.xpGainedToday, 50);
-    expect(first.cat.xp, 50);
+    expect(first.candyGainedToday, 6);
+    expect(first.today.goalPaid, isTrue);
+    expect(first.today.candyEarned, 6);
     expect(first.cat.mood, CatMood.happy);
 
     final second = evaluateDay(
@@ -42,8 +41,9 @@ void main() {
       history: [first.today],
       lastEvaluated: today,
     );
-    expect(second.xpGainedToday, 0);
-    expect(second.cat.xp, 50);
+    expect(second.candyGainedToday, 0);
+    expect(second.today.goalPaid, isTrue);
+    expect(second.today.candyEarned, 6);
   });
 
   test('three missed full days make the cat run away', () {
@@ -52,8 +52,6 @@ void main() {
       id: cat.id,
       name: cat.name,
       appearance: cat.appearance,
-      level: cat.level,
-      xp: cat.xp,
       mood: cat.mood,
       status: cat.status,
       consecutiveMissedDays: 0,
@@ -75,8 +73,6 @@ void main() {
     id: cat.id,
     name: cat.name,
     appearance: cat.appearance,
-    level: 2,
-    xp: 100,
     mood: CatMood.sad,
     status: CatStatus.runaway,
     consecutiveMissedDays: 3,
@@ -88,7 +84,7 @@ void main() {
     stepGoal: 6000,
     steps: 0,
     goalCompleted: false,
-    xpAwarded: false,
+    goalPaid: false,
   );
 
   test('a few steps do not bring a runaway cat back', () {
@@ -102,8 +98,8 @@ void main() {
     );
     expect(result.cat.status, CatStatus.runaway);
     expect(result.cat.mood, CatMood.sad);
-    expect(result.xpGainedToday, 0);
-    expect(result.cat.xp, 100);
+    expect(result.candyGainedToday, 0);
+    expect(result.today.goalCompleted, isFalse);
   });
 
   test('even the full goal does not bring a runaway cat back', () {
@@ -115,10 +111,10 @@ void main() {
       history: [missedYesterday],
       lastEvaluated: today,
     );
-    // The walk still counts for the day and its XP. Only finding the cat on
+    // The walk still counts for the day and its candy. Only finding the cat on
     // the map ends the run.
     expect(result.today.goalCompleted, isTrue);
-    expect(result.xpGainedToday, 50);
+    expect(result.candyGainedToday, 6);
     expect(result.cat.status, CatStatus.runaway);
     expect(result.cat.consecutiveMissedDays, 3);
   });
@@ -147,16 +143,14 @@ void main() {
       stepGoal: 6000,
       steps: 6000,
       goalCompleted: true,
-      xpAwarded: true,
-      xpEarned: 50,
+      goalPaid: true,
+      candyEarned: 6,
     );
 
     final veteran = Cat(
       id: '1',
       name: 'Mimi',
       appearance: CatAppearance.cream,
-      level: 1,
-      xp: 0,
       mood: CatMood.happy,
       status: CatStatus.active,
       consecutiveMissedDays: 0,
@@ -250,26 +244,59 @@ void main() {
     });
   });
 
-  test('enough XP raises the level', () {
-    final experienced = Cat(
-      id: cat.id,
-      name: cat.name,
-      appearance: cat.appearance,
-      level: 1,
-      xp: 60,
-      mood: cat.mood,
-      status: cat.status,
-      consecutiveMissedDays: 0,
-      createdAt: cat.createdAt,
-    );
-    final result = evaluateDay(
-      cat: experienced,
-      dailyStepGoal: 6000,
-      stepsToday: 6000,
-      today: today,
-      history: const [],
-    );
-    expect(result.cat.xp, 110);
-    expect(result.cat.level, 2);
+  group('the goal pays candy', () {
+    DaySnapshot walked(int goal, int steps, {List<DailyProgress>? history}) =>
+        evaluateDay(
+          cat: cat,
+          dailyStepGoal: goal,
+          stepsToday: steps,
+          today: today,
+          history: history ?? const [],
+        );
+
+    test('a thousand steps of goal is one candy, with a floor and a cap', () {
+      expect(walked(1000, 1000).candyGainedToday, 3);
+      expect(walked(3000, 3000).candyGainedToday, 3);
+      expect(walked(6000, 6000).candyGainedToday, 6);
+      expect(walked(12000, 12000).candyGainedToday, 12);
+      expect(walked(30000, 30000).candyGainedToday, 15);
+    });
+
+    test('halfway pays nothing and the day is not done', () {
+      final result = walked(6000, 3000);
+      expect(result.candyGainedToday, 0);
+      expect(result.today.goalCompleted, isFalse);
+      expect(result.today.goalPaid, isFalse);
+      expect(result.today.candyEarned, 0);
+    });
+
+    test('a goal already paid earlier today is not paid again', () {
+      final paid = DailyProgress(
+        date: today,
+        stepGoal: 6000,
+        steps: 6000,
+        goalCompleted: true,
+        goalPaid: true,
+        candyEarned: 6,
+      );
+      final result = walked(6000, 9000, history: [paid]);
+      expect(result.candyGainedToday, 0);
+      expect(result.today.candyEarned, 6);
+      expect(result.today.steps, 9000);
+    });
+
+    test('the goal of the day stays the one it was saved with', () {
+      final saved = DailyProgress(
+        date: today,
+        stepGoal: 3000,
+        steps: 100,
+        goalCompleted: false,
+        goalPaid: false,
+      );
+      // The goal was raised later in the day, but today still counts for 3000.
+      final result = walked(12000, 3000, history: [saved]);
+      expect(result.today.goalCompleted, isTrue);
+      expect(result.candyGainedToday, 3);
+    });
   });
 }

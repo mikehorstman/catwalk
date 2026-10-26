@@ -15,8 +15,6 @@ Cat lostCat({String id = '1'}) => Cat(
   id: id,
   name: 'Jip',
   appearance: CatAppearance.ginger,
-  level: 4,
-  xp: 80,
   mood: CatMood.sad,
   status: CatStatus.runaway,
   consecutiveMissedDays: 10,
@@ -59,10 +57,8 @@ void main() {
   });
 
   group('the stray kitten', () {
-    test('starts at level 1 with no XP and a calm mood', () {
+    test('starts calm, active and not on the run', () {
       final kitten = strayKitten(lost: lostCat(), on: lostOn);
-      expect(kitten.level, 1);
-      expect(kitten.xp, 0);
       expect(kitten.mood, CatMood.neutral);
       expect(kitten.status, CatStatus.active);
       expect(kitten.consecutiveMissedDays, 0);
@@ -141,7 +137,6 @@ void main() {
     expect(AppConstants.recoveryTargetMultiplier, 10);
     expect(AppConstants.lostCatReturnMinDays, 7);
     expect(AppConstants.lostCatReturnMaxDays, 30);
-    expect(AppConstants.sideQuestsEnabled, isFalse);
   });
 
   group('calendar dates across the clock changes', () {

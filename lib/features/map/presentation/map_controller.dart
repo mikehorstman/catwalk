@@ -302,23 +302,15 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     );
   }
 
-  /// Collects [pin]: updates the saved inventory and, when XP was paid, the saved
-  /// cat, then refreshes the home screen.
+  /// Collects [pin]: updates the saved inventory, then refreshes the home
+  /// screen so its candy count is right.
   Future<Collected> _take(MapPin pin, MapViewState view) async {
-    final store = ref.read(localStoreProvider);
-    final cat = await _readCat();
     final inventories = ref.read(inventoryRepositoryProvider);
     final inventory = await inventories.read();
-    final result = collect(reward: pin.reward, inventory: inventory, cat: cat);
+    final result = collect(reward: pin.reward, inventory: inventory);
     await inventories.write(result.inventory);
     ref.invalidate(inventoryProvider);
-    if (result.xpGained > 0) {
-      await store.write(
-        OnboardingRepository.catKey,
-        jsonEncode(catToJson(result.cat)),
-      );
-      await ref.read(homeControllerProvider.notifier).refreshSilently();
-    }
+    await ref.read(homeControllerProvider.notifier).refreshSilently();
     return result;
   }
 

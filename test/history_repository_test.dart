@@ -17,8 +17,8 @@ void main() {
         stepGoal: 6000,
         steps: 6000,
         goalCompleted: true,
-        xpAwarded: true,
-        xpEarned: 50,
+        goalPaid: true,
+        candyEarned: 6,
       ),
     );
     await repository.saveDay(
@@ -27,7 +27,7 @@ void main() {
         stepGoal: 6000,
         steps: 100,
         goalCompleted: false,
-        xpAwarded: false,
+        goalPaid: false,
       ),
     );
     await repository.saveDay(
@@ -36,8 +36,8 @@ void main() {
         stepGoal: 6000,
         steps: 6000,
         goalCompleted: true,
-        xpAwarded: true,
-        xpEarned: 50,
+        goalPaid: true,
+        candyEarned: 6,
       ),
     );
 
@@ -45,19 +45,53 @@ void main() {
     expect(days.length, 2);
     final reloaded = days.firstWhere((day) => day.date == day2);
     expect(reloaded.goalCompleted, isTrue);
-    expect(reloaded.xpEarned, 50);
+    expect(reloaded.candyEarned, 6);
   });
 
-  test('a record without xpEarned still loads', () async {
+  test('a record without candyEarned still loads', () async {
     final store = _MemoryStore();
     await store.write(
       HistoryRepository.historyKey,
       '[{"date":"2026-10-09","stepGoal":6000,"steps":6000,'
-      '"goalCompleted":true,"xpAwarded":true}]',
+      '"goalCompleted":true,"goalPaid":true}]',
     );
     final days = await HistoryRepository(store).readAll();
-    expect(days.single.xpEarned, 0);
+    expect(days.single.candyEarned, 0);
     expect(days.single.goalCompleted, isTrue);
+    expect(days.single.goalPaid, isTrue);
+  });
+
+  test(
+    'an old record with xpAwarded still counts as paid, xp is dropped',
+    () async {
+      final store = _MemoryStore();
+      await store.write(
+        HistoryRepository.historyKey,
+        '[{"date":"2026-10-09","stepGoal":6000,"steps":6000,'
+        '"goalCompleted":true,"xpAwarded":true,"xpEarned":50}]',
+      );
+      final days = await HistoryRepository(store).readAll();
+      expect(days.single.goalPaid, isTrue);
+      expect(days.single.candyEarned, 0);
+    },
+  );
+
+  test('a saved day writes the new keys', () async {
+    final store = _MemoryStore();
+    await HistoryRepository(store).saveDay(
+      DailyProgress(
+        date: CalendarDate(2026, 10, 9),
+        stepGoal: 6000,
+        steps: 6000,
+        goalCompleted: true,
+        goalPaid: true,
+        candyEarned: 6,
+      ),
+    );
+    final raw = store.values[HistoryRepository.historyKey]!;
+    expect(raw, contains('"goalPaid":true'));
+    expect(raw, contains('"candyEarned":6'));
+    expect(raw, isNot(contains('xp')));
   });
 
   test('last evaluated round-trips', () async {

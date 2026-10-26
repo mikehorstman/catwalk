@@ -1,11 +1,11 @@
 import 'package:catwalk/core/constants/app_constants.dart';
 import 'package:catwalk/core/utils/calendar_date.dart';
 import 'package:catwalk/features/daily_goal/domain/daily_progress.dart';
-import 'package:catwalk/features/daily_goal/domain/day_evaluation.dart';
+import 'package:catwalk/features/daily_goal/domain/goal_candy.dart';
+import 'package:catwalk/features/daily_goal/domain/goal_range.dart';
 import 'package:catwalk/features/daily_goal/domain/goal_suggestion.dart';
-import 'package:catwalk/features/daily_goal/domain/goal_tiers.dart';
-import 'package:catwalk/features/daily_goal/domain/side_quest.dart';
-import 'package:catwalk/features/daily_goal/domain/xp_budget.dart';
+import 'package:catwalk/features/daily_goal/domain/shop.dart';
+import 'package:catwalk/features/map/domain/inventory.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final today = CalendarDate.today();
@@ -20,13 +20,9 @@ DailyProgress done(CalendarDate date, {int goal = 6000, int steps = 6000}) =>
       stepGoal: goal,
       steps: steps,
       goalCompleted: steps >= goal,
-      xpAwarded: steps >= goal,
-      xpEarned: steps >= goal ? 50 : 0,
+      goalPaid: steps >= goal,
+      candyEarned: steps >= goal ? candyForGoal(goal) : 0,
     );
-
-List<int> hours(Map<int, int> byHour) => [
-  for (var h = 0; h < 24; h++) byHour[h] ?? 0,
-];
 
 void main() {
   group('goal suggestion', () {
@@ -158,123 +154,62 @@ void main() {
     });
   });
 
-  group('side quests', () {
-    DayTrace trace({
-      int steps = 6000,
-      List<int>? hourly,
-      int? yesterday,
-      int goal = 6000,
-    }) => DayTrace(
-      date: today,
-      steps: steps,
-      goal: goal,
-      hourly: hourly,
-      yesterdaySteps: yesterday,
-    );
-
-    test('only the total is needed for beat yesterday', () {
-      final quest = trace(steps: 3000, yesterday: 2000);
-      expect(quest.hasHourly, isFalse);
-      expect(questDone(SideQuest.beatYesterday, quest), isTrue);
-      expect(pickQuest(trace: quest, daysWalking: 9), SideQuest.beatYesterday);
+  group('goal candy', () {
+    test('a thousand steps of goal is a candy', () {
+      expect(candyForGoal(6000), 6);
+      expect(candyForGoal(12000), 12);
+      expect(candyForGoal(7500), 7);
     });
 
-    test('two walks needs two separate hours, not one long one', () {
-      final oneWalk = trace(hourly: hours({18: 4000}));
-      expect(questDone(SideQuest.twoWalks, oneWalk), isFalse);
-
-      final split = trace(hourly: hours({8: 1200, 19: 900}));
-      expect(questDone(SideQuest.twoWalks, split), isFalse);
-      final splitEnough = trace(hourly: hours({8: 1200, 19: 1100}));
-      expect(questDone(SideQuest.twoWalks, splitEnough), isTrue);
+    test('stays between the floor and the cap', () {
+      expect(candyForGoal(1000), AppConstants.goalCandyMin);
+      expect(candyForGoal(3000), 3);
+      expect(candyForGoal(30000), AppConstants.goalCandyMax);
+      expect(candyForGoal(90000), 15);
     });
 
-    test('twenty minutes before noon', () {
-      final morning = trace(hourly: hours({7: 1200, 9: 900}));
-      expect(questDone(SideQuest.beforeNoon, morning), isTrue);
-      final afternoon = trace(hourly: hours({14: 3000}));
-      expect(questDone(SideQuest.beforeNoon, afternoon), isFalse);
-    });
-
-    test('a walk after seven', () {
-      expect(
-        questDone(SideQuest.afterDinner, trace(hourly: hours({20: 1000}))),
-        isTrue,
-      );
-      expect(
-        questDone(SideQuest.afterDinner, trace(hourly: hours({10: 3000}))),
-        isFalse,
-      );
-    });
-
-    test('no hours means the hourly quests are simply not offered', () {
-      final quest = trace(steps: 12000, yesterday: null);
-      final pick = pickQuest(trace: quest, daysWalking: 9);
-      expect(pick, isNull);
-      expect(questsFor(quest), isEmpty);
-    });
-
-    test('the pick is the same all day and never yesterday\'s', () {
-      final quest = trace(hourly: hours({8: 2000, 19: 1200}), yesterday: 100);
-      final first = pickQuest(trace: quest, daysWalking: 9);
-      final again = pickQuest(trace: quest, daysWalking: 9);
-      expect(again, first);
-      final next = pickQuest(trace: quest, daysWalking: 9, previous: first);
-      expect(next, isNot(first));
-    });
-
-    test('the first days only hand out the gentlest quest', () {
-      final quest = trace(hourly: hours({8: 2000, 19: 1200}), yesterday: 100);
-      expect(pickQuest(trace: quest, daysWalking: 0), SideQuest.twoWalks);
-      expect(pickQuest(trace: quest, daysWalking: 1), SideQuest.twoWalks);
-    });
-  });
-
-  group('xp budget', () {
-    test('a quest is a small share of the day', () {
-      expect(questXpFor(50), 3);
-      expect(questXpFor(25), 2);
-      expect(questXpFor(100), 5);
-    });
-
-    test('goal, halfway and quest stay inside the daily ceiling', () {
-      for (final goal in [3000, 6000, 9000, 12000, 15000, 30000]) {
-        final goalXp = (goal / 6000 * AppConstants.dailyGoalXp).round().clamp(
-          20,
-          250,
-        );
-        final paid = goalXp + snackForGoal(goal) + questXpFor(goalXp);
-        expect(
-          withinDailyCeiling(goalXp: goalXp, paid: paid),
-          isTrue,
-          reason: 'goal $goal pays $paid of a $goalXp ceiling',
-        );
+    test('never pays less for a higher goal', () {
+      var last = 0;
+      for (var goal = 1000; goal <= 40000; goal += 500) {
+        expect(candyForGoal(goal), greaterThanOrEqualTo(last), reason: '$goal');
+        last = candyForGoal(goal);
       }
     });
   });
 
-  group('goal tiers', () {
-    test('a higher goal allows more cats', () {
-      expect(catCapForGoal(3000), 1);
-      expect(catCapForGoal(6000), 2);
-      expect(catCapForGoal(12000), 4);
-      expect(catCapForGoal(20000), 5);
-    });
-
-    test('rare finds improve above six thousand', () {
-      expect(tierForGoal(6000).rareBonus, 0);
-      expect(tierForGoal(9000).rareBonus, greaterThan(0));
-    });
-
-    test('lowering the goal never takes a cat away', () {
-      expect(catCapAfterGoalChange(4, 3000), 4);
-      expect(catCapAfterGoalChange(0, 12000), 4);
-    });
-
+  group('goal range', () {
     test('a goal is kept inside the bounds the app builds', () {
       expect(normaliseGoal(500), AppConstants.minDailyStepGoal);
       expect(normaliseGoal(90000), AppConstants.maxDailyStepGoal);
       expect(normaliseGoal(7000), 7000);
+    });
+  });
+
+  group('shop', () {
+    test('a toy costs eight candy and is kept', () {
+      final purchase = buyToy(const Inventory(candy: 10), 'ball');
+      expect(purchase.ok, isTrue);
+      expect(purchase.inventory!.candy, 10 - AppConstants.toyPriceCandy);
+      expect(purchase.inventory!.toys, ['ball']);
+    });
+
+    test('too little candy takes nothing', () {
+      final purchase = buyToy(const Inventory(candy: 7), 'ball');
+      expect(purchase.ok, isFalse);
+      expect(purchase.refusal, ShopRefusal.notEnoughCandy);
+    });
+
+    test('a toy you own or one that does not exist is refused', () {
+      const owned = Inventory(candy: 20, toys: ['ball']);
+      expect(buyToy(owned, 'ball').refusal, ShopRefusal.alreadyOwned);
+      expect(buyToy(owned, 'dragon').refusal, ShopRefusal.unknownItem);
+    });
+
+    test('only toys not yet owned are for sale', () {
+      expect(toysForSale(const Inventory(toys: ['ball'])), [
+        'mouse',
+        'feather',
+      ]);
     });
   });
 }

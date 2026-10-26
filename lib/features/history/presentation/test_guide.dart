@@ -46,15 +46,11 @@ const List<TestGuideItem> testGuideItems = [
         'skips this.',
   ),
   TestGuideItem(
-    feature: 'Halfway bonus',
-    how: 'Walk to half your goal (3,000 at the default).',
-    check: '“Halfway there: +XP” appears once. It does not make the day count.',
-  ),
-  TestGuideItem(
     feature: 'Reaching the goal',
     how: 'Walk the whole goal, then close and reopen the app.',
     check:
-        'The cat turns happy, XP is paid once, and the streak shows 1. '
+        'The cat turns happy, “+6 candy” shows under the steps (1 candy per '
+        '1,000 steps of your goal, at least 3), and the streak shows 1. '
         'Reopening does not pay again.',
   ),
   TestGuideItem(
@@ -68,17 +64,26 @@ const List<TestGuideItem> testGuideItems = [
     feature: 'Daily draw',
     how: 'Reach the goal on any day.',
     check:
-        'One surprise appears under “Today’s rewards”: XP, a streak freeze or '
-        'a toy. It is the same when you reopen. At least every fifth goal day '
+        'One surprise appears under “Today’s rewards”: 1 to 3 candy, a streak '
+        'freeze or a toy. It is the same when you reopen. At least every fifth goal day '
         'gives a toy or freeze.',
   ),
   TestGuideItem(
     feature: 'Streak prizes',
     how: 'Reach the goal 3 days in a row, then 7.',
     check:
-        '3 days: 20 XP. 7 days: a toy. Also 14 (50 XP), 30 (toy and 100 XP) '
-        'and 100 (250 XP). The “Next” line on Home names the next one. Goal '
-        'milestones at 10, 25, 50, 100 and 250 goals pay XP.',
+        '3 days: 5 candy. 7 days: 15 candy and a toy. 14: 30 candy. 30: 60 '
+        'candy and a toy. 100: 200 candy. The “Next” line on Home names the '
+        'next one. Total steps of 10,000, 100,000, 500,000 and 1,000,000 pay '
+        'candy too.',
+  ),
+  TestGuideItem(
+    feature: 'Candy and the shop',
+    how: 'Tap the candy chip on Home.',
+    check:
+        'The shop lists the toys you do not own, 8 candy each. Buying one '
+        'takes the candy and puts the toy in the room. The button is grey '
+        'when you cannot pay.',
   ),
   TestGuideItem(
     feature: 'Weekly freeze',
@@ -106,7 +111,7 @@ const List<TestGuideItem> testGuideItems = [
     how: 'Go outside, allow location, open Map.',
     check:
         'Up to 5 pins appear 250 to 900 m away. Walk to within 30 m of one '
-        'to collect XP, a streak freeze or a toy. The map needs internet.',
+        'to collect candy (2 to 4), a streak freeze or a toy. The map needs internet.',
   ),
   TestGuideItem(
     feature: 'The room',
@@ -136,15 +141,15 @@ const List<TestGuideItem> testGuideItems = [
     feature: 'A lost cat',
     how: 'Let the 7 days run out without reaching the target.',
     check:
-        'The cat is gone, a stray kitten at level 1 arrives, and Home says so '
+        'The cat is gone, a stray kitten arrives, and Home says so '
         'once.',
   ),
   TestGuideItem(
     feature: 'Me tab',
     how: 'Open Me after a day or two.',
     check:
-        'Streak, best streak, days met, this week, totals and every saved '
-        'day. The numbers should match what you walked.',
+        'Total steps at the top, then streak, best streak, days met, this week '
+        'and every saved day. The total should match the sum of your days.',
   ),
 ];
 
@@ -154,7 +159,7 @@ const List<String> testGuideNotBuilt = [
   'More than one cat, street cats and photos',
   'Reminders and the weekly recap',
   'Friends, leaderboard and visiting rooms',
-  'Daily side quests (built, but switched off)',
+  'Cat beds: buying a bed to get another cat',
 ];
 
 /// The “How to test” section at the bottom of Me.

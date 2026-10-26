@@ -5,9 +5,8 @@ import '../../cat/domain/cat_care.dart';
 import '../../map/domain/recovery.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
-import '../../cat/domain/xp_curve.dart';
 import 'daily_progress.dart';
-import 'xp_for_goal.dart';
+import 'goal_candy.dart';
 
 /// The result of evaluating one app open: the updated cat, today's record and
 /// anything the caller must act on (freezes used, cat walked home, window closed).
@@ -15,23 +14,22 @@ class DaySnapshot {
   const DaySnapshot({
     required this.cat,
     required this.today,
-    required this.xpGainedToday,
+    required this.candyGainedToday,
     this.frozenDays = const [],
     this.walkedHome = false,
-    this.snackXp = 0,
     this.recovery,
     this.windowClosed = false,
   });
 
-  /// The cat after this evaluation (XP, level, mood, status, missed days).
+  /// The cat after this evaluation (mood, status, missed days).
   final Cat cat;
 
   /// Today's record after this evaluation.
   final DailyProgress today;
 
-  /// XP the full-goal reward paid in this evaluation. Zero on repeat opens, so the
-  /// reward is paid once a day.
-  final int xpGainedToday;
+  /// The candy the goal paid on this open (0 when it was paid earlier today
+  /// or the goal is not reached yet).
+  final int candyGainedToday;
 
   /// Past days a streak freeze covered during this evaluation. The caller saves
   /// them as frozen days and takes one freeze from the inventory for each.
@@ -50,18 +48,6 @@ class DaySnapshot {
   /// 30 days later (the return on the map is not built yet). [cat] is still the
   /// cat that ran away.
   final bool windowClosed;
-
-  /// XP paid out for getting halfway today, if this open crossed that line. Zero
-  /// otherwise.
-  final int snackXp;
-}
-
-/// XP for the halfway snack on a day with [goal] steps. A tenth of the day's
-/// reward, at least 2. Example: a 6,000 goal pays 50 XP, so the snack is 5.
-int snackForGoal(int goal) {
-  final reward = xpForGoal(goal);
-  final snack = (reward / 10).round();
-  return snack < 2 ? 2 : snack;
 }
 
 /// Applies one app open to the cat and today's progress.
@@ -73,7 +59,7 @@ int snackForGoal(int goal) {
 /// the cat straight home.
 ///
 /// A day counts only when the whole goal is reached. Half a goal is a missed
-/// day (the 50% mark only pays a small XP snack, see [snackForGoal]).
+/// day (the halfway mark pays nothing).
 ///
 /// [cat] is the cat before this open, [dailyStepGoal] the current goal, and
 /// [stepsToday] the steps so far today. [history] holds the saved past days and
@@ -82,7 +68,7 @@ int snackForGoal(int goal) {
 /// 7-day recovery window with a target of the goal x 10 steps; when it closes
 /// unmet, [DaySnapshot.windowClosed] is true.
 ///
-/// Calling this again on the same day cannot award the completion XP twice.
+/// Calling this again on the same day cannot pay the goal's candy twice.
 /// Days before [today] that have no completed record count as misses. Today
 /// itself is still in progress.
 DaySnapshot evaluateDay({
@@ -98,7 +84,7 @@ DaySnapshot evaluateDay({
 }) {
   final byDate = {for (final day in history) day.date: day};
   final previous = byDate[today];
-  final alreadyAwarded = previous?.xpAwarded ?? false;
+  final alreadyAwarded = previous?.goalPaid ?? false;
   final goal = previous?.stepGoal ?? dailyStepGoal;
   final completed = stepsToday >= goal;
   final awardNow = completed && !alreadyAwarded;
@@ -152,21 +138,9 @@ DaySnapshot evaluateDay({
     missedDays = care.consecutiveMissedDays;
   }
 
-  final reward = xpForGoal(goal);
+  final reward = candyForGoal(goal);
 
-  // Getting halfway pays a little, so a walk has a moment in it before the end.
-  // Only while the goal is still ahead: completing the day pays the full
-  // reward, not the full reward plus the bonus.
-  final snackNow =
-      !completed &&
-      !(previous?.snackAwarded ?? false) &&
-      reachedHalfway(stepsToday: stepsToday, goal: goal);
-  final snackXp = snackNow ? snackForGoal(goal) : 0;
-
-  final xp = cat.xp + (awardNow ? reward : 0) + snackXp;
   final updatedCat = cat.copyWith(
-    xp: xp,
-    level: levelForXp(xp),
     mood: mood,
     status: status,
     consecutiveMissedDays: missedDays,
@@ -178,18 +152,16 @@ DaySnapshot evaluateDay({
     stepGoal: goal,
     steps: stepsToday,
     goalCompleted: completed,
-    xpAwarded: alreadyAwarded || awardNow,
-    xpEarned: previous?.xpEarned ?? (awardNow ? reward : 0),
-    snackAwarded: (previous?.snackAwarded ?? false) || snackNow,
+    goalPaid: alreadyAwarded || awardNow,
+    candyEarned: (previous?.candyEarned ?? 0) + (awardNow ? reward : 0),
   );
 
   return DaySnapshot(
     cat: updatedCat,
     today: progress,
-    xpGainedToday: awardNow ? reward : 0,
+    candyGainedToday: awardNow ? reward : 0,
     frozenDays: gap.frozen,
     walkedHome: walkedHome,
-    snackXp: snackXp,
     recovery: walkedHome ? null : window,
     windowClosed: windowClosed,
   );

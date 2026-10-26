@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:catwalk/core/constants/app_constants.dart';
 import 'package:catwalk/core/utils/calendar_date.dart';
 import 'package:catwalk/features/map/domain/geo.dart';
 import 'package:catwalk/features/map/domain/map_pin.dart';
@@ -51,10 +52,9 @@ void main() {
   group('rewards', () {
     test('every reward survives JSON', () {
       for (final reward in const <Reward>[
-        XpReward(25),
+        CandyReward(3),
         FreezeReward(),
         ToyReward('ball'),
-        CatProgressReward(2),
       ]) {
         expect(Reward.fromJson(reward.toJson()), reward);
       }
@@ -67,11 +67,15 @@ void main() {
       );
     });
 
-    test('cat progress is never drawn until it has weight', () {
-      final random = math.Random(1);
-      for (var i = 0; i < 2000; i++) {
-        expect(pickReward(random), isNot(isA<CatProgressReward>()));
-      }
+    test('old saved XP and cat progress turn into candy', () {
+      expect(
+        Reward.fromJson({'type': 'xp', 'amount': 25}),
+        const CandyReward(3),
+      );
+      expect(
+        Reward.fromJson({'type': 'catProgress', 'amount': 1}),
+        const CandyReward(2),
+      );
     });
 
     test('every kind with weight shows up, with known contents', () {
@@ -80,10 +84,12 @@ void main() {
       for (var i = 0; i < 2000; i++) {
         final reward = pickReward(random);
         seen.add(reward.toJson()['type']! as String);
-        if (reward is XpReward) expect(xpAmounts, contains(reward.amount));
+        if (reward is CandyReward) {
+          expect(AppConstants.pickupCandyAmounts, contains(reward.amount));
+        }
         if (reward is ToyReward) expect(toyIds, contains(reward.toyId));
       }
-      expect(seen, {'xp', 'freeze', 'toy'});
+      expect(seen, {'candy', 'freeze', 'toy'});
     });
   });
 

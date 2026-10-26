@@ -27,13 +27,10 @@ Cat catOf({
   CatStatus status = CatStatus.active,
   CatMood mood = CatMood.neutral,
   int missed = 0,
-  int xp = 0,
 }) => Cat(
   id: '1',
   name: 'Jip',
   appearance: CatAppearance.ginger,
-  level: 1,
-  xp: xp,
   mood: mood,
   status: status,
   consecutiveMissedDays: missed,
@@ -46,7 +43,7 @@ DailyProgress day(CalendarDate date, int steps, {int? forGoal}) =>
       stepGoal: forGoal ?? goal,
       steps: steps,
       goalCompleted: steps >= (forGoal ?? goal),
-      xpAwarded: steps >= (forGoal ?? goal),
+      goalPaid: steps >= (forGoal ?? goal),
     );
 
 void main() {
@@ -368,7 +365,7 @@ void main() {
     );
     await store.write(
       OnboardingRepository.catKey,
-      '{"id":"1","name":"Jip","appearance":"ginger","level":1,"xp":0,'
+      '{"id":"1","name":"Jip","appearance":"ginger",'
       '"mood":"sad","status":"runaway","consecutiveMissedDays":3,'
       '"createdAt":"2026-10-01T08:00:00.000",'
       '"ranAwayOn":"${today.addDays(-2).toIsoDate()}"}',
@@ -417,7 +414,7 @@ void main() {
     );
     await store.write(
       OnboardingRepository.catKey,
-      '{"id":"1","name":"Jip","appearance":"ginger","level":3,"xp":40,'
+      '{"id":"1","name":"Jip","appearance":"ginger",'
       '"mood":"sad","status":"runaway","consecutiveMissedDays":10,'
       '"createdAt":"2026-10-01T08:00:00.000",'
       '"ranAwayOn":"${today.addDays(-8).toIsoDate()}"}',
@@ -446,7 +443,8 @@ void main() {
     );
     final saved = store.values[OnboardingRepository.catKey]!;
     expect(saved, isNot(contains('"name":"Jip"')));
-    expect(saved, contains('"level":1'));
+    expect(saved, contains('"consecutiveMissedDays":0'));
+    expect(saved, contains('"mood":"neutral"'));
     expect(saved, contains('"status":"active"'));
     // The lost cat is remembered, with the day it may be seen again.
     final lost = store.values['lost_cats']!;

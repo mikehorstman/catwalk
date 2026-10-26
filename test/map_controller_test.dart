@@ -28,7 +28,7 @@ String catJson({bool runaway = false}) {
   final created = runaway
       ? DateTime.now().subtract(const Duration(days: 10))
       : DateTime.now();
-  return '{"id":"1","name":"Jip","appearance":"ginger","level":1,"xp":0,'
+  return '{"id":"1","name":"Jip","appearance":"ginger",'
       '"mood":"${runaway ? 'sad' : 'neutral'}",'
       '"status":"${runaway ? 'runaway' : 'active'}",'
       '"consecutiveMissedDays":${runaway ? 3 : 0},'
@@ -170,37 +170,30 @@ void main() {
     expect(reopened.pins.map((p) => p.id), isNot(contains(pin.id)));
   });
 
-  test(
-    'the reward really lands: XP on the cat, freezes in the inventory',
-    () async {
-      final store = await seededStore();
-      final location = FakeLocationService(start: fixAt(amsterdam));
-      final container = containerOf(store, location);
-      final view = await container.read(mapControllerProvider.future);
-      final notifier = container.read(mapControllerProvider.notifier);
+  test('the reward really lands: candy and freezes in the inventory', () async {
+    final store = await seededStore();
+    final location = FakeLocationService(start: fixAt(amsterdam));
+    final container = containerOf(store, location);
+    final view = await container.read(mapControllerProvider.future);
+    final notifier = container.read(mapControllerProvider.notifier);
 
-      for (final pin in List.of(view.pins)) {
-        await notifier.onFix(fixAt(pin.point));
-        notifier.dismissEvent();
-      }
+    for (final pin in List.of(view.pins)) {
+      await notifier.onFix(fixAt(pin.point));
+      notifier.dismissEvent();
+    }
 
-      final inventory = await InventoryRepository(store).read();
-      final expectedXp = [
-        for (final pin in view.pins)
-          if (pin.reward is XpReward) (pin.reward as XpReward).amount,
-      ].fold<int>(0, (a, b) => a + b);
-      expect(inventory.freezes, lessThanOrEqualTo(2));
-      expect(store.values[OnboardingRepository.catKey], contains('"xp":'));
-      expect(container.read(mapControllerProvider).requireValue.pins, isEmpty);
-      // XP pins add up, whatever else the pins held.
-      final xpInStore = int.parse(
-        RegExp(r'"xp":(\d+)')
-            .firstMatch(store.values[OnboardingRepository.catKey]!)!
-            .group(1)!,
-      );
-      expect(xpInStore, greaterThanOrEqualTo(expectedXp));
-    },
-  );
+    final inventory = await InventoryRepository(store).read();
+    final expectedCandy = [
+      for (final pin in view.pins)
+        if (pin.reward is CandyReward) (pin.reward as CandyReward).amount,
+    ].fold<int>(0, (a, b) => a + b);
+    expect(inventory.freezes, lessThanOrEqualTo(2));
+    expect(container.read(mapControllerProvider).requireValue.pins, isEmpty);
+    // Candy pins add up (converted freezes and toys only add more).
+    expect(inventory.candy, greaterThanOrEqualTo(expectedCandy));
+    // The cat carries no XP any more.
+    expect(store.values[OnboardingRepository.catKey], isNot(contains('xp')));
+  });
 
   test('a vague position collects nothing', () async {
     final store = await seededStore();

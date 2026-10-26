@@ -18,8 +18,6 @@ RoomCat catOf(
       id: id,
       name: 'Cat $id',
       appearance: CatAppearance.ginger,
-      level: 1,
-      xp: 0,
       mood: mood,
       status: status,
       consecutiveMissedDays: 0,

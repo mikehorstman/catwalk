@@ -1,54 +1,49 @@
 import '../domain/reward.dart';
 
-/// Most streak freezes you can hold at once.
+/// The most streak freezes a player can hold at once.
 const int maxFreezes = 2;
 
-/// What you have found on the map.
+/// What the player owns: candy, streak freezes and toys.
 class Inventory {
-  /// A fresh inventory is empty.
-  const Inventory({
-    this.freezes = 0,
-    this.toys = const [],
-    this.catProgress = 0,
-  });
+  const Inventory({this.candy = 0, this.freezes = 0, this.toys = const []});
 
-  /// Reads a saved inventory. Freezes are capped at [maxFreezes] and unknown
-  /// toys are dropped, so an old or edited save cannot break the rules.
+  /// Rebuilds an inventory from its JSON. Missing or odd values fall back to
+  /// zero or empty, so a save from an older version still loads. The old
+  /// `catProgress` key is ignored.
   factory Inventory.fromJson(Map<String, dynamic> json) {
     final toys = json['toys'];
     return Inventory(
+      candy: ((json['candy'] as num?)?.toInt() ?? 0).clamp(0, 1 << 30),
       freezes: ((json['freezes'] as num?)?.toInt() ?? 0).clamp(0, maxFreezes),
       toys: [
         if (toys is List)
           for (final id in toys)
             if (id is String && toyIds.contains(id)) id,
       ],
-      catProgress: (json['catProgress'] as num?)?.toInt() ?? 0,
     );
   }
 
-  /// Streak freezes held (0 to [maxFreezes]). One covers a missed day.
+  /// The candy you can spend. It is earned by walking and spent in the shop.
+  final int candy;
+
+  /// Streak freezes held, at most [maxFreezes].
   final int freezes;
 
-  /// Toy ids, each at most once, in the order they were found.
+  /// The ids of the toys owned, each at most once.
   final List<String> toys;
 
-  /// Points towards a new cat. Saved for a later slice (5); nothing spends
-  /// them yet, and no pin holds them for now (their weight is 0).
-  final int catProgress;
-
-  /// A copy with the given fields replaced.
-  Inventory copyWith({int? freezes, List<String>? toys, int? catProgress}) =>
+  /// A copy with the given fields changed.
+  Inventory copyWith({int? candy, int? freezes, List<String>? toys}) =>
       Inventory(
+        candy: candy ?? this.candy,
         freezes: freezes ?? this.freezes,
         toys: toys ?? this.toys,
-        catProgress: catProgress ?? this.catProgress,
       );
 
-  /// The JSON saved to the local store.
+  /// Plain-JSON form for saving.
   Map<String, Object> toJson() => {
+    'candy': candy,
     'freezes': freezes,
     'toys': toys,
-    'catProgress': catProgress,
   };
 }

@@ -9,8 +9,6 @@ class Cat {
     required this.id,
     required this.name,
     required this.appearance,
-    required this.level,
-    required this.xp,
     required this.mood,
     required this.status,
     required this.consecutiveMissedDays,
@@ -26,12 +24,6 @@ class Cat {
 
   /// Coat look. Fixed once the cat is created.
   final CatAppearance appearance;
-
-  /// Level, from 1. Derived from [xp] (see `xp_curve.dart`).
-  final int level;
-
-  /// Total XP earned, in points.
-  final int xp;
 
   /// Current feeling: how recent walking has gone.
   final CatMood mood;
@@ -54,8 +46,6 @@ class Cat {
   /// means "keep the old value". Id, appearance and createdAt never change.
   Cat copyWith({
     String? name,
-    int? level,
-    int? xp,
     CatMood? mood,
     CatStatus? status,
     int? consecutiveMissedDays,
@@ -66,8 +56,6 @@ class Cat {
       id: id,
       name: name ?? this.name,
       appearance: appearance,
-      level: level ?? this.level,
-      xp: xp ?? this.xp,
       mood: mood ?? this.mood,
       status: status ?? this.status,
       consecutiveMissedDays:

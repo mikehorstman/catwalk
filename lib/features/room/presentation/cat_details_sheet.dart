@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
-import '../../../core/utils/format.dart';
-import '../../cat/domain/cat.dart';
-import '../../cat/domain/xp_curve.dart';
 import '../../cat/presentation/cat_voice.dart';
 import '../domain/room_cat.dart';
 
@@ -70,43 +67,9 @@ class CatDetailsSheet extends StatelessWidget {
                 label: 'Missed days',
                 value: '${cat.cat.consecutiveMissedDays}',
               ),
-            const SizedBox(height: 14),
-            Text('Level ${cat.cat.level}', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _LevelBar(cat: cat.cat),
-            const SizedBox(height: 6),
-            Text(
-              '${formatNumber(cat.cat.xp)} / '
-              '${formatNumber(xpToReachLevel(cat.cat.level + 1))} XP · '
-              '${formatNumber(xpUntilNextLevel(cat.cat.xp))} to level '
-              '${cat.cat.level + 1}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
           ],
         ),
       ),
-    );
-  }
-}
-
-/// A thin progress bar from the XP needed for the current level to the XP for
-/// the next one.
-class _LevelBar extends StatelessWidget {
-  const _LevelBar({required this.cat});
-
-  final Cat cat;
-
-  @override
-  Widget build(BuildContext context) {
-    final start = xpToReachLevel(cat.level);
-    final end = xpToReachLevel(cat.level + 1);
-    final span = end - start;
-    final value = span == 0 ? 0.0 : ((cat.xp - start) / span).clamp(0.0, 1.0);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(99),
-      child: LinearProgressIndicator(value: value, minHeight: 8),
     );
   }
 }

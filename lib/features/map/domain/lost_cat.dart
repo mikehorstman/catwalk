@@ -85,8 +85,6 @@ Cat strayKitten({required Cat lost, required CalendarDate on}) {
     id: 'kitten-${on.toIsoDate()}-${stableSeed('kitten:${lost.id}')}',
     name: name == lost.name ? 'Kit' : name,
     appearance: coats[random.nextInt(coats.length)],
-    level: 1,
-    xp: 0,
     mood: CatMood.neutral,
     status: CatStatus.active,
     consecutiveMissedDays: 0,

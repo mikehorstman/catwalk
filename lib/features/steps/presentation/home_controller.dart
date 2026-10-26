@@ -11,23 +11,21 @@ import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_status.dart';
-import '../../cat/domain/xp_curve.dart';
 import '../../daily_goal/data/history_repository.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/day_evaluation.dart';
 import '../../daily_goal/domain/goal_suggestion.dart';
 import '../../daily_goal/data/reward_ledger_repository.dart';
 import '../../daily_goal/domain/gentle_start.dart';
-import '../../daily_goal/domain/goal_tiers.dart';
 import '../../daily_goal/domain/reward_settlement.dart';
-import '../../daily_goal/domain/side_quest.dart';
-import '../../daily_goal/domain/xp_budget.dart';
-import '../../daily_goal/domain/xp_for_goal.dart';
 import '../../daily_goal/domain/streak.dart';
 import '../../map/data/inventory_repository.dart';
 import '../../map/data/location_service.dart';
 import '../../map/data/lost_cat_repository.dart';
+import '../../map/domain/inventory.dart';
 import '../../map/domain/lost_cat.dart';
+import '../../daily_goal/domain/goal_range.dart';
+import '../../daily_goal/domain/shop.dart' as shop;
 import '../../map/domain/recovery.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../onboarding/data/onboarding_repository.dart';
@@ -43,7 +41,9 @@ class HomeState {
   const HomeState({
     required this.cat,
     required this.today,
-    required this.xpGainedToday,
+    required this.candyGainedToday,
+    required this.inventory,
+    required this.totalSteps,
     required this.stepsAvailable,
     required this.stepsPermissionGranted,
     required this.currentStreak,
@@ -56,10 +56,6 @@ class HomeState {
     this.lostCatName,
     this.kittenName,
     this.goalsMet = 0,
-    this.snackXpToday = 0,
-    this.quest,
-    this.questDoneToday = false,
-    this.questXpToday = 0,
     this.suggestedGoal,
     this.showGoalTune = false,
     this.goalRaise,
@@ -74,8 +70,15 @@ class HomeState {
   /// Today's steps, goal and what was earned. Saved to history on each load.
   final DailyProgress today;
 
-  /// XP the cat earned on this open, from goals, snacks and quests, in XP.
-  final int xpGainedToday;
+  /// Candy the goal paid on this open, or 0. It was paid once already when
+  /// this is 0 on a later open the same day.
+  final int candyGainedToday;
+
+  /// What the player owns: candy, freezes and toys.
+  final Inventory inventory;
+
+  /// Every step walked since the first day, today included.
+  final int totalSteps;
 
   /// The cat came home because the recovery step target was met and the map
   /// was not needed to find it.
@@ -107,20 +110,6 @@ class HomeState {
 
   /// Days the goal was completed, ever. Never goes down.
   final int goalsMet;
-
-  /// The small XP snack paid on this open for passing 50% of the goal, or 0.
-  /// Half a goal is still a missed day; the snack is only a nudge.
-  final int snackXpToday;
-
-  /// Today's optional side quest, or null when none is offered. Always null
-  /// while [AppConstants.sideQuestsEnabled] is false.
-  final SideQuest? quest;
-
-  /// The quest was already met by the steps the phone counts.
-  final bool questDoneToday;
-
-  /// XP paid on this open for finishing the quest, or 0.
-  final int questXpToday;
 
   /// A goal picked from the last week, when there is enough history.
   final int? suggestedGoal;
@@ -202,7 +191,7 @@ class HomeController extends AsyncNotifier<HomeState> {
   /// (goal met or missed, streak, freezes, runaway); for a runaway cat, count
   /// steps since it left; if its 7-day window closed, store it as a lost cat
   /// (it may return 7 to 30 days later) and bring a stray kitten; save
-  /// everything; then work out the optional quest and goal suggestions.
+  /// everything; then work out the goal suggestions.
   Future<HomeState> _load() async {
     final store = ref.read(localStoreProvider);
     final history = ref.read(historyRepositoryProvider);
@@ -266,9 +255,8 @@ class HomeController extends AsyncNotifier<HomeState> {
       snapshot = DaySnapshot(
         cat: kitten,
         today: snapshot.today,
-        xpGainedToday: snapshot.xpGainedToday,
+        candyGainedToday: snapshot.candyGainedToday,
         frozenDays: snapshot.frozenDays,
-        snackXp: snapshot.snackXp,
       );
     }
     final frozen = [
@@ -278,7 +266,7 @@ class HomeController extends AsyncNotifier<HomeState> {
           stepGoal: profile.dailyStepGoal,
           steps: 0,
           goalCompleted: false,
-          xpAwarded: false,
+          goalPaid: false,
           frozen: true,
         ),
     ];
@@ -301,84 +289,33 @@ class HomeController extends AsyncNotifier<HomeState> {
     final goalsMet = allDays.where((day) => day.goalCompleted).length;
     final todayDate = CalendarDate.today();
 
-    // What today earned beyond the goal XP: gifts, prizes and the daily draw.
-    // Paid once a day and remembered, so reopening the app pays nothing more.
+    // The goal's candy, then what today earned beyond it: gifts, prizes and the
+    // daily draw. Paid once a day and remembered, so reopening the app pays
+    // nothing more.
     final ledgers = ref.read(rewardLedgerRepositoryProvider);
+    final afterFreezes = frozen.isEmpty
+        ? inventory
+        : inventory.copyWith(freezes: inventory.freezes - frozen.length);
+    final totalSteps = allDays.fold<int>(0, (sum, day) => sum + day.steps);
     final settled = settleRewards(
       today: todayDate,
       startedOn: profile.startedOn,
       goalCompleted: snapshot.today.goalCompleted,
       streak: streak,
       goalsMet: goalsMet,
-      cat: snapshot.cat,
-      inventory: frozen.isEmpty
-          ? inventory
-          : inventory.copyWith(freezes: inventory.freezes - frozen.length),
+      totalSteps: totalSteps,
+      inventory: afterFreezes.copyWith(
+        candy: afterFreezes.candy + snapshot.candyGainedToday,
+      ),
       ledger: await ledgers.read(),
     );
     await ledgers.write(settled.ledger);
     await inventories.write(settled.inventory);
     await store.write(
       OnboardingRepository.catKey,
-      jsonEncode(catToJson(settled.cat)),
+      jsonEncode(catToJson(snapshot.cat)),
     );
-
-    // A quest changes how you walk, not how much. It is judged from what the
-    // phone can see, pays once, and costs nothing when missed.
-    final questsOn = AppConstants.sideQuestsEnabled;
-    final hours = granted && questsOn ? await _hoursOrNull(repository) : null;
-    final yesterdaySteps = granted && questsOn
-        ? await _stepsOrNull(repository, todayDate.addDays(-1))
-        : null;
-    final daysWalking = allDays.where((day) => day.steps > 0).length;
-    final trace = DayTrace(
-      date: todayDate,
-      steps: steps,
-      goal: snapshot.today.stepGoal,
-      hourly: hours,
-      yesterdaySteps: yesterdaySteps,
-    );
-    final yesterdayPick = pickQuest(
-      trace: DayTrace(
-        date: todayDate.addDays(-1),
-        steps: yesterdaySteps ?? 0,
-        goal: trace.goal,
-        hourly: hours,
-      ),
-      daysWalking: daysWalking,
-    );
-    final quest = questsOn
-        ? pickQuest(
-            trace: trace,
-            daysWalking: daysWalking,
-            previous: yesterdayPick,
-          )
-        : null;
-    final questMet = quest != null && questDone(quest, trace);
-    var grownCat = settled.cat;
-    var todayProgress = snapshot.today;
-    var questXpToday = 0;
-    if (questMet && !todayProgress.questAwarded) {
-      final goalXp = xpForGoal(todayProgress.stepGoal);
-      final paid = questXpFor(goalXp);
-      final already =
-          (todayProgress.goalCompleted ? goalXp : 0) +
-          (todayProgress.snackAwarded
-              ? snackForGoal(todayProgress.stepGoal)
-              : 0);
-      if (withinDailyCeiling(goalXp: goalXp, paid: already + paid)) {
-        questXpToday = paid;
-        grownCat = grownCat.copyWith(
-          xp: grownCat.xp + paid,
-          level: levelForXp(grownCat.xp + paid),
-        );
-        todayProgress = todayProgress.copyWith(
-          questAwarded: true,
-          questXp: paid,
-        );
-        await history.saveDay(todayProgress);
-      }
-    }
+    final todayProgress = snapshot.today;
 
     // A goal that suits the person. The card shows once, and never in the same
     // open as a raise: one hint at a time.
@@ -401,9 +338,11 @@ class HomeController extends AsyncNotifier<HomeState> {
 
     return HomeState(
       currentStreak: streak,
-      cat: grownCat,
+      cat: snapshot.cat,
       today: todayProgress,
-      xpGainedToday: snapshot.xpGainedToday + questXpToday,
+      candyGainedToday: snapshot.candyGainedToday,
+      inventory: settled.inventory,
+      totalSteps: totalSteps,
       stepsAvailable: available,
       stepsPermissionGranted: granted,
       stepSource: reading.source,
@@ -419,14 +358,22 @@ class HomeController extends AsyncNotifier<HomeState> {
       lostCatName: lostCatName,
       kittenName: kittenName,
       goalsMet: goalsMet,
-      snackXpToday: snapshot.snackXp,
-      quest: quest,
-      questDoneToday: questMet,
-      questXpToday: questXpToday,
       suggestedGoal: suggestion?.goal,
       showGoalTune: tuneOk,
       goalRaise: raiseOk ? raise : null,
     );
+  }
+
+  /// Buys the toy [toyId] with candy and reloads. Returns why it was refused,
+  /// or null when it was bought.
+  Future<shop.ShopRefusal?> buyToy(String toyId) async {
+    final inventories = ref.read(inventoryRepositoryProvider);
+    final result = shop.buyToy(await inventories.read(), toyId);
+    final bought = result.inventory;
+    if (bought == null) return result.refusal;
+    await inventories.write(bought);
+    await refreshSilently();
+    return null;
   }
 
   /// Sets the goal from a suggestion or a raise, and answers the card.
@@ -458,28 +405,6 @@ class HomeController extends AsyncNotifier<HomeState> {
   Future<void> declineGoalRaise() async {
     await ref.read(goalNudgesProvider).markRaiseOffered(CalendarDate.today());
     await refresh();
-  }
-
-  /// Today's steps per hour, or null when the phone cannot say.
-  Future<List<int>?> _hoursOrNull(StepRepository repository) async {
-    try {
-      return await repository.hourlySteps(CalendarDate.today());
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Steps for [date], or null when the phone cannot say.
-  Future<int?> _stepsOrNull(
-    StepRepository repository,
-    CalendarDate date,
-  ) async {
-    try {
-      final reading = await repository.getStepsForDate(date);
-      return reading.steps;
-    } catch (_) {
-      return null;
-    }
   }
 
   /// The steps of every day from [ranAwayOn] up to yesterday, for the recovery

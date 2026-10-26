@@ -1,7 +1,5 @@
 import 'package:catwalk/app/app.dart';
 import 'package:catwalk/core/utils/calendar_date.dart';
-import 'package:catwalk/core/constants/app_constants.dart';
-import 'package:catwalk/features/daily_goal/domain/side_quest.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
 import 'package:catwalk/features/onboarding/data/onboarding_repository.dart';
 import 'package:catwalk/features/steps/domain/step_reading.dart';
@@ -74,7 +72,7 @@ class _MemoryStore implements LocalStore {
 
 void main() {
   testWidgets(
-    'Home shows the goal as minutes, and no side quest while they are off',
+    'Home keeps the minutes behind the details row and shows candy, not XP',
     (tester) async {
       final store = _MemoryStore();
       await store.write(
@@ -84,7 +82,7 @@ void main() {
       final created = DateTime.now();
       await store.write(
         OnboardingRepository.catKey,
-        '{"id":"1","name":"Jip","appearance":"ginger","level":1,"xp":0,'
+        '{"id":"1","name":"Jip","appearance":"ginger",'
         '"mood":"neutral","status":"active","consecutiveMissedDays":0,'
         '"createdAt":"${created.toIso8601String()}"}',
       );
@@ -108,16 +106,17 @@ void main() {
       // The minutes line is behind the details row, not on Home itself.
       expect(find.text('about 60 min of walking'), findsNothing);
 
-      // Side quests are switched off for now: no card, and no quest XP.
-      expect(AppConstants.sideQuestsEnabled, isFalse);
-      await tester.drag(find.byType(ListView).first, const Offset(0, -560));
-      for (var i = 0; i < 6; i++) {
-        await tester.pump(const Duration(milliseconds: 20));
-      }
-      for (final info in sideQuestInfo.values) {
-        expect(find.text(info.title), findsNothing);
-      }
-      expect(find.textContaining('+3 XP'), findsNothing);
+      // No XP or level any more: 6000 steps today paid the goal's 6 candy.
+      expect(find.textContaining('XP'), findsNothing);
+      expect(find.textContaining('Level'), findsNothing);
+      expect(find.text('+6 candy'), findsOneWidget);
+      // The chip counts the goal's candy plus whatever the day's draw added.
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Text && RegExp(r'^\d+ candy$').hasMatch(w.data ?? ''),
+        ),
+        findsOneWidget,
+      );
     },
   );
 }
