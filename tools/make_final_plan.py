@@ -340,7 +340,7 @@ SLICES = [
     ("Rules change", "built", "Half a goal is a miss. Side quest off. 7-day recovery window, lost cat leaves, stray kitten arrives. The lost cat is remembered with its random return day; the return on the map needs beds (not built)."),
     ("First week and rewards", "built", "Gentle goal ramp, free first toy and freeze, streak prizes, a freeze every 7 days and the daily draw."),
     ("Candy replaces XP and level", "built", "XP and level are gone. Candy comes from the goal, pickups, the draw, streak prizes and step milestones. Total steps lead the Me tab. Side quests deleted. The daily draw and prizes come in a gift you open with a button on Home, grey until the goal is reached."),
-    ("5. Beds and more cats", "built", "Cat beds in the shop with a rising price, a new cat on the map the next morning, (street cat photos are still to do) a lost cat returning to an empty bed."),
+    ("5. Beds and more cats", "built", "Cat beds in the shop with a rising price, a new cat on the map the next morning, street cat photos (three photos, then an invite), a lost cat returning to an empty bed."),
     ("Toy perks", "built", "Each toy gets a small, visible perk: the ball pays +1 candy on goal days, the mouse adds a map pickup, the feather sweetens the daily gift."),
     ("A Shop screen", "built", "The shop becomes a whole screen of its own, not the small sheet on Home: toys and cat beds with their prices, what you own, and your candy. The sheet is a stopgap."),
     ("Reminders and recap", "built", "Reminders in the cat's voice, the weekly recap, the lower-goal offer, and analytics opt-out. Before outside testers."),

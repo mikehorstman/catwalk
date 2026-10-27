@@ -13,6 +13,7 @@ import '../data/route_service.dart';
 import '../domain/collect.dart';
 import '../domain/geo.dart';
 import '../domain/reach_rule.dart';
+import '../domain/street_cat.dart';
 import '../domain/walking_route.dart';
 import '../domain/reward.dart';
 import 'map_controller.dart';
@@ -239,10 +240,86 @@ class _MapScreenState extends ConsumerState<MapScreen>
     if (id == 'lost-cat' && view.recovery.isLocated) {
       return _Target('${view.catName} is hiding here', view.recovery.catPoint!);
     }
+    if (id == 'street-cat' && view.streetCat != null) {
+      final spot = view.streetCat!;
+      return _Target(
+        'Street cat: ${spot.cat.name}',
+        spot.point,
+        detail: spot.cat.ready
+            ? '${spot.cat.name} is ready to join you'
+            : 'Photos so far: ${spot.cat.sightings} of $sightingsToJoin',
+      );
+    }
     for (final pin in view.pins) {
       if (id == 'pin-${pin.id}') return _Target('Pickup', pin.point);
     }
     return null;
+  }
+
+  /// What you can do with the street cat: say hi from afar, or photograph it,
+  /// or invite it once you are close.
+  Widget? _streetAction(MapViewState view) {
+    final spot = view.streetCat;
+    final fix = view.fix;
+    if (spot == null || fix == null) return null;
+    final near = reached(
+      fix: fix,
+      target: spot.point,
+      allowMocked: CatMapController.allowMocked,
+    );
+    if (!near) {
+      return Text(
+        'Walk within ${reachRadiusMeters.round()} m to meet ${spot.cat.name}.',
+        key: const Key('street-far'),
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
+    if (spot.cat.ready) {
+      return view.freeBeds > 0
+          ? FilledButton.icon(
+              key: const Key('street-invite'),
+              onPressed: _invite,
+              icon: const Icon(Icons.home_outlined),
+              label: const Text('Invite to join'),
+            )
+          : Text(
+              'Every bed is taken. Buy one in the Shop, then invite '
+              '${spot.cat.name}.',
+              key: const Key('street-no-bed'),
+              style: Theme.of(context).textTheme.bodySmall,
+            );
+    }
+    return FilledButton.icon(
+      key: const Key('street-photo'),
+      onPressed: _photograph,
+      icon: const Icon(Icons.photo_camera),
+      label: const Text('Take a photo'),
+    );
+  }
+
+  Future<void> _photograph() => _streetOutcome(
+    ref.read(mapControllerProvider.notifier).photographStreetCat(),
+  );
+
+  Future<void> _invite() => _streetOutcome(
+    ref.read(mapControllerProvider.notifier).inviteStreetCat(),
+  );
+
+  Future<void> _streetOutcome(Future<StreetCatOutcome> pending) async {
+    final outcome = await pending;
+    if (!mounted) return;
+    final message = switch (outcome) {
+      StreetCatOutcome.done || StreetCatOutcome.cancelled => null,
+      StreetCatOutcome.notClose => 'Walk a little closer first.',
+      StreetCatOutcome.noCamera =>
+        'The camera is not available. Check that Catwalk may use it.',
+      StreetCatOutcome.noBed => 'Every bed is taken. Buy one in the Shop.',
+    };
+    if (message != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
+    if (outcome == StreetCatOutcome.done) _select(null);
   }
 
   /// Adds [point] to the trail and turns the avatar towards where you went.
@@ -453,6 +530,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       child: const _CatMarker(key: Key('waiting-cat')),
                     ),
                   ),
+                if (view.streetCat case final spot?)
+                  Marker(
+                    point: _ll(spot.point),
+                    width: 64,
+                    height: 64,
+                    rotate: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _select('street-cat'),
+                      child: _StreetCatMarker(
+                        key: const Key('street-cat'),
+                        coat: spot.cat.appearance.color,
+                      ),
+                    ),
+                  ),
                 if (view.recovery.isLocated)
                   Marker(
                     point: _ll(view.recovery.catPoint!),
@@ -503,6 +595,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   : _routeBusy
                   ? 'Finding the way…'
                   : 'Straight line, a rough guess',
+              detail: target.detail,
+              action: _selected == 'street-cat' ? _streetAction(view) : null,
               onClose: () => _select(null),
             ),
           ),
@@ -720,7 +814,10 @@ class _MapCredit extends StatelessWidget {
 
 /// Something on the map you tapped.
 class _Target {
-  const _Target(this.title, this.point);
+  const _Target(this.title, this.point, {this.detail});
+
+  /// A line under the title, for what the player may do here.
+  final String? detail;
 
   /// What it is.
   final String title;
@@ -739,7 +836,15 @@ class _TargetCard extends StatelessWidget {
     required this.timeText,
     required this.caption,
     required this.onClose,
+    this.detail,
+    this.action,
   });
+
+  /// A line about what you can do here.
+  final String? detail;
+
+  /// A button for it, when you are in reach.
+  final Widget? action;
 
   /// How long the walk takes, already worded.
   final String timeText;
@@ -798,6 +903,13 @@ class _TargetCard extends StatelessWidget {
                       color: CatwalkColors.inkMuted,
                     ),
                   ),
+                  if (detail != null)
+                    Text(
+                      detail!,
+                      key: const Key('target-detail'),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  if (action != null) ...[const SizedBox(height: 8), action!],
                 ],
               ),
             ),
@@ -1045,6 +1157,24 @@ class _EventSheet extends StatelessWidget {
             : '$catName is in your room now, in the empty bed.',
         Icons.pets,
       ),
+      StreetCatPhotographed(
+        :final catName,
+        :final sightings,
+        :final ready,
+        :final hasFreeBed,
+      ) =>
+        (
+          'Photo of $catName',
+          !ready
+              ? 'Photo $sightings of $sightingsToJoin. $catName may be '
+                    'back on another day.'
+              : hasFreeBed
+              ? '$catName trusts you now. Meet them again and invite them '
+                    'to join. There is an empty bed.'
+              : '$catName trusts you now, but every bed is taken. Buy a bed '
+                    'in the Shop, then invite them.',
+          Icons.photo_camera,
+        ),
       PinCollected(:final result) => _describe(result),
     };
     return SafeArea(
@@ -1112,4 +1242,47 @@ class _EventSheet extends StatelessWidget {
             : ('A $toyId', 'It is in the room now.', Icons.toys);
     }
   }
+}
+
+/// A street cat on the map: its coat colour in a ring, a cat head and a small
+/// camera badge to say it wants a photo.
+class _StreetCatMarker extends StatelessWidget {
+  const _StreetCatMarker({super.key, required this.coat});
+
+  /// The cat's coat.
+  final Color coat;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Street cat',
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: coat,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: const [
+              BoxShadow(color: Color(0x44000000), blurRadius: 6),
+            ],
+          ),
+          child: const Center(
+            child: CatHeadIcon(size: 26, color: Colors.white),
+          ),
+        ),
+        const Positioned(
+          right: 6,
+          bottom: 6,
+          child: CircleAvatar(
+            radius: 11,
+            backgroundColor: CatwalkColors.teal,
+            child: Icon(Icons.photo_camera, size: 13, color: Colors.white),
+          ),
+        ),
+      ],
+    ),
+  );
 }

@@ -16,13 +16,16 @@ import '../../room/data/room_layout_provider.dart';
 import '../../steps/presentation/home_controller.dart';
 import '../../analytics/analytics_service.dart';
 import '../data/arrival_repository.dart';
+import '../data/photo_service.dart';
 import '../data/route_service.dart';
+import '../data/street_cat_repository.dart';
 import '../data/inventory_repository.dart';
 import '../data/lost_cat_repository.dart';
 import '../data/location_service.dart';
 import '../data/map_state_repository.dart';
 import '../domain/arrival.dart';
 import '../domain/pin_snapping.dart';
+import '../domain/street_cat.dart';
 import '../domain/walking_route.dart';
 import '../domain/collect.dart';
 import '../domain/toy_perks.dart';
@@ -65,6 +68,46 @@ class CatJoined extends MapNotice {
   final bool returning;
 }
 
+/// A street cat was photographed.
+class StreetCatPhotographed extends MapNotice {
+  const StreetCatPhotographed({
+    required this.catName,
+    required this.sightings,
+    required this.ready,
+    required this.hasFreeBed,
+  });
+
+  /// Its name.
+  final String catName;
+
+  /// How many photos you have of it now.
+  final int sightings;
+
+  /// True when it has seen enough of you to join.
+  final bool ready;
+
+  /// True when there is an empty bed for it right now.
+  final bool hasFreeBed;
+}
+
+/// What happened when you tried to photograph or invite a street cat.
+enum StreetCatOutcome {
+  /// It worked.
+  done,
+
+  /// You are not within reach of the cat.
+  notClose,
+
+  /// You closed the camera without a photo.
+  cancelled,
+
+  /// There is no camera, or it may not be used.
+  noCamera,
+
+  /// Every bed has a cat in it already.
+  noBed,
+}
+
 class MapViewState {
   const MapViewState({
     required this.access,
@@ -79,6 +122,8 @@ class MapViewState {
     this.arrival,
     this.fix,
     this.event,
+    this.streetCat,
+    this.freeBeds = 0,
   });
 
   /// Whether location is allowed. Anything but granted shows the access card.
@@ -117,6 +162,12 @@ class MapViewState {
   /// Shown once, then cleared by [CatMapController.dismissEvent].
   final MapNotice? event;
 
+  /// The street cat standing on today's map, if any.
+  final StreetCatSpot? streetCat;
+
+  /// Beds with no cat in them.
+  final int freeBeds;
+
   /// True when location is allowed and a position is known.
   bool get hasLocation => access == LocationAccess.granted && fix != null;
 
@@ -137,6 +188,9 @@ class MapViewState {
     bool clearArrival = false,
     MapNotice? event,
     bool clearEvent = false,
+    StreetCatSpot? streetCat,
+    bool clearStreetCat = false,
+    int? freeBeds,
   }) => MapViewState(
     access: access ?? this.access,
     fix: fix ?? this.fix,
@@ -150,8 +204,20 @@ class MapViewState {
     inventory: inventory ?? this.inventory,
     arrival: clearArrival ? null : (arrival ?? this.arrival),
     event: clearEvent ? null : (event ?? this.event),
+    streetCat: clearStreetCat ? null : (streetCat ?? this.streetCat),
+    freeBeds: freeBeds ?? this.freeBeds,
   );
 }
+
+/// Chooses today's street cat. Tests replace it to get one on demand.
+final streetCatPickerProvider =
+    Provider<
+      StreetCat? Function({
+        required List<StreetCat> known,
+        required GeoCell cell,
+        required CalendarDate date,
+      })
+    >((ref) => todaysStreetCat);
 
 /// The map's state and logic, loaded when the map tab opens.
 final mapControllerProvider =
@@ -301,7 +367,6 @@ class CatMapController extends AsyncNotifier<MapViewState> {
       }
     }
     pins = _pinsFor(cell, today, pinCount, collectedIds, mapState.snaps);
-    _snapSoon(cell, today, pinCount, fix, mapState.snaps);
 
     // A cat waiting for a bed: placed once, then walked to.
     final arrivals = ref.read(arrivalRepositoryProvider);
@@ -348,9 +413,29 @@ class CatMapController extends AsyncNotifier<MapViewState> {
       await maps.write(mapState.copyWith(recovery: recovery));
     }
 
+    // A street cat may be standing somewhere today.
+    final known = await ref.read(streetCatRepositoryProvider).readAll();
+    final streetCat = ref.read(streetCatPickerProvider)(
+      known: known,
+      cell: cell,
+      date: today,
+    );
+    final spot = streetCat == null
+        ? null
+        : _streetSpot(streetCat, cell, today, mapState.snaps);
+    _snapSoon(cell, today, pinCount, fix, mapState.snaps, streetCat?.id);
+    final cats = await ref.read(catRepositoryProvider).readAll();
+
     return next.copyWith(
       arrival: arrival,
       clearArrival: arrival == null,
+      streetCat: spot,
+      clearStreetCat: spot == null,
+      freeBeds: freeBeds(
+        beds: next.inventory.beds,
+        cats: cats.length,
+        arriving: arrival != null,
+      ),
       pins: pins,
       recovery: recovery,
       runaway: runaway,
@@ -384,6 +469,39 @@ class CatMapController extends AsyncNotifier<MapViewState> {
   /// How long to wait before asking the router again after it was unreachable.
   static const Duration snapRetryEvery = Duration(seconds: 45);
 
+  /// Where today's street cat stands, on its street once the router has said.
+  StreetCatSpot? _streetSpot(
+    StreetCat cat,
+    GeoCell cell,
+    CalendarDate today,
+    Map<String, PinSnap> snaps,
+  ) {
+    final chosen = choosePins(
+      candidates: streetCatCandidates(cell: cell, date: today, catId: cat.id),
+      snaps: snaps,
+      count: 1,
+    );
+    return chosen.isEmpty
+        ? null
+        : StreetCatSpot(cat: cat, point: chosen.first.point);
+  }
+
+  /// The candidates to ask the router about, with how many of each are needed:
+  /// the day's pins and today's street cat.
+  List<(List<MapPin>, int)> _snapGroups(
+    GeoCell cell,
+    CalendarDate today,
+    int count,
+    String? streetCatId,
+  ) => [
+    (
+      spawnPins(cell: cell, date: today, count: count * candidatesPerPin),
+      count,
+    ),
+    if (streetCatId != null)
+      (streetCatCandidates(cell: cell, date: today, catId: streetCatId), 1),
+  ];
+
   /// Starts asking the router about today's candidate pins, when some have not
   /// been asked about. It runs in the background: the map shows the pins as
   /// drawn at first and moves them onto streets as the answers come in.
@@ -393,74 +511,76 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     int count,
     GeoFix fix,
     Map<String, PinSnap> snaps,
+    String? streetCatId,
   ) {
     if (_snapping) return;
-    final candidates = spawnPins(
-      cell: cell,
-      date: today,
-      count: count * candidatesPerPin,
+    final groups = _snapGroups(cell, today, count, streetCatId);
+    final pending = groups.any(
+      (g) => needsSnapping(candidates: g.$1, snaps: snaps, count: g.$2),
     );
-    if (!needsSnapping(candidates: candidates, snaps: snaps, count: count)) {
-      return;
-    }
+    if (!pending) return;
     final tried = _snapTriedAt;
     if (tried != null && DateTime.now().difference(tried) < snapRetryEvery) {
       return;
     }
     _snapping = true;
-    unawaited(_snap(candidates, count, fix, today));
+    unawaited(_snap(groups, fix, today, count));
   }
 
   Future<void> _snap(
-    List<MapPin> candidates,
-    int count,
+    List<(List<MapPin>, int)> groups,
     GeoFix fix,
     CalendarDate today,
+    int pinCount,
   ) async {
     try {
       final maps = ref.read(mapStateRepositoryProvider);
       final router = ref.read(routeServiceProvider);
       var mapState = await maps.read();
-      var snaps = {...mapState.snaps};
-      var kept = 0;
-      for (final candidate in candidates) {
-        var snap = snaps[candidate.id];
-        if (snap == null) {
-          final WalkingRoute? route;
-          try {
-            route = await router.walk(fix.point, candidate.point);
-          } on RouteUnavailable {
-            // Ask again later; the pins stay where they were drawn.
-            _snapTriedAt = DateTime.now();
-            break;
+      final snaps = {...mapState.snaps};
+      for (final (candidates, count) in groups) {
+        var kept = 0;
+        for (final candidate in candidates) {
+          var snap = snaps[candidate.id];
+          if (snap == null) {
+            final WalkingRoute? route;
+            try {
+              route = await router.walk(fix.point, candidate.point);
+            } on RouteUnavailable {
+              // Ask again later; the pins stay where they were drawn.
+              _snapTriedAt = DateTime.now();
+              _showSnappedPins(mapState, today, pinCount);
+              return;
+            }
+            snap = route == null
+                ? const PinSnap.rejected()
+                : judgeSnap(
+                    candidate: candidate.point,
+                    from: fix.point,
+                    route: route,
+                  );
+            snaps[candidate.id] = snap;
+            // The day may have turned while the router was thinking.
+            mapState = (await maps.read()).copyWith(snaps: snaps);
+            if (CalendarDate.today() != today) return;
+            await maps.write(mapState);
           }
-          snap = route == null
-              ? const PinSnap.rejected()
-              : judgeSnap(
-                  candidate: candidate.point,
-                  from: fix.point,
-                  route: route,
-                );
-          snaps[candidate.id] = snap;
-          // The day may have turned while the router was thinking.
-          mapState = (await maps.read()).copyWith(snaps: snaps);
-          if (CalendarDate.today() != today) return;
-          await maps.write(mapState);
+          if (snap.verdict == SnapVerdict.accepted) kept++;
+          if (kept == count) break;
         }
-        if (snap.verdict == SnapVerdict.accepted) kept++;
-        if (kept == count) break;
       }
-      _showSnappedPins(mapState, today, count);
+      _showSnappedPins(mapState, today, pinCount);
     } finally {
       _snapping = false;
     }
   }
 
-  /// Puts the pins as they now stand on the map.
+  /// Puts the pins and the street cat as they now stand on the map.
   void _showSnappedPins(MapState mapState, CalendarDate today, int count) {
     final view = state.value;
     final cell = mapState.cellFor(today);
     if (view == null || cell == null) return;
+    final cat = view.streetCat?.cat;
     state = AsyncData(
       view.copyWith(
         pins: _pinsFor(
@@ -470,8 +590,85 @@ class CatMapController extends AsyncNotifier<MapViewState> {
           mapState.collectedOn(today),
           mapState.snaps,
         ),
+        streetCat: cat == null
+            ? null
+            : _streetSpot(cat, cell, today, mapState.snaps),
       ),
     );
+  }
+
+  /// Takes a photo of today's street cat. You must be within reach of it.
+  Future<StreetCatOutcome> photographStreetCat() async {
+    final view = state.value;
+    final spot = view?.streetCat;
+    final fix = view?.fix;
+    if (view == null || spot == null || fix == null || spot.cat.ready) {
+      return StreetCatOutcome.notClose;
+    }
+    if (!reached(fix: fix, target: spot.point, allowMocked: allowMocked)) {
+      return StreetCatOutcome.notClose;
+    }
+    final String? path;
+    try {
+      path = await ref
+          .read(photoServiceProvider)
+          .takeStreetCatPhoto(spot.cat.id);
+    } on CameraUnavailable {
+      return StreetCatOutcome.noCamera;
+    }
+    if (path == null) return StreetCatOutcome.cancelled;
+    final today = CalendarDate.today();
+    final saved = spot.cat.copyWith(
+      photos: [...spot.cat.photos, path],
+      lastSeen: today,
+    );
+    await ref.read(streetCatRepositoryProvider).upsert(saved);
+    ref.invalidate(streetCatsProvider);
+    final latest = state.value ?? view;
+    state = AsyncData(
+      latest.copyWith(
+        clearStreetCat: true,
+        event: StreetCatPhotographed(
+          catName: saved.name,
+          sightings: saved.sightings,
+          ready: saved.ready,
+          hasFreeBed: latest.freeBeds > 0,
+        ),
+      ),
+    );
+    return StreetCatOutcome.done;
+  }
+
+  /// Invites today's street cat to join, when it is ready, you are within
+  /// reach and a bed is free.
+  Future<StreetCatOutcome> inviteStreetCat() async {
+    final view = state.value;
+    final spot = view?.streetCat;
+    final fix = view?.fix;
+    if (view == null || spot == null || fix == null || !spot.cat.ready) {
+      return StreetCatOutcome.notClose;
+    }
+    if (!reached(fix: fix, target: spot.point, allowMocked: allowMocked)) {
+      return StreetCatOutcome.notClose;
+    }
+    if (view.freeBeds <= 0) return StreetCatOutcome.noBed;
+    final today = CalendarDate.today();
+    await ref.read(catRepositoryProvider).add(spot.cat.toCat(today));
+    await ref
+        .read(streetCatRepositoryProvider)
+        .upsert(spot.cat.copyWith(joined: true, lastSeen: today));
+    ref.invalidate(streetCatsProvider);
+    await ref.read(analyticsProvider).log('cat_joined');
+    await ref.read(homeControllerProvider.notifier).refreshSilently();
+    final latest = state.value ?? view;
+    state = AsyncData(
+      latest.copyWith(
+        clearStreetCat: true,
+        freeBeds: latest.freeBeds - 1,
+        event: CatJoined(catName: spot.cat.name, returning: false),
+      ),
+    );
+    return StreetCatOutcome.done;
   }
 
   Future<Collected> _take(MapPin pin, MapViewState view) async {

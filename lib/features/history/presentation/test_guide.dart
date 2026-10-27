@@ -198,10 +198,23 @@ const List<TestGuideItem> testGuideItems = [
         'the leaderboard with this week\'s steps. Tap a friend to see their '
         'cats and send a wave. Delete my online data removes it all.',
   ),
+  TestGuideItem(
+    feature: 'Street cats',
+    how:
+        'On the map, a cat with a camera badge sometimes stands on a street. '
+        'Tap it, walk to within 30 m and tap Take a photo.',
+    check:
+        'The camera opens and the photo counts as one of three. The cat is '
+        'gone for the day and may come back. After three photos, with an '
+        'empty bed, Invite to join puts it in your room. Me > Street cats '
+        'shows your photos. They stay on the phone.',
+  ),
 ];
 
 /// What is not in this build, so a missing feature is not mistaken for a bug.
-const List<String> testGuideNotBuilt = ['Street cats and photos'];
+const List<String> testGuideNotBuilt = [
+  'Cat mood art: the cats are placeholders until your drawings are in',
+];
 
 /// The “How to test” section at the bottom of Me.
 ///

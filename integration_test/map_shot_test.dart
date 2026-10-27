@@ -1,5 +1,8 @@
 import 'package:catwalk/app/app.dart';
+import 'package:catwalk/features/cat/domain/cat_appearance.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
+import 'package:catwalk/features/map/data/photo_service.dart';
+import 'package:catwalk/features/map/domain/street_cat.dart';
 import 'package:catwalk/features/map/domain/geo.dart';
 import 'package:catwalk/features/map/presentation/map_controller.dart';
 import 'package:catwalk/features/map/presentation/map_screen.dart';
@@ -23,6 +26,15 @@ void main() {
         overrides: [
           localStoreProvider.overrideWithValue(store),
           locationServiceProvider.overrideWithValue(location),
+          photoServiceProvider.overrideWithValue(FakePhotoService()),
+          streetCatPickerProvider.overrideWithValue(
+            ({required known, required cell, required date}) => const StreetCat(
+              id: 'street-1',
+              name: 'Vlek',
+              appearance: CatAppearance.ginger,
+              photos: ['/p/a.jpg'],
+            ),
+          ),
         ],
         child: const CatwalkApp(),
       ),
@@ -50,5 +62,25 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
     }
     await binding.takeScreenshot('map_2');
+
+    final spot = container.read(mapControllerProvider).requireValue.streetCat!;
+    location.move(fixAt(GeoPoint(spot.point.lat + 0.0009, spot.point.lon)));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    await tester.tap(find.byKey(const Key('street-cat')));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    await binding.takeScreenshot('map_3');
+    location.move(fixAt(GeoPoint(spot.point.lat + 0.0002, spot.point.lon)));
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    await tester.tap(find.byKey(const Key('street-photo')));
+    for (var i = 0; i < 15; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    await binding.takeScreenshot('map_4');
   });
 }

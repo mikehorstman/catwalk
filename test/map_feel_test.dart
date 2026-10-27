@@ -1,7 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:catwalk/features/cat/presentation/widgets/cat_head_icon.dart';
+import 'package:catwalk/features/cat/domain/cat_appearance.dart';
+import 'package:catwalk/features/map/data/inventory_repository.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
+import 'package:catwalk/features/map/data/photo_service.dart';
+import 'package:catwalk/features/map/data/street_cat_repository.dart';
+import 'package:catwalk/features/map/domain/inventory.dart';
+import 'package:catwalk/features/map/domain/street_cat.dart';
+import 'package:catwalk/features/map/presentation/street_cats_screen.dart';
 import 'package:catwalk/features/map/data/route_service.dart';
 import 'package:catwalk/features/map/domain/walking_route.dart';
 import 'package:catwalk/features/map/domain/geo.dart';
@@ -14,6 +21,7 @@ import 'package:catwalk/services/storage/local_store_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -32,8 +40,13 @@ Future<ProviderContainer> show(
   WidgetTester tester,
   FakeLocationService location, {
   FakeRouteService? routes,
+  List<Override> extra = const [],
+  int? beds,
 }) async {
   final store = await seededStore();
+  if (beds != null) {
+    await InventoryRepository(store).write(Inventory(beds: beds));
+  }
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -47,6 +60,7 @@ Future<ProviderContainer> show(
         ),
         routeServiceProvider.overrideWithValue(routes ?? defaultRoutes()),
         mapTilesEnabledProvider.overrideWithValue(false),
+        ...extra,
       ],
       child: const MaterialApp(home: MapScreen()),
     ),
@@ -452,6 +466,137 @@ void main() {
           .expand((layer) => layer.polylines)
           .where((line) => line.borderStrokeWidth > 0);
       expect(withBorder, isEmpty);
+    });
+  });
+
+  group('street cats on the map', () {
+    StreetCat vlek({int photos = 0}) => StreetCat(
+      id: 'street-1',
+      name: 'Vlek',
+      appearance: CatAppearance.ginger,
+      photos: [for (var i = 0; i < photos; i++) '/p/$i.jpg'],
+    );
+
+    Future<(FakeLocationService, FakePhotoService, ProviderContainer)> meet(
+      WidgetTester tester, {
+      int photos = 0,
+      int beds = 1,
+    }) async {
+      final camera = FakePhotoService();
+      final location = FakeLocationService(start: fixAt(amsterdam));
+      final container = await show(
+        tester,
+        location,
+        beds: beds,
+        extra: [
+          photoServiceProvider.overrideWithValue(camera),
+          streetCatPickerProvider.overrideWithValue(
+            ({required known, required cell, required date}) =>
+                vlek(photos: photos),
+          ),
+        ],
+      );
+      await frames(tester, 20);
+      final spot = container
+          .read(mapControllerProvider)
+          .requireValue
+          .streetCat!;
+      location.move(fixAt(north(spot.point, 100)));
+      await frames(tester, 25);
+      await tester.tap(find.byKey(const Key('street-cat')));
+      await frames(tester);
+      return (location, camera, container);
+    }
+
+    Future<void> stepUp(
+      WidgetTester tester,
+      FakeLocationService location,
+      ProviderContainer container,
+    ) async {
+      final spot = container
+          .read(mapControllerProvider)
+          .requireValue
+          .streetCat!;
+      location.move(fixAt(north(spot.point, 20)));
+      await frames(tester, 25);
+    }
+
+    testWidgets(
+      'a street cat stands on the map; far away you cannot photograph it',
+      (tester) async {
+        await meet(tester);
+        expect(find.text('Street cat: Vlek'), findsOneWidget);
+        expect(find.text('Photos so far: 0 of 3'), findsOneWidget);
+        expect(find.byKey(const Key('street-far')), findsOneWidget);
+        expect(find.byKey(const Key('street-photo')), findsNothing);
+      },
+    );
+
+    testWidgets('close by, Take a photo works the camera and shows the sheet', (
+      tester,
+    ) async {
+      final (location, camera, container) = await meet(tester);
+      await stepUp(tester, location, container);
+      expect(find.byKey(const Key('street-far')), findsNothing);
+      await tester.tap(find.byKey(const Key('street-photo')));
+      await frames(tester, 20);
+      expect(camera.asked, ['street-1']);
+      expect(find.text('Photo of Vlek'), findsOneWidget);
+      expect(find.textContaining('Photo 1 of 3'), findsOneWidget);
+    });
+
+    testWidgets('a cat that is ready offers an invite when a bed is free', (
+      tester,
+    ) async {
+      final (location, _, container) = await meet(tester, photos: 3, beds: 3);
+      await stepUp(tester, location, container);
+      expect(find.byKey(const Key('street-photo')), findsNothing);
+      expect(find.byKey(const Key('street-invite')), findsOneWidget);
+    });
+
+    testWidgets('with every bed taken it says so instead of inviting', (
+      tester,
+    ) async {
+      final (location, _, container) = await meet(tester, photos: 3);
+      await stepUp(tester, location, container);
+      expect(find.byKey(const Key('street-invite')), findsNothing);
+      expect(find.byKey(const Key('street-no-bed')), findsOneWidget);
+    });
+  });
+
+  group('street cats on Me', () {
+    testWidgets('the list shows each cat and its progress', (tester) async {
+      final store = await seededStore();
+      await StreetCatRepository(store).upsert(
+        const StreetCat(
+          id: 's1',
+          name: 'Vlek',
+          appearance: CatAppearance.ginger,
+          photos: ['/p/a.jpg', '/p/b.jpg'],
+        ),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [localStoreProvider.overrideWithValue(store)],
+          child: const MaterialApp(home: StreetCatsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Vlek'), findsOneWidget);
+      expect(find.text('2 of 3 photos'), findsOneWidget);
+      expect(find.textContaining('never uploaded'), findsOneWidget);
+    });
+
+    testWidgets('with none, it explains how to meet one', (tester) async {
+      final store = await seededStore();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [localStoreProvider.overrideWithValue(store)],
+          child: const MaterialApp(home: StreetCatsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('street-cats-empty')), findsOneWidget);
     });
   });
 }

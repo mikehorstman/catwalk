@@ -7,6 +7,8 @@ import '../../../core/utils/calendar_date.dart';
 import '../../../core/utils/format.dart';
 import '../../daily_goal/domain/daily_progress.dart';
 import '../../daily_goal/domain/progress_milestones.dart';
+import '../../map/data/street_cat_repository.dart';
+import '../../map/presentation/street_cats_screen.dart';
 import '../../social/application/social_controller.dart';
 import '../../social/presentation/friends_screen.dart';
 import 'history_controller.dart';
@@ -114,6 +116,8 @@ class _Me extends StatelessWidget {
           ],
         const SizedBox(height: 24),
         const _FriendsCard(),
+        const SizedBox(height: 12),
+        const _StreetCatsCard(),
         const SizedBox(height: 12),
         const TestGuide(),
       ],
@@ -389,6 +393,32 @@ class _FriendsCard extends ConsumerWidget {
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => openFriends(context),
+      ),
+    );
+  }
+}
+
+/// The way into the street cats you have photographed.
+class _StreetCatsCard extends ConsumerWidget {
+  const _StreetCatsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cats = ref.watch(streetCatsProvider).value ?? const [];
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        key: const Key('street-cats-card'),
+        leading: const Icon(Icons.photo_camera_outlined),
+        title: const Text('Street cats'),
+        subtitle: Text(
+          cats.isEmpty
+              ? 'Photograph a stray on the map'
+              : '${cats.length} met · ${cats.where((c) => c.joined).length} '
+                    'joined',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => openStreetCats(context),
       ),
     );
   }
