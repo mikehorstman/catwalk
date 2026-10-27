@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:catwalk/features/cat/presentation/widgets/cat_head_icon.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
+import 'package:catwalk/features/map/data/route_service.dart';
+import 'package:catwalk/features/map/domain/walking_route.dart';
 import 'package:catwalk/features/map/domain/geo.dart';
 import 'package:catwalk/features/map/presentation/map_controller.dart';
 import 'package:catwalk/features/map/presentation/map_screen.dart';
@@ -21,10 +23,16 @@ import 'map_controller_test.dart' show amsterdam, fixAt, seededStore;
 GeoPoint north(GeoPoint p, double meters) =>
     GeoPoint(p.lat + meters / 111320, p.lon);
 
+/// A 180 m, 2.5 minute route, which the fake service returns by default.
+FakeRouteService defaultRoutes() => FakeRouteService(
+  route: const WalkingRoute(points: [], meters: 180, seconds: 150),
+);
+
 Future<ProviderContainer> show(
   WidgetTester tester,
-  FakeLocationService location,
-) async {
+  FakeLocationService location, {
+  FakeRouteService? routes,
+}) async {
   final store = await seededStore();
   await tester.pumpWidget(
     ProviderScope(
@@ -37,6 +45,7 @@ Future<ProviderContainer> show(
         notificationServiceProvider.overrideWithValue(
           FakeNotificationService(),
         ),
+        routeServiceProvider.overrideWithValue(routes ?? defaultRoutes()),
         mapTilesEnabledProvider.overrideWithValue(false),
       ],
       child: const MaterialApp(home: MapScreen()),
@@ -290,5 +299,154 @@ void main() {
     }
     expect(mapTilerKey, isNotEmpty);
     expect(mapNeedsTint, isFalse);
+  });
+
+  group('street routes', () {
+    const sample = {
+      'code': 'Ok',
+      'routes': [
+        {
+          'distance': 354.4,
+          'duration': 289.5,
+          'geometry': {
+            'type': 'LineString',
+            'coordinates': [
+              [4.9041, 52.3676],
+              [4.9050, 52.3685],
+              [4.9061, 52.3700],
+            ],
+          },
+        },
+      ],
+    };
+
+    test('an OSRM answer becomes a route, with latitude first', () {
+      final route = parseOsrmRoute(sample)!;
+      expect(route.points, hasLength(3));
+      expect(route.points.first.lat, 52.3676);
+      expect(route.points.first.lon, 4.9041);
+      expect(route.meters, 354.4);
+      expect(route.minutes, 5);
+      expect(route.timeText, '5 min');
+    });
+
+    test('anything else is no route', () {
+      expect(parseOsrmRoute(null), isNull);
+      expect(parseOsrmRoute({'code': 'NoRoute'}), isNull);
+      expect(parseOsrmRoute({'code': 'Ok', 'routes': []}), isNull);
+      expect(
+        parseOsrmRoute({
+          'code': 'Ok',
+          'routes': [
+            {
+              'distance': 1,
+              'duration': 1,
+              'geometry': {
+                'coordinates': [
+                  [1, 2],
+                ],
+              },
+            },
+          ],
+        }),
+        isNull,
+      );
+    });
+
+    test('times are worded', () {
+      WalkingRoute at(double s) =>
+          WalkingRoute(points: const [], meters: 0, seconds: s);
+      expect(at(20).timeText, 'under a minute');
+      expect(at(61).timeText, '2 min');
+      expect(at(3600).timeText, '1 h');
+      expect(at(3900).timeText, '1 h 5 min');
+    });
+
+    Future<(FakeLocationService, FakeRouteService, dynamic)> tapPin(
+      WidgetTester tester, {
+      FakeRouteService? routes,
+    }) async {
+      final fake = routes ?? defaultRoutes();
+      final location = FakeLocationService(start: fixAt(amsterdam));
+      final container = await show(tester, location, routes: fake);
+      final pin = container.read(mapControllerProvider).requireValue.pins.first;
+      location.move(fixAt(north(pin.point, 100)));
+      await frames(tester, 25);
+      await tester.tap(find.byKey(ValueKey('pin-${pin.id}')));
+      await frames(tester);
+      return (location, fake, pin);
+    }
+
+    testWidgets('the card uses the street route and says so', (tester) async {
+      final (_, fake, _) = await tapPin(tester);
+      expect(fake.calls, hasLength(1));
+      expect(
+        tester.widget<Text>(find.byKey(const Key('target-distance'))).data,
+        '3 min · 180 m',
+      );
+      expect(
+        tester.widget<Text>(find.byKey(const Key('target-caption'))).data,
+        'Walking route',
+      );
+    });
+
+    testWidgets('the route is drawn as a solid line along the streets', (
+      tester,
+    ) async {
+      final routes = FakeRouteService(
+        route: WalkingRoute(
+          points: [GeoPoint(52.3680, 4.9040), GeoPoint(52.3682, 4.9044)],
+          meters: 180,
+          seconds: 150,
+        ),
+      );
+      await tapPin(tester, routes: routes);
+      final lines = tester
+          .widgetList<PolylineLayer>(find.byType(PolylineLayer))
+          .expand((layer) => layer.polylines)
+          .where((line) => line.borderStrokeWidth > 0);
+      expect(lines, hasLength(1));
+      // You, the two street points the router gave, and the pickup.
+      expect(lines.single.points.length, greaterThanOrEqualTo(4));
+    });
+
+    testWidgets('no route found: a straight-line guess, labelled as one', (
+      tester,
+    ) async {
+      await tapPin(tester, routes: FakeRouteService());
+      expect(
+        tester.widget<Text>(find.byKey(const Key('target-caption'))).data,
+        'Straight line, a rough guess',
+      );
+      expect(find.byKey(const Key('target-card')), findsOneWidget);
+    });
+
+    testWidgets('walking on asks again only after a real step', (tester) async {
+      final saved = routeRefreshEvery;
+      routeRefreshEvery = Duration.zero;
+      addTearDown(() => routeRefreshEvery = saved);
+      final (location, fake, pin) = await tapPin(tester);
+      expect(fake.calls, hasLength(1));
+      final from = north(pin.point, 100);
+
+      location.move(fixAt(north(from, -10)));
+      await frames(tester, 15);
+      expect(fake.calls, hasLength(1));
+
+      location.move(fixAt(north(from, -60)));
+      await frames(tester, 15);
+      expect(fake.calls, hasLength(2));
+    });
+
+    testWidgets('closing the card takes the route off the map', (tester) async {
+      await tapPin(tester);
+      await tester.tap(find.byTooltip('Close'));
+      await frames(tester);
+      final withBorder = tester
+          .widgetList<PolylineLayer>(find.byType(PolylineLayer))
+          .expand((layer) => layer.polylines)
+          .where((line) => line.borderStrokeWidth > 0);
+      expect(withBorder, isEmpty);
+    });
   });
 }

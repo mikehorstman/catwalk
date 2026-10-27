@@ -9,9 +9,11 @@ import '../../../app/theme.dart';
 import '../../../core/utils/format.dart';
 import '../../cat/presentation/widgets/cat_head_icon.dart';
 import '../data/location_service.dart';
+import '../data/route_service.dart';
 import '../domain/collect.dart';
 import '../domain/geo.dart';
 import '../domain/reach_rule.dart';
+import '../domain/walking_route.dart';
 import '../domain/reward.dart';
 import 'map_controller.dart';
 
@@ -44,6 +46,15 @@ bool get mapNeedsTint => mapTileUrl.contains('openstreetmap.org');
 
 /// Tests turn the tiles off so no widget test touches the network.
 final mapTilesEnabledProvider = Provider<bool>((ref) => true);
+
+/// The route is asked for again once you have walked this far (metres)...
+const double routeRefreshMeters = 40;
+
+/// ...but not more often than this, and a failed ask waits this long.
+Duration routeRefreshEvery = const Duration(seconds: 8);
+
+/// How long a failed ask waits before the next try.
+Duration routeRetryEvery = const Duration(seconds: 15);
 
 /// How close the map starts, and returns to when you recentre.
 const double mapStartZoom = 17;
@@ -135,6 +146,20 @@ class _MapScreenState extends ConsumerState<MapScreen>
   /// card at the bottom then shows how far away it is and how long to walk.
   String? _selected;
 
+  /// The street route to what you tapped, once found.
+  WalkingRoute? _route;
+
+  /// Which selection [_route] belongs to.
+  String? _routeFor;
+
+  /// Where you stood when the route was asked for.
+  GeoPoint? _routeFrom;
+
+  /// When the route was last asked for, and whether that found nothing.
+  DateTime? _routeAt;
+  bool _routeFailed = false;
+  bool _routeBusy = false;
+
   /// Glides the camera to your new position instead of jumping.
   late final AnimationController _glide = AnimationController(
     vsync: this,
@@ -149,6 +174,53 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _glide.dispose();
     _map.dispose();
     super.dispose();
+  }
+
+  /// Selects [id] and asks for the street route to it.
+  void _select(String? id) {
+    setState(() {
+      _selected = id;
+      _route = null;
+      _routeFor = null;
+      _routeAt = null;
+      _routeFailed = false;
+    });
+    final view = ref.read(mapControllerProvider).value;
+    if (id != null && view != null) _refreshRoute(view);
+  }
+
+  /// Asks for the street route to the selection when it is missing or stale:
+  /// you walked on, or an earlier ask found nothing.
+  Future<void> _refreshRoute(MapViewState view) async {
+    final id = _selected;
+    final target = _selectedTarget(view);
+    final fix = view.fix;
+    if (id == null || target == null || fix == null || _routeBusy) return;
+    final now = DateTime.now();
+    final last = _routeAt;
+    if (_routeFor == id && last != null) {
+      final wait = now.difference(last);
+      final from = _routeFrom;
+      final moved = from == null ? 0.0 : distanceMeters(from, fix.point);
+      final stale = _routeFailed
+          ? wait >= routeRetryEvery
+          : moved >= routeRefreshMeters && wait >= routeRefreshEvery;
+      if (!stale) return;
+    }
+    _routeBusy = true;
+    if (mounted) setState(() {});
+    final route = await ref
+        .read(routeServiceProvider)
+        .walk(fix.point, target.point);
+    _routeBusy = false;
+    if (!mounted || _selected != id) return;
+    setState(() {
+      _route = route ?? (_routeFor == id ? _route : null);
+      _routeFor = id;
+      _routeFrom = fix.point;
+      _routeAt = DateTime.now();
+      _routeFailed = route == null;
+    });
   }
 
   /// What is selected right now, or null. A pin that was collected, or a cat
@@ -228,6 +300,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         _walked(_ll(fix.point));
         // The map only takes commands once it has been drawn.
         if (_following && _mapReady) _glideTo(_ll(fix.point));
+        _refreshRoute(view);
       }
     });
 
@@ -267,7 +340,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             maxZoom: 19,
             onMapReady: () => _mapReady = true,
             onTap: (_, _) {
-              if (_selected != null) setState(() => _selected = null);
+              if (_selected != null) _select(null);
             },
             onPositionChanged: (camera, hasGesture) {
               _zoom = camera.zoom;
@@ -302,16 +375,32 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   ),
                 ],
               ),
-            // A dashed line from you to what you tapped.
+            // The way to what you tapped: along the streets once the router
+            // answered, a dashed straight line until then.
             if (_selectedTarget(view) case final target?)
               PolylineLayer(
                 polylines: [
-                  Polyline(
-                    points: [_ll(fix.point), _ll(target.point)],
-                    strokeWidth: 4,
-                    color: CatwalkColors.orange.withValues(alpha: 0.85),
-                    pattern: StrokePattern.dashed(segments: [10, 8]),
-                  ),
+                  if (_route != null && _routeFor == _selected)
+                    Polyline(
+                      points: [
+                        _ll(fix.point),
+                        for (final p in _route!.points) _ll(p),
+                        _ll(target.point),
+                      ],
+                      strokeWidth: 6,
+                      color: CatwalkColors.orange,
+                      borderStrokeWidth: 2,
+                      borderColor: Colors.white,
+                      strokeCap: StrokeCap.round,
+                      strokeJoin: StrokeJoin.round,
+                    )
+                  else
+                    Polyline(
+                      points: [_ll(fix.point), _ll(target.point)],
+                      strokeWidth: 4,
+                      color: CatwalkColors.orange.withValues(alpha: 0.85),
+                      pattern: StrokePattern.dashed(segments: const [10, 8]),
+                    ),
                 ],
               ),
             // The circle you have to walk into to pick something up.
@@ -337,7 +426,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     rotate: true,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => setState(() => _selected = 'pin-${pin.id}'),
+                      onTap: () => _select('pin-${pin.id}'),
                       child: _PinMarker(
                         key: ValueKey('pin-${pin.id}'),
                         near:
@@ -355,7 +444,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     rotate: true,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => setState(() => _selected = 'waiting-cat'),
+                      onTap: () => _select('waiting-cat'),
                       child: const _CatMarker(key: Key('waiting-cat')),
                     ),
                   ),
@@ -367,7 +456,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                     rotate: true,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => setState(() => _selected = 'lost-cat'),
+                      onTap: () => _select('lost-cat'),
                       child: const _CatMarker(key: Key('lost-cat')),
                     ),
                   ),
@@ -398,8 +487,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
             child: _TargetCard(
               key: const Key('target-card'),
               title: target.title,
-              meters: distanceMeters(fix.point, target.point),
-              onClose: () => setState(() => _selected = null),
+              meters: _route != null && _routeFor == _selected
+                  ? _route!.meters
+                  : distanceMeters(fix.point, target.point),
+              timeText: _route != null && _routeFor == _selected
+                  ? _route!.timeText
+                  : walkingTimeText(distanceMeters(fix.point, target.point)),
+              caption: _route != null && _routeFor == _selected
+                  ? 'Walking route'
+                  : _routeBusy
+                  ? 'Finding the way…'
+                  : 'Straight line, a rough guess',
+              onClose: () => _select(null),
             ),
           ),
         if (_rotation.abs() > 1)
@@ -632,8 +731,16 @@ class _TargetCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.meters,
+    required this.timeText,
+    required this.caption,
     required this.onClose,
   });
+
+  /// How long the walk takes, already worded.
+  final String timeText;
+
+  /// Where the numbers come from: the street route or a straight-line guess.
+  final String caption;
 
   /// What was tapped.
   final String title;
@@ -672,12 +779,19 @@ class _TargetCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          '${walkingTimeText(meters)} · ${distanceText(meters)}',
+                          '$timeText · ${distanceText(meters)}',
                           key: const Key('target-distance'),
                           style: theme.textTheme.bodyMedium,
                         ),
                       ),
                     ],
+                  ),
+                  Text(
+                    caption,
+                    key: const Key('target-caption'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: CatwalkColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
