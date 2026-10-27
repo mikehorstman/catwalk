@@ -371,7 +371,7 @@ CHECK = [
     ("higher daily goal -> more rewards -> more cats faster", "built", "Candy is 1 per 1,000 steps of the goal, so a higher goal earns more a day (D6, D17). It unlocks cats faster once beds exist."),
     ("kat kan weglopen als doel aantal dagen niet behaald is", "built", "Built at 3 missed days. Half a goal also counts as missed."),
     ("terugkomen door weer veel te lopen", "built", "A target inside a 7-day window, then the map. If missed, the cat leaves and may come back on the map some random day later (D1, D2, D10)."),
-    ("fotos maken van katten op straat -> meerdere keren zelfde kat -> kans op unlocken", "planned", "Stays. The photographed cat needs an empty bed. How many photos unlock a cat is open."),
+    ("fotos maken van katten op straat -> meerdere keren zelfde kat -> kans op unlocken", "built", "Three photos of the same street cat, then Invite to join into an empty bed. Photos stay on the phone. Camera untested on a real phone."),
     ("maximaal aantal katten op basis van doel?", "changing", "Replaced by beds: each bed costs more than the last (D18)."),
     ("statistieken, leaderboard", "partly", "Lifetime counters and the weekly card are built. Total steps becomes the headline on Me. The leaderboard is slice 6."),
     ("voortgangsbalk voor stappen per dag", "built", "On Home."),
