@@ -15,12 +15,32 @@ import '../domain/reach_rule.dart';
 import '../domain/reward.dart';
 import 'map_controller.dart';
 
-/// Tiles come from OpenStreetMap by default, which is fine for development.
-/// A shipped app should point `MAP_TILE_URL` at a host it has an account with.
+/// The MapTiler key. A map key, not a secret: it ships inside the app, as
+/// every map key does. Override it with `--dart-define=MAPTILER_KEY=...`.
+const String mapTilerKey = String.fromEnvironment(
+  'MAPTILER_KEY',
+  defaultValue: 'RhM9qwrSBQiLZKaLWqLP',
+);
+
+/// The map style. `streets-v4` is cream and soft green, which suits the app.
+const String mapTilerStyle = String.fromEnvironment(
+  'MAPTILER_STYLE',
+  defaultValue: 'streets-v4',
+);
+
+/// Where tiles come from: MapTiler by default. `{r}` becomes `@2x` on sharp
+/// screens. Point `MAP_TILE_URL` at another host to change it, for example
+/// OpenStreetMap's own, which is only fine for development.
 const String mapTileUrl = String.fromEnvironment(
   'MAP_TILE_URL',
-  defaultValue: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  defaultValue:
+      'https://api.maptiler.com/maps/$mapTilerStyle/256/{z}/{x}/{y}{r}.png'
+      '?key=$mapTilerKey',
 );
+
+/// True when the tiles are OpenStreetMap's own plain ones, which get softened
+/// by [mapTint]. MapTiler's style is already cream, so it is left alone.
+bool get mapNeedsTint => mapTileUrl.contains('openstreetmap.org');
 
 /// Tests turn the tiles off so no widget test touches the network.
 final mapTilesEnabledProvider = Provider<bool>((ref) => true);
@@ -258,14 +278,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
             },
           ),
           children: [
-            if (ref.watch(mapTilesEnabledProvider))
+            if (ref.watch(mapTilesEnabledProvider)) ...[
               TileLayer(
                 urlTemplate: mapTileUrl,
                 userAgentPackageName: 'app.catwalk.catwalk',
-                // The same streets, softened into the app's cream and sage.
-                tileBuilder: (context, tile, _) =>
-                    ColorFiltered(colorFilter: mapTint, child: tile),
+                retinaMode: RetinaMode.isHighDensity(context),
+                tileBuilder: mapNeedsTint
+                    ? (context, tile, _) =>
+                          ColorFiltered(colorFilter: mapTint, child: tile)
+                    : null,
               ),
+              const _MapCredit(),
+            ],
             if (_trail.length > 1)
               PolylineLayer(
                 polylines: [
@@ -579,6 +603,17 @@ class _AccessCard extends ConsumerWidget {
 }
 
 /// The blue dot for your own position.
+/// The credit the map data and the tile host ask for.
+class _MapCredit extends StatelessWidget {
+  const _MapCredit();
+
+  @override
+  Widget build(BuildContext context) => const SimpleAttributionWidget(
+    source: Text('MapTiler · OpenStreetMap contributors'),
+    alignment: Alignment.bottomLeft,
+  );
+}
+
 /// Something on the map you tapped.
 class _Target {
   const _Target(this.title, this.point);

@@ -138,6 +138,10 @@ void main() {
     final container = await show(tester, location);
     final view = container.read(mapControllerProvider).requireValue;
     expect(view.pins, isNotEmpty);
+    // Pins far off screen are not drawn, so first walk to within sight of one.
+    final first = view.pins.first.point;
+    location.move(fixAt(north(first, 150)));
+    await frames(tester, 20);
     expect(labelled('Pickup, very close'), findsNothing);
     expect(labelled('Pickup'), findsWidgets);
 
@@ -277,5 +281,14 @@ void main() {
     location.move(fixAt(target.point));
     await frames(tester, 25);
     expect(find.byKey(const Key('target-card')), findsNothing);
+  });
+
+  test('tiles come from MapTiler with a key, and the map is not tinted', () {
+    expect(mapTileUrl, startsWith('https://api.maptiler.com/maps/'));
+    for (final part in ['{z}', '{x}', '{y}', '{r}', 'key=']) {
+      expect(mapTileUrl, contains(part));
+    }
+    expect(mapTilerKey, isNotEmpty);
+    expect(mapNeedsTint, isFalse);
   });
 }
