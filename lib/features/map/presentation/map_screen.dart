@@ -209,9 +209,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
     }
     _routeBusy = true;
     if (mounted) setState(() {});
-    final route = await ref
-        .read(routeServiceProvider)
-        .walk(fix.point, target.point);
+    WalkingRoute? route;
+    try {
+      route = await ref
+          .read(routeServiceProvider)
+          .walk(fix.point, target.point);
+    } on RouteUnavailable {
+      route = null;
+    }
     _routeBusy = false;
     if (!mounted || _selected != id) return;
     setState(() {

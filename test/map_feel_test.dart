@@ -362,24 +362,29 @@ void main() {
       expect(at(3900).timeText, '1 h 5 min');
     });
 
-    Future<(FakeLocationService, FakeRouteService, dynamic)> tapPin(
+    Future<(FakeLocationService, FakeRouteService, dynamic, int)> tapPin(
       WidgetTester tester, {
       FakeRouteService? routes,
+      void Function(FakeRouteService)? onSnapped,
     }) async {
       final fake = routes ?? defaultRoutes();
       final location = FakeLocationService(start: fixAt(amsterdam));
       final container = await show(tester, location, routes: fake);
+      // Let the day's pins find their streets first.
+      await frames(tester, 20);
       final pin = container.read(mapControllerProvider).requireValue.pins.first;
       location.move(fixAt(north(pin.point, 100)));
       await frames(tester, 25);
+      final before = fake.calls.length;
+      onSnapped?.call(fake);
       await tester.tap(find.byKey(ValueKey('pin-${pin.id}')));
       await frames(tester);
-      return (location, fake, pin);
+      return (location, fake, pin, before);
     }
 
     testWidgets('the card uses the street route and says so', (tester) async {
-      final (_, fake, _) = await tapPin(tester);
-      expect(fake.calls, hasLength(1));
+      final (_, fake, _, before) = await tapPin(tester);
+      expect(fake.calls.length - before, 1);
       expect(
         tester.widget<Text>(find.byKey(const Key('target-distance'))).data,
         '3 min · 180 m',
@@ -413,7 +418,7 @@ void main() {
     testWidgets('no route found: a straight-line guess, labelled as one', (
       tester,
     ) async {
-      await tapPin(tester, routes: FakeRouteService());
+      await tapPin(tester, onSnapped: (fake) => fake.route = null);
       expect(
         tester.widget<Text>(find.byKey(const Key('target-caption'))).data,
         'Straight line, a rough guess',
@@ -425,17 +430,17 @@ void main() {
       final saved = routeRefreshEvery;
       routeRefreshEvery = Duration.zero;
       addTearDown(() => routeRefreshEvery = saved);
-      final (location, fake, pin) = await tapPin(tester);
-      expect(fake.calls, hasLength(1));
+      final (location, fake, pin, before) = await tapPin(tester);
+      expect(fake.calls.length - before, 1);
       final from = north(pin.point, 100);
 
       location.move(fixAt(north(from, -10)));
       await frames(tester, 15);
-      expect(fake.calls, hasLength(1));
+      expect(fake.calls.length - before, 1);
 
       location.move(fixAt(north(from, -60)));
       await frames(tester, 15);
-      expect(fake.calls, hasLength(2));
+      expect(fake.calls.length - before, 2);
     });
 
     testWidgets('closing the card takes the route off the map', (tester) async {

@@ -58,19 +58,36 @@ void main() {
     expect(route.points.first.lat, 52.3676);
   });
 
-  test('a server error is no route', () async {
+  test('"no way there" is a null route, not an error', () async {
+    status = 400;
+    body = {'code': 'NoRoute', 'message': 'Impossible route'};
+    expect(await service().walk(amsterdam, nearby), isNull);
+    body = {'code': 'NoSegment'};
+    expect(await service().walk(amsterdam, nearby), isNull);
+  });
+
+  test('a server error means the router is unavailable', () async {
     status = 500;
-    expect(await service().walk(amsterdam, nearby), isNull);
+    expect(service().walk(amsterdam, nearby), throwsA(isA<RouteUnavailable>()));
   });
 
-  test('a nonsense answer is no route', () async {
+  test('a nonsense answer means the router is unavailable', () async {
     body = 'not json';
-    expect(await service().walk(amsterdam, nearby), isNull);
+    expect(service().walk(amsterdam, nearby), throwsA(isA<RouteUnavailable>()));
+    body = {'code': 'InvalidQuery'};
+    expect(service().walk(amsterdam, nearby), throwsA(isA<RouteUnavailable>()));
   });
 
-  test('no server at all is no route', () async {
+  test('no server at all means the router is unavailable', () async {
     final dead = OsrmRouteService(baseUrl: 'http://127.0.0.1:1/route/v1/foot');
-    expect(await dead.walk(amsterdam, nearby), isNull);
+    expect(dead.walk(amsterdam, nearby), throwsA(isA<RouteUnavailable>()));
+  });
+
+  test('under test the default router is never reached', () {
+    expect(
+      const UnavailableRouteService().walk(amsterdam, nearby),
+      throwsA(isA<RouteUnavailable>()),
+    );
   });
 
   test('the default server is an OSRM foot profile', () {

@@ -16,11 +16,14 @@ import '../../room/data/room_layout_provider.dart';
 import '../../steps/presentation/home_controller.dart';
 import '../../analytics/analytics_service.dart';
 import '../data/arrival_repository.dart';
+import '../data/route_service.dart';
 import '../data/inventory_repository.dart';
 import '../data/lost_cat_repository.dart';
 import '../data/location_service.dart';
 import '../data/map_state_repository.dart';
 import '../domain/arrival.dart';
+import '../domain/pin_snapping.dart';
+import '../domain/walking_route.dart';
 import '../domain/collect.dart';
 import '../domain/toy_perks.dart';
 import '../domain/geo.dart';
@@ -271,6 +274,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
         cellDate: today,
         collectedDate: today,
         collected: const {},
+        snaps: const {},
       );
       await maps.write(mapState);
     }
@@ -278,12 +282,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     var next = view.copyWith(fix: fix);
     var collectedIds = mapState.collectedOn(today);
     final pinCount = ToyPerks.of(view.inventory.toys).pinsPerDay;
-    var pins = spawnPins(
-      cell: cell,
-      date: today,
-      count: pinCount,
-      collected: collectedIds,
-    );
+    var pins = _pinsFor(cell, today, pinCount, collectedIds, mapState.snaps);
     MapNotice? event;
 
     // Walking onto a pin picks it up. One at a time, so each gets its sheet.
@@ -301,12 +300,8 @@ class CatMapController extends AsyncNotifier<MapViewState> {
         break;
       }
     }
-    pins = spawnPins(
-      cell: cell,
-      date: today,
-      count: pinCount,
-      collected: collectedIds,
-    );
+    pins = _pinsFor(cell, today, pinCount, collectedIds, mapState.snaps);
+    _snapSoon(cell, today, pinCount, fix, mapState.snaps);
 
     // A cat waiting for a bed: placed once, then walked to.
     final arrivals = ref.read(arrivalRepositoryProvider);
@@ -365,6 +360,120 @@ class CatMapController extends AsyncNotifier<MapViewState> {
 
   /// Collects [pin]: updates the saved inventory, then refreshes the home
   /// screen so its candy count is right.
+  /// Today's pins: the first [count] candidates not dropped, on their streets.
+  List<MapPin> _pinsFor(
+    GeoCell cell,
+    CalendarDate today,
+    int count,
+    Set<String> collected,
+    Map<String, PinSnap> snaps,
+  ) => choosePins(
+    candidates: spawnPins(
+      cell: cell,
+      date: today,
+      count: count * candidatesPerPin,
+    ),
+    snaps: snaps,
+    count: count,
+    collected: collected,
+  );
+
+  bool _snapping = false;
+  DateTime? _snapTriedAt;
+
+  /// How long to wait before asking the router again after it was unreachable.
+  static const Duration snapRetryEvery = Duration(seconds: 45);
+
+  /// Starts asking the router about today's candidate pins, when some have not
+  /// been asked about. It runs in the background: the map shows the pins as
+  /// drawn at first and moves them onto streets as the answers come in.
+  void _snapSoon(
+    GeoCell cell,
+    CalendarDate today,
+    int count,
+    GeoFix fix,
+    Map<String, PinSnap> snaps,
+  ) {
+    if (_snapping) return;
+    final candidates = spawnPins(
+      cell: cell,
+      date: today,
+      count: count * candidatesPerPin,
+    );
+    if (!needsSnapping(candidates: candidates, snaps: snaps, count: count)) {
+      return;
+    }
+    final tried = _snapTriedAt;
+    if (tried != null && DateTime.now().difference(tried) < snapRetryEvery) {
+      return;
+    }
+    _snapping = true;
+    unawaited(_snap(candidates, count, fix, today));
+  }
+
+  Future<void> _snap(
+    List<MapPin> candidates,
+    int count,
+    GeoFix fix,
+    CalendarDate today,
+  ) async {
+    try {
+      final maps = ref.read(mapStateRepositoryProvider);
+      final router = ref.read(routeServiceProvider);
+      var mapState = await maps.read();
+      var snaps = {...mapState.snaps};
+      var kept = 0;
+      for (final candidate in candidates) {
+        var snap = snaps[candidate.id];
+        if (snap == null) {
+          final WalkingRoute? route;
+          try {
+            route = await router.walk(fix.point, candidate.point);
+          } on RouteUnavailable {
+            // Ask again later; the pins stay where they were drawn.
+            _snapTriedAt = DateTime.now();
+            break;
+          }
+          snap = route == null
+              ? const PinSnap.rejected()
+              : judgeSnap(
+                  candidate: candidate.point,
+                  from: fix.point,
+                  route: route,
+                );
+          snaps[candidate.id] = snap;
+          // The day may have turned while the router was thinking.
+          mapState = (await maps.read()).copyWith(snaps: snaps);
+          if (CalendarDate.today() != today) return;
+          await maps.write(mapState);
+        }
+        if (snap.verdict == SnapVerdict.accepted) kept++;
+        if (kept == count) break;
+      }
+      _showSnappedPins(mapState, today, count);
+    } finally {
+      _snapping = false;
+    }
+  }
+
+  /// Puts the pins as they now stand on the map.
+  void _showSnappedPins(MapState mapState, CalendarDate today, int count) {
+    final view = state.value;
+    final cell = mapState.cellFor(today);
+    if (view == null || cell == null) return;
+    state = AsyncData(
+      view.copyWith(
+        pins: _pinsFor(
+          cell,
+          today,
+          count,
+          mapState.collectedOn(today),
+          mapState.snaps,
+        ),
+      ),
+    );
+  }
+
   Future<Collected> _take(MapPin pin, MapViewState view) async {
     final inventories = ref.read(inventoryRepositoryProvider);
     final inventory = await inventories.read();

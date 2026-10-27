@@ -6,6 +6,7 @@ import '../../../core/utils/calendar_date.dart';
 import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../domain/geo.dart';
+import '../domain/pin_snapping.dart';
 import '../domain/recovery.dart';
 
 /// The app-wide [MapStateRepository], built on the local store.
@@ -24,6 +25,7 @@ class MapState {
     this.collectedDate,
     this.collected = const {},
     this.recovery = const Recovery(),
+    this.snaps = const {},
   });
 
   /// Reads a saved state. Missing or wrongly typed fields fall back to empty.
@@ -43,6 +45,12 @@ class MapState {
         if (collected is List)
           for (final id in collected)
             if (id is String) id,
+      },
+      snaps: {
+        if (json['snaps'] is Map<String, dynamic>)
+          for (final entry in (json['snaps'] as Map<String, dynamic>).entries)
+            if (entry.value is Map<String, dynamic>)
+              entry.key: PinSnap.fromJson(entry.value as Map<String, dynamic>),
       },
       recovery: json['recovery'] is Map<String, dynamic>
           ? Recovery.fromJson(json['recovery'] as Map<String, dynamic>)
@@ -68,6 +76,10 @@ class MapState {
   /// Where the runaway cat's search stands (not placed, or placed on the map).
   final Recovery recovery;
 
+  /// What was decided about each of today's candidate pins: snapped onto a
+  /// street, or dropped. Cleared with the day's cell.
+  final Map<String, PinSnap> snaps;
+
   /// The pins' cell for [today], or null when it is yesterday's.
   GeoCell? cellFor(CalendarDate today) => cellDate == today ? cell : null;
 
@@ -83,12 +95,14 @@ class MapState {
     CalendarDate? collectedDate,
     Set<String>? collected,
     Recovery? recovery,
+    Map<String, PinSnap>? snaps,
   }) => MapState(
     cell: cell ?? this.cell,
     cellDate: cellDate ?? this.cellDate,
     collectedDate: collectedDate ?? this.collectedDate,
     collected: collected ?? this.collected,
     recovery: recovery ?? this.recovery,
+    snaps: snaps ?? this.snaps,
   );
 
   /// The JSON saved to the local store. Null fields are left out.
@@ -98,6 +112,7 @@ class MapState {
     if (collectedDate != null) 'collectedDate': collectedDate!.toIsoDate(),
     'collected': collected.toList(),
     'recovery': recovery.toJson(),
+    'snaps': {for (final e in snaps.entries) e.key: e.value.toJson()},
   };
 }
 
