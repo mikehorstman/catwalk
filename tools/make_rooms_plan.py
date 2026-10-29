@@ -9,8 +9,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = sorted((ROOT / ".hermes" / "plans").glob("*rooms-decorations-gifts.md"))[-1]
-OUT = ROOT / "docs" / "plan-rooms.html"
+# Two documents: the rules plan and the implementation plan.
+DOCS = {
+    "rules": ("*rooms-decorations-gifts.md", "plan-rooms.html",
+              "Catwalk: rooms, decorations, gifts and wishes (rules)"),
+    "implementation": ("*rooms-implementation.md", "plan-rooms-implementation.html",
+                       "Catwalk: rooms, gifts and wishes (implementation plan)"),
+}
+KEY = sys.argv[1] if len(sys.argv) > 1 else None
 
 
 def inline(text: str) -> str:
@@ -63,7 +69,7 @@ def convert(md: str):
         if m:
             level, text = len(m.group(1)), m.group(2)
             sid = slug(text)
-            if level in (2, 3):
+            if level in (1, 2, 3):
                 toc.append((level, text, sid))
             out.append(f"<h{level} id='{sid}'>{inline(text)}</h{level}>")
             i += 1
@@ -152,25 +158,33 @@ strong{color:#16222b}
 """
 
 
-def main():
-    md = SRC.read_text()
+def build(key):
+    pattern, out_name, title = DOCS[key]
+    src = sorted((ROOT / ".hermes" / "plans").glob(pattern))[-1]
+    md = src.read_text()
     body, toc = convert(md)
     nav = "".join(
         f"<a class='l{lvl}' href='#{sid}'>{html.escape(re.sub(r'[`*]', '', text))}</a>"
         for lvl, text, sid in toc
-        if lvl == 2 or text.startswith("Slice")
+        if lvl in (1, 2) and not text.startswith("Rooms, ")
     )
     page = (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-        "<title>Catwalk: rooms, decorations, gifts and wishes</title>"
+        f"<title>{title}</title>"
         f"<style>{CSS}</style></head><body><div class='wrap'>"
         f"<nav><b>Contents</b>{nav}</nav><main>"
         "<span class='badge'>Plan, not built yet</span>"
         f"{body}</main></div></body></html>"
     )
-    OUT.write_text(page)
-    print("wrote", OUT, len(page), "bytes from", SRC.name)
+    out = ROOT / "docs" / out_name
+    out.write_text(page)
+    print("wrote", out, len(page), "bytes from", src.name)
+
+
+def main():
+    for key in ([KEY] if KEY else DOCS):
+        build(key)
 
 
 if __name__ == "__main__":
