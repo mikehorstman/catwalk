@@ -7,5 +7,6 @@ import 'room_type.dart';
 /// living room and the player owns any.
 Set<Like> tagsOf(RoomType room, HomeState home, Inventory inventory) => {
   room.baseLike,
+  for (final item in home.itemsIn(room)) ...item.tags,
   if (room == RoomType.living && inventory.toys.isNotEmpty) Like.toys,
 };

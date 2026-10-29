@@ -42,6 +42,37 @@ class RoomSpot {
 }
 
 /// Spot ids for toys start with this: `toy_ball`. It tells toys from furniture.
+/// A decoration standing in the room, for drawing.
+class PlacedItem {
+  /// Creates a placed item.
+  const PlacedItem({
+    required this.id,
+    required this.name,
+    required this.slot,
+    required this.position,
+    required this.tier,
+    required this.starter,
+  });
+
+  /// The catalogue id.
+  final String id;
+
+  /// The name shown on the placeholder.
+  final String name;
+
+  /// The slot name: floor, sleep, climb, view or corner.
+  final String slot;
+
+  /// Where it stands, as a fraction of the room.
+  final Offset position;
+
+  /// 1 to 3.
+  final int tier;
+
+  /// True for a starter item.
+  final bool starter;
+}
+
 const String toySpotPrefix = 'toy_';
 
 /// Where each toy lies on the floor, left to right as a fraction of the room.
@@ -60,6 +91,8 @@ class RoomLayout {
     this.walkY = 0.88,
     this.walkLeft = 0.10,
     this.walkRight = 0.90,
+    this.items = const [],
+    this.roomId = 'living',
   });
 
   /// Every place a cat can use: furniture first, then any toys.
@@ -73,6 +106,13 @@ class RoomLayout {
 
   /// Right end of the walk line, as a fraction of the room's width.
   final double walkRight;
+
+  /// The decorations standing in the room. Empty for the classic layout.
+  final List<PlacedItem> items;
+
+  /// The room this layout is for. The living room keeps its hand-drawn
+  /// furniture; the others draw placeholders.
+  final String roomId;
 
   /// Floor spots sit on the walk line, so furniture and feet agree.
   static const _floorY = 0.88;
@@ -143,6 +183,8 @@ class RoomLayout {
       walkY: walkY,
       walkLeft: walkLeft,
       walkRight: walkRight,
+      items: items,
+      roomId: roomId,
     );
   }
 
