@@ -2,6 +2,7 @@ import '../../../core/utils/calendar_date.dart';
 import 'decoration_catalogue.dart';
 import 'room_constants.dart';
 import 'room_type.dart';
+import 'wishes.dart';
 
 /// What the player's home looks like: the rooms owned and the cats still
 /// owed to the player. Saved on the phone as one JSON object.
@@ -15,6 +16,13 @@ class HomeState {
     this.owned = const {},
     this.unlocked = const {},
     this.placed = const {},
+    this.giftsDay,
+    this.giftCarrier,
+    this.extraGifts = const [],
+    this.lastGiftOn = const {},
+    this.giftsSincePity = 0,
+    this.bonusCats = const {},
+    this.wishes = const {},
   });
 
   /// Reads a state from JSON. Missing or odd values fall back to the
@@ -60,6 +68,41 @@ class HomeState {
       owned: ids(json['owned']),
       unlocked: ids(json['unlocked']),
       placed: placed,
+      giftsDay: json['giftsDay'] is String
+          ? _parseDate(json['giftsDay'] as String)
+          : null,
+      giftCarrier: json['giftCarrier'] as String?,
+      extraGifts: [
+        if (json['extraGifts'] is List)
+          for (final g in json['extraGifts'] as List)
+            if (g is Map && g['catId'] is String && g['date'] is String)
+              if (_parseDate(g['date'] as String) case final d?)
+                ExtraGift(catId: g['catId'] as String, date: d),
+      ],
+      lastGiftOn: {
+        if (json['lastGiftOn'] is Map)
+          for (final e in (json['lastGiftOn'] as Map).entries)
+            if (e.key is String && e.value is String)
+              if (_parseDate(e.value as String) case final d?)
+                e.key as String: d,
+      },
+      giftsSincePity: ((json['giftsSincePity'] as num?)?.toInt() ?? 0).clamp(
+        0,
+        999,
+      ),
+      bonusCats: {
+        if (json['bonusCats'] is List)
+          for (final c in json['bonusCats'] as List)
+            if (c is String) c,
+      },
+      wishes: {
+        if (json['wishes'] is Map)
+          for (final e in (json['wishes'] as Map).entries)
+            if (e.key is String && e.value is Map<String, dynamic>)
+              e.key as String: WishRecord.fromJson(
+                e.value as Map<String, dynamic>,
+              ),
+      },
     );
   }
 
@@ -87,6 +130,27 @@ class HomeState {
   /// What the player placed: `room:slot` to an item id. A slot that is not
   /// here holds its starter item, if it has one.
   final Map<String, String> placed;
+
+  /// The day the gift cats were chosen for.
+  final CalendarDate? giftsDay;
+
+  /// The cat that holds today's main gift (the daily gift), if one waits.
+  final String? giftCarrier;
+
+  /// Small gifts cats hold, from the day they were earned.
+  final List<ExtraGift> extraGifts;
+
+  /// The last day each cat handed over a gift.
+  final Map<String, CalendarDate> lastGiftOn;
+
+  /// Extra gifts opened since one unlocked a decoration.
+  final int giftsSincePity;
+
+  /// Cats whose wish was granted: their next gift unlocks more often.
+  final Set<String> bonusCats;
+
+  /// Each cat's wishes.
+  final Map<String, WishRecord> wishes;
 
   /// The key of a slot in [placed].
   static String placeKey(RoomType room, Slot slot) =>
@@ -126,6 +190,14 @@ class HomeState {
     Set<String>? owned,
     Set<String>? unlocked,
     Map<String, String>? placed,
+    CalendarDate? giftsDay,
+    String? giftCarrier,
+    bool clearGiftCarrier = false,
+    List<ExtraGift>? extraGifts,
+    Map<String, CalendarDate>? lastGiftOn,
+    int? giftsSincePity,
+    Set<String>? bonusCats,
+    Map<String, WishRecord>? wishes,
   }) => HomeState(
     rooms: rooms ?? this.rooms,
     arrivalCredits: arrivalCredits ?? this.arrivalCredits,
@@ -134,6 +206,13 @@ class HomeState {
     owned: owned ?? this.owned,
     unlocked: unlocked ?? this.unlocked,
     placed: placed ?? this.placed,
+    giftsDay: giftsDay ?? this.giftsDay,
+    giftCarrier: clearGiftCarrier ? null : (giftCarrier ?? this.giftCarrier),
+    extraGifts: extraGifts ?? this.extraGifts,
+    lastGiftOn: lastGiftOn ?? this.lastGiftOn,
+    giftsSincePity: giftsSincePity ?? this.giftsSincePity,
+    bonusCats: bonusCats ?? this.bonusCats,
+    wishes: wishes ?? this.wishes,
   );
 
   /// The state as JSON.
@@ -145,6 +224,15 @@ class HomeState {
     'owned': owned.toList()..sort(),
     'unlocked': unlocked.toList()..sort(),
     'placed': placed,
+    if (giftsDay != null) 'giftsDay': giftsDay!.toIsoDate(),
+    if (giftCarrier != null) 'giftCarrier': giftCarrier!,
+    'extraGifts': [for (final g in extraGifts) g.toJson()],
+    'lastGiftOn': {
+      for (final e in lastGiftOn.entries) e.key: e.value.toIsoDate(),
+    },
+    'giftsSincePity': giftsSincePity,
+    'bonusCats': bonusCats.toList()..sort(),
+    'wishes': {for (final e in wishes.entries) e.key: e.value.toJson()},
   };
 }
 
@@ -154,4 +242,19 @@ CalendarDate? _parseDate(String value) {
   } catch (_) {
     return null;
   }
+}
+
+/// A small gift a cat holds for the player until the day ends.
+class ExtraGift {
+  /// Creates an extra gift.
+  const ExtraGift({required this.catId, required this.date});
+
+  /// The cat holding it.
+  final String catId;
+
+  /// The day it was earned.
+  final CalendarDate date;
+
+  /// JSON.
+  Map<String, Object> toJson() => {'catId': catId, 'date': date.toIsoDate()};
 }
