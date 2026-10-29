@@ -34,9 +34,6 @@ abstract final class AppConstants {
   static const int goalCandyMin = 3;
   static const int goalCandyMax = 15;
 
-  /// What the 2nd, 3rd, 4th and 5th bed cost, in candy. The first is free.
-  static const List<int> bedPrices = [40, 90, 160, 250];
-
   /// Pins on the map each day, before any toy adds more.
   static const int pinsPerDay = 5;
 

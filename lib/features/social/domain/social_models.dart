@@ -77,7 +77,7 @@ class PublicProfile {
     required this.dailyGoal,
     required this.cats,
     required this.toys,
-    required this.beds,
+    required this.rooms,
     this.photoUrl,
   });
 
@@ -104,7 +104,7 @@ class PublicProfile {
         for (final item in (json['toys'] as List<dynamic>?) ?? const [])
           item.toString(),
       ],
-      beds: number('beds') == 0 ? 1 : number('beds'),
+      rooms: number('rooms') == 0 ? 1 : number('rooms').clamp(1, 4),
     );
   }
 
@@ -147,8 +147,8 @@ class PublicProfile {
   /// The toys owned, as ids.
   final List<String> toys;
 
-  /// The beds owned.
-  final int beds;
+  /// The rooms owned, from 1 to 4.
+  final int rooms;
 
   /// Plain-JSON form for Firestore. The uid is the document id, so it is not
   /// stored again.
@@ -165,7 +165,7 @@ class PublicProfile {
     'dailyGoal': dailyGoal,
     'cats': [for (final cat in cats) cat.toJson()],
     'toys': toys,
-    'beds': beds,
+    'rooms': rooms,
   };
 }
 
@@ -175,6 +175,7 @@ PublicProfile buildPublicProfile({
   required String friendCode,
   required List<Cat> cats,
   required Inventory inventory,
+  required int rooms,
   required int streak,
   required int bestStreak,
   required int totalSteps,
@@ -199,7 +200,7 @@ PublicProfile buildPublicProfile({
     dailyGoal: dailyGoal,
     cats: [for (final cat in cats) PublicCat.of(cat)],
     toys: inventory.toys,
-    beds: inventory.beds,
+    rooms: rooms,
   );
 }
 

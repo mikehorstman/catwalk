@@ -5,6 +5,9 @@ import '../../cat/data/cat_codec.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
+import '../../rooms/domain/home_state.dart';
+import '../../rooms/domain/placement.dart';
+import '../../cat/domain/new_cat.dart';
 import 'geo.dart';
 import 'lost_cat.dart';
 import 'map_pin.dart';
@@ -95,13 +98,6 @@ Arrival placeArrival({
   return arrival.withPoint(pointInBand(cell.center, random));
 }
 
-/// Beds with nobody in them: beds owned, minus the cats in the room, minus a
-/// cat that is already on its way.
-int freeBeds({required int beds, required int cats, required bool arriving}) {
-  final free = beds - cats - (arriving ? 1 : 0);
-  return free < 0 ? 0 : free;
-}
-
 /// The lost cat that has come back and should now wait on the map, or null.
 ///
 /// A lost cat comes back only on or after its return day, only when a bed is
@@ -130,4 +126,52 @@ Arrival? returningArrival({
     kind: ArrivalKind.returning,
     appearsOn: today,
   );
+}
+
+/// What [nextArrival] decided: the cat that now waits on the map (or null),
+/// and the home after a credit was used.
+class ArrivalPlan {
+  /// Creates a plan.
+  const ArrivalPlan(this.arrival, this.home);
+
+  /// The arriving cat, or null when nobody arrives.
+  final Arrival? arrival;
+
+  /// The home, with the credit taken when a cat arrives.
+  final HomeState home;
+}
+
+/// Decides who waits on the map next. Only one cat waits at a time, and a
+/// cat needs a free place somewhere. A lost cat that is due back goes first,
+/// then a cat the player paid for with a room.
+ArrivalPlan nextArrival({
+  required List<LostCat> lost,
+  required HomeState home,
+  required List<Cat> cats,
+  required CalendarDate today,
+  required bool arriving,
+}) {
+  if (arriving) return ArrivalPlan(null, home);
+  final free = totalFreePlaces(home, cats);
+  if (free <= 0) return ArrivalPlan(null, home);
+  final returning = returningArrival(
+    lost: lost,
+    today: today,
+    free: free,
+    arriving: false,
+  );
+  if (returning != null) return ArrivalPlan(returning, home);
+  final from = home.creditsFrom;
+  if (home.arrivalCredits > 0 && from != null && from.daysUntil(today) >= 0) {
+    final left = home.arrivalCredits - 1;
+    return ArrivalPlan(
+      Arrival(
+        cat: newCat(seed: 'room${home.rooms.length}-$left', on: today),
+        kind: ArrivalKind.bought,
+        appearsOn: today,
+      ),
+      home.copyWith(arrivalCredits: left, clearCreditsFrom: left == 0),
+    );
+  }
+  return ArrivalPlan(null, home);
 }

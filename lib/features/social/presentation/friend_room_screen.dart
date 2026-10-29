@@ -93,8 +93,8 @@ class FriendRoomScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              '${profile.cats.length} of ${profile.beds} '
-              '${profile.beds == 1 ? 'bed' : 'beds'} in use.',
+              '${profile.cats.length} of ${profile.rooms * 3} places in use, '
+              '${profile.rooms} ${profile.rooms == 1 ? 'room' : 'rooms'}.',
               style: muted,
             ),
             if (profile.toys.isNotEmpty) ...[

@@ -11,7 +11,7 @@ import 'package:catwalk/features/onboarding/data/onboarding_repository.dart';
 import 'package:catwalk/features/steps/presentation/home_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'cats_and_beds_test.dart' as beds show cat;
+import 'cats_and_rooms_test.dart' as beds show cat;
 import 'map_controller_test.dart'
     show amsterdam, containerOf, fixAt, seededStore;
 
@@ -117,23 +117,19 @@ void main() {
   });
 
   group('on Home', () {
-    test('every cat is listed, with the empty beds counted', () async {
+    test('every cat is listed, with the free places counted', () async {
       final store = await seededStore();
       await CatRepository(store).add(beds.cat('2'));
       final container = containerOf(store, FakeLocationService());
       final state = await container.read(homeControllerProvider.future);
       expect(state.cats.map((c) => c.id), ['1', '2']);
-      expect(state.freeBeds, 0);
+      expect(state.freePlaces, 1);
     });
 
     test(
-      'a lost cat that is due back waits on the map when a bed is free',
+      'a lost cat that is due back waits on the map when a place is free',
       () async {
         final store = await seededStore();
-        await store.write(
-          'inventory',
-          '{"candy":0,"freezes":0,"toys":[],"beds":2}',
-        );
         await LostCatRepository(store).add(
           LostCat(
             cat: beds.cat('7'),
@@ -144,13 +140,15 @@ void main() {
         final container = containerOf(store, FakeLocationService());
         final state = await container.read(homeControllerProvider.future);
         expect(state.arrival?.kind, ArrivalKind.returning);
-        expect(state.freeBeds, 0);
+        expect(state.freePlaces, 1);
         expect((await ArrivalRepository(store).read())!.cat.id, '7');
       },
     );
 
-    test('it keeps waiting while every bed is taken', () async {
+    test('it keeps waiting while every place is taken', () async {
       final store = await seededStore();
+      await CatRepository(store).add(beds.cat('2'));
+      await CatRepository(store).add(beds.cat('3'));
       await LostCatRepository(store).add(
         LostCat(
           cat: beds.cat('7'),

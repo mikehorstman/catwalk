@@ -9,6 +9,7 @@ class HomeState {
   const HomeState({
     this.rooms = const [RoomType.living],
     this.arrivalCredits = 0,
+    this.creditsFrom,
     this.lastWelcomeOn,
   });
 
@@ -28,10 +29,12 @@ class HomeState {
       }
     }
     final credits = json['arrivalCredits'];
+    final from = json['creditsFrom'];
     final welcome = json['lastWelcomeOn'];
     return HomeState(
       rooms: rooms,
       arrivalCredits: credits is num ? credits.toInt().clamp(0, 99) : 0,
+      creditsFrom: from is String ? _parseDate(from) : null,
       lastWelcomeOn: welcome is String ? _parseDate(welcome) : null,
     );
   }
@@ -43,6 +46,10 @@ class HomeState {
   /// Cats the player has paid for (a room) that have not arrived yet.
   final int arrivalCredits;
 
+  /// The first day a waiting credit may bring a cat: the morning after the
+  /// purchase. Null when no credit is waiting.
+  final CalendarDate? creditsFrom;
+
   /// The day of the last welcome call, or null if there was none.
   final CalendarDate? lastWelcomeOn;
 
@@ -53,10 +60,13 @@ class HomeState {
   HomeState copyWith({
     List<RoomType>? rooms,
     int? arrivalCredits,
+    CalendarDate? creditsFrom,
+    bool clearCreditsFrom = false,
     CalendarDate? lastWelcomeOn,
   }) => HomeState(
     rooms: rooms ?? this.rooms,
     arrivalCredits: arrivalCredits ?? this.arrivalCredits,
+    creditsFrom: clearCreditsFrom ? null : (creditsFrom ?? this.creditsFrom),
     lastWelcomeOn: lastWelcomeOn ?? this.lastWelcomeOn,
   );
 
@@ -64,6 +74,7 @@ class HomeState {
   Map<String, Object> toJson() => {
     'rooms': [for (final room in rooms) room.name],
     'arrivalCredits': arrivalCredits,
+    if (creditsFrom != null) 'creditsFrom': creditsFrom!.toIsoDate(),
     if (lastWelcomeOn != null) 'lastWelcomeOn': lastWelcomeOn!.toIsoDate(),
   };
 }

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../cat/presentation/cat_voice.dart';
+import '../../cat/data/cat_repository.dart';
+import '../../rooms/domain/placement.dart';
+import '../../steps/presentation/home_controller.dart';
 import '../domain/room_cat.dart';
 
 /// Tapping a cat opens this: who she is and how she is doing.
 ///
 /// The room is a picture, not a dashboard. The numbers live here so the room can
 /// stay full screen.
-class CatDetailsSheet extends StatelessWidget {
+class CatDetailsSheet extends ConsumerWidget {
   const CatDetailsSheet({required this.cat, super.key});
 
   /// The cat to describe.
@@ -28,8 +32,14 @@ class CatDetailsSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final home = ref.watch(homeControllerProvider).value;
+    final moves = [
+      if (home != null)
+        for (final room in home.rooms)
+          if (room != cat.cat.roomId && placesFree(room, home.cats) > 0) room,
+    ];
     return SafeArea(
       top: false,
       child: Padding(
@@ -67,6 +77,29 @@ class CatDetailsSheet extends StatelessWidget {
                 label: 'Missed days',
                 value: '${cat.cat.consecutiveMissedDays}',
               ),
+            _Row(label: 'Lives in', value: cat.cat.roomId.label),
+            if (moves.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final room in moves)
+                    OutlinedButton(
+                      key: Key('move-to-${room.name}'),
+                      onPressed: () async {
+                        await ref
+                            .read(catRepositoryProvider)
+                            .moveCat(cat.id, room);
+                        await ref
+                            .read(homeControllerProvider.notifier)
+                            .refreshSilently();
+                        if (context.mounted) Navigator.of(context).pop();
+                      },
+                      child: Text('Move to ${room.label}'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

@@ -6,6 +6,11 @@ import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../domain/home_state.dart';
 
+/// The saved home state, for screens.
+final homeStateProvider = FutureProvider<HomeState>(
+  (ref) => ref.watch(homeStateRepositoryProvider).read(),
+);
+
 /// The shared home state repository.
 final homeStateRepositoryProvider = Provider<HomeStateRepository>(
   (ref) => HomeStateRepository(ref.watch(localStoreProvider)),

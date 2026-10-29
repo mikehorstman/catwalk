@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
+import '../../rooms/domain/placement.dart';
+import '../../rooms/domain/room_constants.dart';
+import '../../rooms/domain/room_type.dart';
 import '../../steps/presentation/home_controller.dart';
 import '../data/room_cats_provider.dart';
 import '../domain/cat_action.dart';
@@ -21,8 +24,16 @@ import 'widgets/room_scene.dart';
 ///
 /// The room shows state; it never decides it. Mood and status come from the day's
 /// rules, and the room only picks what a cat does about them.
-class RoomScreen extends ConsumerStatefulWidget {
-  const RoomScreen({this.layout, this.animations, super.key});
+class RoomPage extends ConsumerStatefulWidget {
+  const RoomPage({
+    this.room = RoomType.living,
+    this.layout,
+    this.animations,
+    super.key,
+  });
+
+  /// Which room this page shows. Only its cats are drawn.
+  final RoomType room;
 
   /// Overrides the room, for tests. Normally the room is built from what you
   /// have found.
@@ -33,10 +44,10 @@ class RoomScreen extends ConsumerStatefulWidget {
   final CatAnimationSet? animations;
 
   @override
-  ConsumerState<RoomScreen> createState() => _RoomScreenState();
+  ConsumerState<RoomPage> createState() => _RoomPageState();
 }
 
-class _RoomScreenState extends ConsumerState<RoomScreen>
+class _RoomPageState extends ConsumerState<RoomPage>
     with SingleTickerProviderStateMixin {
   /// Drives the simulation once per frame. Null until the first room is built,
   /// and stopped in reduced-motion mode.
@@ -115,9 +126,10 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cats = ref.watch(roomCatsProvider);
-    final bedCount =
-        ref.watch(homeControllerProvider).value?.inventory.beds ?? 0;
+    final cats = [
+      for (final cat in ref.watch(roomCatsProvider))
+        if (cat.cat.roomId == widget.room) cat,
+    ];
     // Reduce Motion is a device setting, and it can change while the app runs.
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
     final RoomLayout layout = widget.layout ?? ref.watch(roomLayoutProvider);
@@ -141,6 +153,11 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
             fit: StackFit.expand,
             children: [
               RoomScene(layout: layout),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: ColoredBox(color: roomTint(widget.room)),
+                ),
+              ),
               if (runAway)
                 const Center(child: EmptyCushion(size: 200))
               else
@@ -156,12 +173,6 @@ class _RoomScreenState extends ConsumerState<RoomScreen>
                       onTap: () => CatDetailsSheet.show(context, cat),
                     ),
               if (cats.isEmpty) const _NoCats(),
-              if (bedCount > 1)
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: _BedStrip(beds: bedCount, cats: cats.length),
-                ),
               if (kDebugMode)
                 const Positioned(
                   left: 4,
@@ -295,35 +306,201 @@ class _LabButton extends StatelessWidget {
   }
 }
 
-/// One small bed for each bed owned, full for a bed with a cat and outlined for
-/// an empty one. A placeholder until the real room art exists.
-class _BedStrip extends StatelessWidget {
-  const _BedStrip({required this.beds, required this.cats});
+/// A soft colour over the room that tells the rooms apart until each has its
+/// own art.
+Color roomTint(RoomType room) => switch (room) {
+  RoomType.living => const Color(0x00000000),
+  RoomType.garden => const Color(0x2A8FAE9B),
+  RoomType.attic => const Color(0x2AB07A3A),
+  RoomType.veranda => const Color(0x2A7FA3B8),
+};
 
-  /// Beds owned.
-  final int beds;
+/// The Cats tab: the rooms side by side. Swipe to see the next one.
+///
+/// The living room is first. Rooms you do not own yet are shown dim, with
+/// their price and a Buy button.
+class RoomScreen extends ConsumerStatefulWidget {
+  const RoomScreen({this.layout, this.animations, super.key});
 
-  /// Cats in the room.
-  final int cats;
+  /// Overrides the room, for tests.
+  final RoomLayout? layout;
+
+  /// Overrides how cats are drawn, for tests.
+  final CatAnimationSet? animations;
+
+  @override
+  ConsumerState<RoomScreen> createState() => _RoomScreenState();
+}
+
+class _RoomScreenState extends ConsumerState<RoomScreen> {
+  final PageController _pages = PageController();
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: '$cats of $beds beds used',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < beds; i++)
-            Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: Icon(
-                i < cats ? Icons.bed : Icons.bed_outlined,
-                size: 26,
-                color: i < cats ? CatwalkColors.teal : CatwalkColors.inkMuted,
+    final home = ref.watch(homeControllerProvider).value;
+    final owned = home?.rooms ?? const [RoomType.living];
+    final cats = home?.cats ?? const [];
+    final room = RoomType.values[_page];
+    final theme = Theme.of(context);
+    return Stack(
+      children: [
+        PageView(
+          key: const Key('room-pager'),
+          controller: _pages,
+          onPageChanged: (page) => setState(() => _page = page),
+          children: [
+            for (final type in RoomType.values)
+              if (owned.contains(type))
+                RoomPage(
+                  room: type,
+                  layout: widget.layout,
+                  animations: widget.animations,
+                )
+              else
+                _LockedRoom(
+                  room: type,
+                  price: RoomType.priceForNext(owned.length),
+                  candy: home?.inventory.candy ?? 0,
+                  layout: widget.layout,
+                ),
+          ],
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          child: SafeArea(
+            bottom: false,
+            child: IgnorePointer(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: CatwalkColors.card.withAlpha(220),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        owned.contains(room)
+                            ? '${room.label} · '
+                                  '${catsIn(room, cats).length} of '
+                                  '${RoomConstants.placesPerRoom} places'
+                            : '${room.label} · not yours yet',
+                        key: const Key('room-title'),
+                        style: theme.textTheme.labelLarge,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final type in RoomType.values)
+                          Container(
+                            key: Key('room-dot-${type.name}'),
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: type == room
+                                  ? CatwalkColors.teal
+                                  : owned.contains(type)
+                                  ? CatwalkColors.orangeSoft
+                                  : CatwalkColors.line,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A room the player does not own yet: dim, with its price and a Buy button.
+class _LockedRoom extends ConsumerWidget {
+  const _LockedRoom({
+    required this.room,
+    required this.price,
+    required this.candy,
+    required this.layout,
+  });
+
+  final RoomType room;
+  final int? price;
+  final int candy;
+  final RoomLayout? layout;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final canBuy = price != null && candy >= price!;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        RoomScene(layout: layout ?? RoomLayout.standard),
+        ColoredBox(color: Colors.black.withAlpha(120)),
+        Center(
+          child: Container(
+            key: Key('locked-${room.name}'),
+            margin: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: CatwalkColors.card,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline, size: 28),
+                const SizedBox(height: 8),
+                Text(room.label, style: theme.textTheme.titleLarge),
+                const SizedBox(height: 4),
+                Text(
+                  'A new room for cats that like '
+                  '${room.baseLike.label.toLowerCase()}. A new cat arrives '
+                  'the next morning.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  key: Key('buy-room-page-${room.name}'),
+                  onPressed: canBuy
+                      ? () => ref
+                            .read(homeControllerProvider.notifier)
+                            .buyRoom(room)
+                      : null,
+                  child: Text(
+                    price == null
+                        ? 'Not for sale'
+                        : canBuy
+                        ? 'Buy for $price candy'
+                        : '$price candy (you have $candy)',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

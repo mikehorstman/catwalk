@@ -2,11 +2,10 @@ import 'dart:math' as math;
 
 import 'package:catwalk/features/cat/presentation/widgets/cat_head_icon.dart';
 import 'package:catwalk/features/cat/domain/cat_appearance.dart';
-import 'package:catwalk/features/map/data/inventory_repository.dart';
+import 'package:catwalk/features/cat/data/cat_repository.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
 import 'package:catwalk/features/map/data/photo_service.dart';
 import 'package:catwalk/features/map/data/street_cat_repository.dart';
-import 'package:catwalk/features/map/domain/inventory.dart';
 import 'package:catwalk/features/map/domain/street_cat.dart';
 import 'package:catwalk/features/map/presentation/street_cats_screen.dart';
 import 'package:catwalk/features/map/data/route_service.dart';
@@ -26,6 +25,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'map_controller_test.dart' show amsterdam, fixAt, seededStore;
+import 'support/test_cats.dart';
 
 /// About [meters] north of [p].
 GeoPoint north(GeoPoint p, double meters) =>
@@ -41,11 +41,12 @@ Future<ProviderContainer> show(
   FakeLocationService location, {
   FakeRouteService? routes,
   List<Override> extra = const [],
-  int? beds,
+  bool full = false,
 }) async {
   final store = await seededStore();
-  if (beds != null) {
-    await InventoryRepository(store).write(Inventory(beds: beds));
+  if (full) {
+    await CatRepository(store).add(testCat('f2'));
+    await CatRepository(store).add(testCat('f3'));
   }
   await tester.pumpWidget(
     ProviderScope(
@@ -480,14 +481,14 @@ void main() {
     Future<(FakeLocationService, FakePhotoService, ProviderContainer)> meet(
       WidgetTester tester, {
       int photos = 0,
-      int beds = 1,
+      bool full = true,
     }) async {
       final camera = FakePhotoService();
       final location = FakeLocationService(start: fixAt(amsterdam));
       final container = await show(
         tester,
         location,
-        beds: beds,
+        full: full,
         extra: [
           photoServiceProvider.overrideWithValue(camera),
           streetCatPickerProvider.overrideWithValue(
@@ -545,22 +546,26 @@ void main() {
       expect(find.textContaining('Photo 1 of 3'), findsOneWidget);
     });
 
-    testWidgets('a cat that is ready offers an invite when a bed is free', (
+    testWidgets('a cat that is ready offers an invite when a place is free', (
       tester,
     ) async {
-      final (location, _, container) = await meet(tester, photos: 3, beds: 3);
+      final (location, _, container) = await meet(
+        tester,
+        photos: 3,
+        full: false,
+      );
       await stepUp(tester, location, container);
       expect(find.byKey(const Key('street-photo')), findsNothing);
       expect(find.byKey(const Key('street-invite')), findsOneWidget);
     });
 
-    testWidgets('with every bed taken it says so instead of inviting', (
+    testWidgets('with every place taken it says so instead of inviting', (
       tester,
     ) async {
       final (location, _, container) = await meet(tester, photos: 3);
       await stepUp(tester, location, container);
       expect(find.byKey(const Key('street-invite')), findsNothing);
-      expect(find.byKey(const Key('street-no-bed')), findsOneWidget);
+      expect(find.byKey(const Key('street-no-place')), findsOneWidget);
     });
   });
 

@@ -4,6 +4,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../rooms/data/home_state_repository.dart';
+import '../../rooms/data/room_placement.dart';
+import '../../rooms/domain/placement.dart';
+
 import '../../../core/utils/calendar_date.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../../cat/data/cat_codec.dart';
@@ -74,7 +78,7 @@ class StreetCatPhotographed extends MapNotice {
     required this.catName,
     required this.sightings,
     required this.ready,
-    required this.hasFreeBed,
+    required this.hasFreePlace,
   });
 
   /// Its name.
@@ -86,8 +90,8 @@ class StreetCatPhotographed extends MapNotice {
   /// True when it has seen enough of you to join.
   final bool ready;
 
-  /// True when there is an empty bed for it right now.
-  final bool hasFreeBed;
+  /// True when there is an free place for it right now.
+  final bool hasFreePlace;
 }
 
 /// What happened when you tried to photograph or invite a street cat.
@@ -104,8 +108,8 @@ enum StreetCatOutcome {
   /// There is no camera, or it may not be used.
   noCamera,
 
-  /// Every bed has a cat in it already.
-  noBed,
+  /// Every place has a cat in it already.
+  noPlace,
 }
 
 class MapViewState {
@@ -123,7 +127,7 @@ class MapViewState {
     this.fix,
     this.event,
     this.streetCat,
-    this.freeBeds = 0,
+    this.freePlaces = 0,
   });
 
   /// Whether location is allowed. Anything but granted shows the access card.
@@ -166,7 +170,7 @@ class MapViewState {
   final StreetCatSpot? streetCat;
 
   /// Beds with no cat in them.
-  final int freeBeds;
+  final int freePlaces;
 
   /// True when location is allowed and a position is known.
   bool get hasLocation => access == LocationAccess.granted && fix != null;
@@ -190,7 +194,7 @@ class MapViewState {
     bool clearEvent = false,
     StreetCatSpot? streetCat,
     bool clearStreetCat = false,
-    int? freeBeds,
+    int? freePlaces,
   }) => MapViewState(
     access: access ?? this.access,
     fix: fix ?? this.fix,
@@ -205,7 +209,7 @@ class MapViewState {
     arrival: clearArrival ? null : (arrival ?? this.arrival),
     event: clearEvent ? null : (event ?? this.event),
     streetCat: clearStreetCat ? null : (streetCat ?? this.streetCat),
-    freeBeds: freeBeds ?? this.freeBeds,
+    freePlaces: freePlaces ?? this.freePlaces,
   );
 }
 
@@ -368,7 +372,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     }
     pins = _pinsFor(cell, today, pinCount, collectedIds, mapState.snaps);
 
-    // A cat waiting for a bed: placed once, then walked to.
+    // A cat waiting for a place: placed once, then walked to.
     final arrivals = ref.read(arrivalRepositoryProvider);
     var arrival = await arrivals.read();
     if (arrival != null && arrival.isVisibleOn(today)) {
@@ -431,9 +435,9 @@ class CatMapController extends AsyncNotifier<MapViewState> {
       clearArrival: arrival == null,
       streetCat: spot,
       clearStreetCat: spot == null,
-      freeBeds: freeBeds(
-        beds: next.inventory.beds,
-        cats: cats.length,
+      freePlaces: placesLeft(
+        home: await ref.read(homeStateRepositoryProvider).read(),
+        cats: cats,
         arriving: arrival != null,
       ),
       pins: pins,
@@ -632,7 +636,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
           catName: saved.name,
           sightings: saved.sightings,
           ready: saved.ready,
-          hasFreeBed: latest.freeBeds > 0,
+          hasFreePlace: latest.freePlaces > 0,
         ),
       ),
     );
@@ -640,7 +644,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
   }
 
   /// Invites today's street cat to join, when it is ready, you are within
-  /// reach and a bed is free.
+  /// reach and a place is free.
   Future<StreetCatOutcome> inviteStreetCat() async {
     final view = state.value;
     final spot = view?.streetCat;
@@ -651,9 +655,11 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     if (!reached(fix: fix, target: spot.point, allowMocked: allowMocked)) {
       return StreetCatOutcome.notClose;
     }
-    if (view.freeBeds <= 0) return StreetCatOutcome.noBed;
+    if (view.freePlaces <= 0) return StreetCatOutcome.noPlace;
     final today = CalendarDate.today();
-    await ref.read(catRepositoryProvider).add(spot.cat.toCat(today));
+    await ref
+        .read(catRepositoryProvider)
+        .add(await placeInBestRoom(ref, spot.cat.toCat(today)));
     await ref
         .read(streetCatRepositoryProvider)
         .upsert(spot.cat.copyWith(joined: true, lastSeen: today));
@@ -664,7 +670,7 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     state = AsyncData(
       latest.copyWith(
         clearStreetCat: true,
-        freeBeds: latest.freeBeds - 1,
+        freePlaces: latest.freePlaces - 1,
         event: CatJoined(catName: spot.cat.name, returning: false),
       ),
     );
@@ -683,10 +689,12 @@ class CatMapController extends AsyncNotifier<MapViewState> {
 
   /// The cat is back: active again, neutral mood, and no longer counting missed
   /// days. Saved, then the home screen is refreshed.
-  /// The waiting cat joins the room and takes its bed. A returning lost cat is
+  /// The waiting cat joins the room and takes a place. A returning lost cat is
   /// no longer lost.
   Future<CatJoined> _join(Arrival arrival) async {
-    await ref.read(catRepositoryProvider).add(arrival.cat);
+    await ref
+        .read(catRepositoryProvider)
+        .add(await placeInBestRoom(ref, arrival.cat));
     if (arrival.kind == ArrivalKind.returning) {
       await ref.read(lostCatRepositoryProvider).remove(arrival.cat.id);
     }

@@ -275,7 +275,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
       );
     }
     if (spot.cat.ready) {
-      return view.freeBeds > 0
+      return view.freePlaces > 0
           ? FilledButton.icon(
               key: const Key('street-invite'),
               onPressed: _invite,
@@ -283,9 +283,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
               label: const Text('Invite to join'),
             )
           : Text(
-              'Every bed is taken. Buy one in the Shop, then invite '
+              'Every place is taken. Buy a room in the Shop, then invite '
               '${spot.cat.name}.',
-              key: const Key('street-no-bed'),
+              key: const Key('street-no-place'),
               style: Theme.of(context).textTheme.bodySmall,
             );
     }
@@ -313,7 +313,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
       StreetCatOutcome.notClose => 'Walk a little closer first.',
       StreetCatOutcome.noCamera =>
         'The camera is not available. Check that Catwalk may use it.',
-      StreetCatOutcome.noBed => 'Every bed is taken. Buy one in the Shop.',
+      StreetCatOutcome.noPlace =>
+        'Every place is taken. Buy a room in the Shop.',
     };
     if (message != null) {
       ScaffoldMessenger.of(context)
@@ -1153,25 +1154,25 @@ class _EventSheet extends StatelessWidget {
       CatJoined(:final catName, :final returning) => (
         returning ? '$catName is back!' : '$catName joined you',
         returning
-            ? '$catName found the way home. The bed is theirs again.'
-            : '$catName is in your room now, in the empty bed.',
+            ? '$catName found the way home. The place is theirs again.'
+            : '$catName is in your home now, in an empty place.',
         Icons.pets,
       ),
       StreetCatPhotographed(
         :final catName,
         :final sightings,
         :final ready,
-        :final hasFreeBed,
+        :final hasFreePlace,
       ) =>
         (
           'Photo of $catName',
           !ready
               ? 'Photo $sightings of $sightingsToJoin. $catName may be '
                     'back on another day.'
-              : hasFreeBed
+              : hasFreePlace
               ? '$catName trusts you now. Meet them again and invite them '
-                    'to join. There is an empty bed.'
-              : '$catName trusts you now, but every bed is taken. Buy a bed '
+                    'to join. There is a free place.'
+              : '$catName trusts you now, but every place is taken. Buy a room '
                     'in the Shop, then invite them.',
           Icons.photo_camera,
         ),

@@ -164,8 +164,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 30));
     }
 
-    expect(find.bySemanticsLabel('A ball'), findsOneWidget);
-    expect(find.bySemanticsLabel('A mouse'), findsNothing);
+    bool labelled(Widget w, String label) =>
+        w is Semantics && w.properties.label == label;
+    expect(
+      find.byWidgetPredicate((w) => labelled(w, 'A ball')),
+      findsOneWidget,
+    );
+    expect(find.byWidgetPredicate((w) => labelled(w, 'A mouse')), findsNothing);
 
     await disposeRoom(tester);
     handle.dispose();

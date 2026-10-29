@@ -33,6 +33,7 @@ Future<PublicProfile> buildMyProfile({
     friendCode: friendCode,
     cats: home.cats,
     inventory: home.inventory,
+    rooms: home.rooms.length,
     streak: home.currentStreak,
     bestStreak: best > home.currentStreak ? best : home.currentStreak,
     totalSteps: home.totalSteps,

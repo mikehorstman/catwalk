@@ -1,13 +1,11 @@
 import 'package:catwalk/core/utils/calendar_date.dart';
 import 'package:catwalk/features/cat/data/cat_repository.dart';
 import 'package:catwalk/features/cat/domain/cat_appearance.dart';
-import 'package:catwalk/features/map/data/inventory_repository.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
 import 'package:catwalk/features/map/data/photo_service.dart';
 import 'package:catwalk/features/map/data/route_service.dart';
 import 'package:catwalk/features/map/data/street_cat_repository.dart';
 import 'package:catwalk/features/map/domain/geo.dart';
-import 'package:catwalk/features/map/domain/inventory.dart';
 import 'package:catwalk/features/map/domain/street_cat.dart';
 import 'package:catwalk/features/map/presentation/map_controller.dart';
 import 'package:catwalk/features/reminders/data/notification_service.dart';
@@ -18,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'map_controller_test.dart' show amsterdam, fixAt, seededStore;
+import 'support/test_cats.dart';
 
 StreetCat cat({int photos = 0, bool joined = false, CalendarDate? seen}) =>
     StreetCat(
@@ -127,7 +126,7 @@ void main() {
 
     Future<void> start({
       required StreetCat standing,
-      int beds = 1,
+      bool full = true,
       bool seed = true,
     }) async {
       final store = await seededStore();
@@ -162,9 +161,11 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
-      await container
-          .read(inventoryRepositoryProvider)
-          .write(Inventory(beds: beds));
+      if (full) {
+        // The living room holds three cats: the home cat and two more.
+        await container.read(catRepositoryProvider).add(testCat('f2'));
+        await container.read(catRepositoryProvider).add(testCat('f3'));
+      }
       if (seed && standing.photos.isNotEmpty) {
         await container.read(streetCatRepositoryProvider).upsert(standing);
       }
@@ -234,18 +235,21 @@ void main() {
       );
     });
 
-    test('the third photo makes it ready, and says if a bed is free', () async {
-      await start(
-        standing: cat(photos: 2, seen: CalendarDate(2026, 1, 1)),
-        beds: 3,
-      );
-      await walkToCat();
-      expect(await ctl().photographStreetCat(), StreetCatOutcome.done);
-      final event = view().event as StreetCatPhotographed;
-      expect(event.ready, isTrue);
-      expect(event.sightings, 3);
-      expect(event.hasFreeBed, isTrue);
-    });
+    test(
+      'the third photo makes it ready, and says if a place is free',
+      () async {
+        await start(
+          standing: cat(photos: 2, seen: CalendarDate(2026, 1, 1)),
+          full: false,
+        );
+        await walkToCat();
+        expect(await ctl().photographStreetCat(), StreetCatOutcome.done);
+        final event = view().event as StreetCatPhotographed;
+        expect(event.ready, isTrue);
+        expect(event.sightings, 3);
+        expect(event.hasFreePlace, isTrue);
+      },
+    );
 
     test('a cat that is ready cannot be photographed again', () async {
       await start(standing: cat(photos: 3, seen: CalendarDate(2026, 1, 1)));
@@ -254,19 +258,19 @@ void main() {
       expect(camera.asked, isEmpty);
     });
 
-    test('with no empty bed it cannot join, and nothing is lost', () async {
+    test('with no free place it cannot join, and nothing is lost', () async {
       await start(standing: cat(photos: 3, seen: CalendarDate(2026, 1, 1)));
       await walkToCat();
-      expect(await ctl().inviteStreetCat(), StreetCatOutcome.noBed);
+      expect(await ctl().inviteStreetCat(), StreetCatOutcome.noPlace);
       final cats = await container.read(catRepositoryProvider).readAll();
       expect(cats.any((c) => c.name == 'Vlek'), isFalse);
       expect(view().streetCat, isNotNull);
     });
 
-    test('with an empty bed it joins the room', () async {
+    test('with a free place it joins the room', () async {
       await start(
         standing: cat(photos: 3, seen: CalendarDate(2026, 1, 1)),
-        beds: 2,
+        full: false,
       );
       await walkToCat();
       expect(await ctl().inviteStreetCat(), StreetCatOutcome.done);
@@ -281,7 +285,7 @@ void main() {
     test('too far to invite', () async {
       await start(
         standing: cat(photos: 3, seen: CalendarDate(2026, 1, 1)),
-        beds: 2,
+        full: false,
       );
       expect(await ctl().inviteStreetCat(), StreetCatOutcome.notClose);
     });

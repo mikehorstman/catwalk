@@ -1,6 +1,8 @@
 import 'package:catwalk/app/app.dart';
 import 'package:catwalk/core/utils/calendar_date.dart';
 import 'package:catwalk/features/map/data/arrival_repository.dart';
+import 'package:catwalk/features/rooms/data/home_state_repository.dart';
+import 'package:catwalk/features/rooms/domain/room_type.dart';
 import 'package:catwalk/features/map/data/inventory_repository.dart';
 import 'package:catwalk/features/map/domain/inventory.dart';
 import 'package:catwalk/features/map/data/location_service.dart';
@@ -32,6 +34,10 @@ Future<MemoryStore> newPlayer() async {
 }
 
 Future<void> open(WidgetTester tester, MemoryStore store, int steps) async {
+  // A tall screen, so the whole shop list is on it.
+  tester.view.physicalSize = const Size(800, 2400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   final today = CalendarDate.today();
   await tester.pumpWidget(
     ProviderScope(
@@ -103,16 +109,16 @@ void main() {
 
     expect(find.byType(AppBar), findsOneWidget);
     expect(find.text('Shop'), findsOneWidget);
-    expect(find.text('Cat beds'), findsOneWidget);
+    expect(find.text('Rooms'), findsOneWidget);
     expect(find.text('Toys'), findsOneWidget);
-    expect(find.textContaining('1 of 1 bed is in use'), findsOneWidget);
+    expect(find.textContaining('1 of 3 places used'), findsOneWidget);
     expect(find.textContaining('You have 3 candy'), findsOneWidget);
 
     await tester.pageBack();
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 30));
     }
-    expect(find.text('Cat beds'), findsNothing);
+    expect(find.text('Rooms'), findsNothing);
   });
 
   testWidgets('with too little candy the buy buttons are off', (tester) async {
@@ -128,41 +134,42 @@ void main() {
     expect((await InventoryRepository(store).read()).toys, isEmpty);
   });
 
-  testWidgets('a cat bed can be bought, and a cat is sent for tomorrow', (
+  testWidgets('a room can be bought, and a cat is owed for tomorrow', (
     tester,
   ) async {
     final store = await newPlayer();
-    await InventoryRepository(store).write(const Inventory(candy: 100));
+    await InventoryRepository(store).write(const Inventory(candy: 400));
     await open(tester, store, 1000);
 
-    await openShop(tester, '100 candy');
-    expect(find.text('Cat bed'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('buy-bed')));
+    await openShop(tester, '400 candy');
+    expect(find.text('Garden'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('buy-room-garden')));
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 20));
     }
 
     final inventory = await InventoryRepository(store).read();
-    expect(inventory.candy, 60);
-    expect(inventory.beds, 2);
-    final arrival = (await ArrivalRepository(store).read())!;
-    expect(arrival.appearsOn, CalendarDate.today().addDays(1));
-    // A second bed is refused while that cat is on its way.
-    expect(
-      tester.widget<FilledButton>(find.byKey(const Key('buy-bed'))).onPressed,
-      isNull,
-    );
-    expect(find.text('A cat is waiting for you on the map.'), findsOneWidget);
+    expect(inventory.candy, 100);
+    final home = await HomeStateRepository(store).read();
+    expect(home.owns(RoomType.garden), isTrue);
+    expect(home.arrivalCredits, 1);
+    expect(home.creditsFrom, CalendarDate.today().addDays(1));
+    // Nobody is on the map yet: the cat comes the next morning.
+    expect(await ArrivalRepository(store).read(), isNull);
+    // The garden is owned now, so it shows no Buy button.
+    expect(find.byKey(const Key('buy-room-garden')), findsNothing);
   });
 
-  testWidgets('with too little candy the bed cannot be bought', (tester) async {
+  testWidgets('with too little candy a room cannot be bought', (tester) async {
     final store = await newPlayer();
-    await InventoryRepository(store).write(const Inventory(candy: 39));
+    await InventoryRepository(store).write(const Inventory(candy: 299));
     await open(tester, store, 1000);
 
-    await openShop(tester, '39 candy');
+    await openShop(tester, '299 candy');
     expect(
-      tester.widget<FilledButton>(find.byKey(const Key('buy-bed'))).onPressed,
+      tester
+          .widget<FilledButton>(find.byKey(const Key('buy-room-garden')))
+          .onPressed,
       isNull,
     );
     expect(await ArrivalRepository(store).read(), isNull);

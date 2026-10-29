@@ -4,6 +4,10 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../rooms/data/home_state_repository.dart';
+import '../../rooms/domain/placement.dart';
+import '../../rooms/domain/room_type.dart';
+
 import '../../../core/utils/calendar_date.dart';
 import '../../../services/health/mock_step_repository.dart';
 import '../../../services/health/step_repository.dart';
@@ -69,7 +73,8 @@ class HomeState {
     this.kittenName,
     this.promotedName,
     this.cats = const [],
-    this.freeBeds = 0,
+    this.freePlaces = 0,
+    this.rooms = const [RoomType.living],
     this.arrival,
     this.goalsMet = 0,
     this.suggestedGoal,
@@ -134,7 +139,10 @@ class HomeState {
   final List<Cat> cats;
 
   /// Beds with nobody in them.
-  final int freeBeds;
+  final int freePlaces;
+
+  /// The rooms the player owns.
+  final List<RoomType> rooms;
 
   /// The cat waiting on the map, if any.
   final Arrival? arrival;
@@ -383,16 +391,23 @@ class HomeController extends AsyncNotifier<HomeState> {
     await catRepo.writeOthers(others);
     final arrivals = ref.read(arrivalRepositoryProvider);
     var arrival = await arrivals.read();
-    final catCount = 1 + others.length;
-    final beds = weekly.inventory.beds;
+    final homes = ref.read(homeStateRepositoryProvider);
+    final allCats = [snapshot.cat, ...others];
+    var home = await homes.read();
     if (arrival == null) {
-      arrival = returningArrival(
+      final plan = nextArrival(
         lost: await ref.read(lostCatRepositoryProvider).readAll(),
+        home: home,
+        cats: allCats,
         today: todayDate,
-        free: freeBeds(beds: beds, cats: catCount, arriving: false),
         arriving: false,
       );
-      if (arrival != null) await arrivals.write(arrival);
+      arrival = plan.arrival;
+      if (arrival != null) {
+        await arrivals.write(arrival);
+        home = plan.home;
+        await homes.write(home);
+      }
     }
 
     // A goal that suits the person. The card shows once, and never in the same
@@ -438,7 +453,12 @@ class HomeController extends AsyncNotifier<HomeState> {
       kittenName: kittenName,
       promotedName: promotedName,
       cats: [snapshot.cat, ...others],
-      freeBeds: freeBeds(beds: beds, cats: catCount, arriving: arrival != null),
+      rooms: home.rooms,
+      freePlaces: placesLeft(
+        home: home,
+        cats: allCats,
+        arriving: arrival != null,
+      ),
       arrival: arrival,
       goalsMet: goalsMet,
       suggestedGoal: suggestion?.goal,
@@ -485,29 +505,26 @@ class HomeController extends AsyncNotifier<HomeState> {
     return null;
   }
 
-  /// Buys the next cat bed. A cat then appears on the map the next morning.
-  /// Returns why it was refused, or null when it was bought.
-  Future<shop.ShopRefusal?> buyBed() async {
+  /// Buys [room]. A cat for it appears on the map the next morning. Returns
+  /// why it was refused, or null when it was bought.
+  Future<shop.ShopRefusal?> buyRoom(RoomType room) async {
     final inventories = ref.read(inventoryRepositoryProvider);
-    final arrivals = ref.read(arrivalRepositoryProvider);
+    final homes = ref.read(homeStateRepositoryProvider);
     final inventory = await inventories.read();
-    final cats = (await ref.read(catRepositoryProvider).readAll()).length;
-    final arriving = await arrivals.read() != null;
-    final purchase = shop.buyBed(
+    final home = await homes.read();
+    final purchase = shop.buyRoom(
       inventory: inventory,
-      cats: cats,
-      arriving: arriving,
+      home: home,
+      room: room,
       today: CalendarDate.today(),
     );
     if (purchase == null) {
-      return shop.bedRefusal(
-        inventory: inventory,
-        cats: cats,
-        arriving: arriving,
-      );
+      return shop.roomRefusal(inventory: inventory, home: home, room: room);
     }
     await inventories.write(purchase.inventory);
-    await arrivals.write(purchase.arrival);
+    await homes.write(purchase.home);
+    await ref.read(analyticsProvider).log('room_bought');
+    ref.invalidate(homeStateProvider);
     await refreshSilently();
     return null;
   }

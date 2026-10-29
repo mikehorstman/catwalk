@@ -13,6 +13,9 @@ import 'package:catwalk/features/map/domain/arrival.dart';
 import 'package:catwalk/features/map/domain/geo.dart';
 import 'package:catwalk/features/map/domain/inventory.dart';
 import 'package:catwalk/features/map/domain/lost_cat.dart';
+import 'package:catwalk/features/rooms/domain/home_state.dart';
+import 'package:catwalk/features/rooms/domain/placement.dart';
+import 'package:catwalk/features/rooms/domain/room_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/memory_store.dart';
@@ -73,135 +76,191 @@ void main() {
     });
   });
 
-  group('Inventory beds', () {
-    test('start at one, also for a save from before beds', () {
-      expect(const Inventory().beds, 1);
-      expect(Inventory.fromJson({'candy': 5}).beds, 1);
-    });
-
-    test('round trip and a silly value is kept in range', () {
-      expect(Inventory.fromJson(const Inventory(beds: 3).toJson()).beds, 3);
-      expect(Inventory.fromJson({'beds': 0}).beds, 1);
-      expect(Inventory.fromJson({'beds': 99}).beds, 12);
+  group('Inventory', () {
+    test('an old save with beds still loads and drops them', () {
+      final back = Inventory.fromJson({'candy': 5, 'beds': 3});
+      expect(back.candy, 5);
+      expect(back.toJson().containsKey('beds'), isFalse);
     });
   });
 
-  group('beds in the shop', () {
-    test('prices rise with every bed', () {
-      expect(
-        [for (var n = 1; n <= 6; n++) bedPrice(n)],
-        [40, 90, 160, 250, 350, 450],
-      );
+  group('rooms in the shop', () {
+    const home = HomeState();
+
+    test('the garden costs 300, then 700, then 1200', () {
+      var inventory = const Inventory(candy: 5000);
+      var state = home;
+      final prices = <int>[];
+      for (final room in [RoomType.garden, RoomType.attic, RoomType.veranda]) {
+        final bought = buyRoom(
+          inventory: inventory,
+          home: state,
+          room: room,
+          today: monday,
+        )!;
+        prices.add(inventory.candy - bought.inventory.candy);
+        inventory = bought.inventory;
+        state = bought.home;
+      }
+      expect(prices, [300, 700, 1200]);
+      expect(state.rooms, hasLength(4));
     });
 
-    test('buying pays, adds a bed and sends a cat for the next morning', () {
-      final bought = buyBed(
-        inventory: const Inventory(candy: 100),
-        cats: 1,
-        arriving: false,
+    test('buying pays, adds the room and owes a cat for tomorrow', () {
+      final bought = buyRoom(
+        inventory: const Inventory(candy: 400),
+        home: home,
+        room: RoomType.garden,
         today: monday,
       )!;
-      expect(bought.inventory.candy, 60);
-      expect(bought.inventory.beds, 2);
-      expect(bought.arrival.kind, ArrivalKind.bought);
-      expect(bought.arrival.appearsOn, monday.addDays(1));
-      expect(bought.arrival.isVisibleOn(monday), isFalse);
-      expect(bought.arrival.isVisibleOn(monday.addDays(1)), isTrue);
-      expect(bought.arrival.point, isNull);
+      expect(bought.inventory.candy, 100);
+      expect(bought.home.owns(RoomType.garden), isTrue);
+      expect(bought.home.arrivalCredits, 1);
+      expect(bought.home.creditsFrom, monday.addDays(1));
     });
 
-    test('refused with too little candy, taking nothing', () {
+    test('refused when poor, owned, or the living room', () {
+      ShopRefusal? why(Inventory inv, HomeState h, RoomType r) =>
+          roomRefusal(inventory: inv, home: h, room: r);
       expect(
-        buyBed(
-          inventory: const Inventory(candy: 39),
-          cats: 1,
-          arriving: false,
+        why(const Inventory(candy: 299), home, RoomType.garden),
+        ShopRefusal.notEnoughCandy,
+      );
+      expect(
+        why(
+          const Inventory(candy: 999),
+          const HomeState(rooms: [RoomType.living, RoomType.garden]),
+          RoomType.garden,
+        ),
+        ShopRefusal.alreadyOwned,
+      );
+      expect(
+        why(const Inventory(candy: 999), home, RoomType.living),
+        ShopRefusal.unknownItem,
+      );
+      expect(
+        buyRoom(
+          inventory: const Inventory(candy: 299),
+          home: home,
+          room: RoomType.garden,
           today: monday,
         ),
         isNull,
       );
-      expect(
-        bedRefusal(
-          inventory: const Inventory(candy: 39),
-          cats: 1,
-          arriving: false,
-        ),
-        ShopRefusal.notEnoughCandy,
-      );
-    });
-
-    test('refused while a cat is already on its way', () {
-      expect(
-        bedRefusal(
-          inventory: const Inventory(candy: 500, beds: 2),
-          cats: 1,
-          arriving: true,
-        ),
-        ShopRefusal.catAlreadyWaiting,
-      );
-    });
-
-    test('refused while a bed stands empty', () {
-      expect(
-        bedRefusal(
-          inventory: const Inventory(candy: 500, beds: 2),
-          cats: 1,
-          arriving: false,
-        ),
-        ShopRefusal.emptyBedWaiting,
-      );
-    });
-
-    test('the second bed costs 40 and the third 90, on top of the first', () {
-      var inventory = const Inventory(candy: 200);
-      final second = buyBed(
-        inventory: inventory,
-        cats: 1,
-        arriving: false,
-        today: monday,
-      )!;
-      expect(second.inventory.candy, 160);
-      inventory = second.inventory;
-      final third = buyBed(
-        inventory: inventory,
-        cats: 2,
-        arriving: false,
-        today: monday,
-      )!;
-      expect(third.inventory.candy, 70);
-      expect(third.inventory.beds, 3);
     });
   });
 
   group('new cats', () {
     test('the same seed and day give the same cat', () {
-      final a = newCat(seed: 'bed2', on: monday);
-      final b = newCat(seed: 'bed2', on: monday);
+      final a = newCat(seed: 'room2', on: monday);
+      final b = newCat(seed: 'room2', on: monday);
       expect(a.id, b.id);
       expect(a.name, b.name);
       expect(a.appearance, b.appearance);
     });
 
-    test('a different bed gives a different cat id', () {
+    test('a different room gives a different cat id', () {
       expect(
-        newCat(seed: 'bed2', on: monday).id,
-        isNot(newCat(seed: 'bed3', on: monday).id),
+        newCat(seed: 'room2', on: monday).id,
+        isNot(newCat(seed: 'room3', on: monday).id),
       );
     });
 
     test('it starts content and at home', () {
-      final fresh = newCat(seed: 'bed2', on: monday);
+      final fresh = newCat(seed: 'room2', on: monday);
       expect(fresh.status, CatStatus.active);
       expect(fresh.consecutiveMissedDays, 0);
       expect(fresh.mood, CatMood.neutral);
     });
   });
 
-  group('free beds', () {
-    test('beds minus cats minus a cat on its way, never below zero', () {
-      expect(freeBeds(beds: 3, cats: 1, arriving: false), 2);
-      expect(freeBeds(beds: 3, cats: 1, arriving: true), 1);
-      expect(freeBeds(beds: 1, cats: 2, arriving: true), 0);
+  group('places and the next arrival', () {
+    final bought = HomeState(
+      rooms: const [RoomType.living, RoomType.garden],
+      arrivalCredits: 1,
+      creditsFrom: monday.addDays(1),
+    );
+
+    test('places left: free places minus a cat on its way, never below 0', () {
+      const one = HomeState();
+      expect(placesLeft(home: one, cats: [cat('1')], arriving: false), 2);
+      expect(placesLeft(home: one, cats: [cat('1')], arriving: true), 1);
+      expect(
+        placesLeft(
+          home: one,
+          cats: [cat('1'), cat('2'), cat('3')],
+          arriving: true,
+        ),
+        0,
+      );
+    });
+
+    test('a paid cat waits until the morning after the purchase', () {
+      final today = nextArrival(
+        lost: const [],
+        home: bought,
+        cats: [cat('1')],
+        today: monday,
+        arriving: false,
+      );
+      expect(today.arrival, isNull);
+      final tomorrow = nextArrival(
+        lost: const [],
+        home: bought,
+        cats: [cat('1')],
+        today: monday.addDays(1),
+        arriving: false,
+      );
+      expect(tomorrow.arrival?.kind, ArrivalKind.bought);
+      expect(tomorrow.home.arrivalCredits, 0);
+      expect(tomorrow.home.creditsFrom, isNull);
+    });
+
+    test('one cat at a time, and none when every place is taken', () {
+      final waiting = nextArrival(
+        lost: const [],
+        home: bought,
+        cats: [cat('1')],
+        today: monday.addDays(1),
+        arriving: true,
+      );
+      expect(waiting.arrival, isNull);
+      expect(waiting.home.arrivalCredits, 1);
+      final full = nextArrival(
+        lost: const [],
+        home: const HomeState(arrivalCredits: 1).copyWith(creditsFrom: monday),
+        cats: [cat('1'), cat('2'), cat('3')],
+        today: monday.addDays(1),
+        arriving: false,
+      );
+      expect(full.arrival, isNull);
+      expect(full.home.arrivalCredits, 1);
+    });
+
+    test('credits stack and come one a day, lost cats first', () {
+      final two = bought.copyWith(arrivalCredits: 2);
+      final first = nextArrival(
+        lost: const [],
+        home: two,
+        cats: [cat('1')],
+        today: monday.addDays(1),
+        arriving: false,
+      );
+      expect(first.home.arrivalCredits, 1);
+      final lostCat = LostCat(
+        cat: cat('7', status: CatStatus.runaway),
+        lostOn: monday.addDays(-10),
+        returnsOn: monday,
+      );
+      final withLost = nextArrival(
+        lost: [lostCat],
+        home: two,
+        cats: [cat('1')],
+        today: monday.addDays(1),
+        arriving: false,
+      );
+      expect(withLost.arrival?.kind, ArrivalKind.returning);
+      expect(withLost.home.arrivalCredits, 2);
     });
   });
 
@@ -293,7 +352,7 @@ void main() {
       );
     });
 
-    test('on its day when a bed is free, as a content cat at home', () {
+    test('on its day when a place is free, as a content cat at home', () {
       final back = returningArrival(
         lost: [lostCat],
         today: monday.addDays(10),
@@ -308,7 +367,7 @@ void main() {
       expect(back.cat.ranAwayOn, isNull);
     });
 
-    test('waits for room when every bed is taken', () {
+    test('waits for room when every place is taken', () {
       expect(
         returningArrival(
           lost: [lostCat],

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
 import '../../onboarding/data/onboarding_repository.dart';
+import '../../rooms/domain/room_type.dart';
 import '../domain/cat.dart';
 import 'cat_codec.dart';
 
@@ -72,5 +73,19 @@ class CatRepository {
     final all = await readAll();
     if (all.any((known) => known.id == cat.id)) return;
     await writeOthers([...await readOthers(), cat]);
+  }
+
+  /// Moves the cat with [id] to [room]. Does nothing when it is unknown.
+  Future<void> moveCat(String id, RoomType room) async {
+    final home = await readHome();
+    if (home != null && home.id == id) {
+      await writeHome(home.copyWith(roomId: room));
+      return;
+    }
+    final others = await readOthers();
+    await writeOthers([
+      for (final cat in others)
+        if (cat.id == id) cat.copyWith(roomId: room) else cat,
+    ]);
   }
 }

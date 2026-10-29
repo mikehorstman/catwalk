@@ -64,7 +64,7 @@ class _StreetCatTile extends StatelessWidget {
     final status = cat.joined
         ? 'Lives in your room'
         : cat.ready
-        ? 'Ready to join. Needs an empty bed.'
+        ? 'Ready to join. Needs a free place.'
         : '${cat.sightings} of $sightingsToJoin photos';
     return Card(
       key: Key('street-cat-${cat.id}'),

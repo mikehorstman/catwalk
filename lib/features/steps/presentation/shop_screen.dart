@@ -5,6 +5,8 @@ import '../../../app/theme.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../daily_goal/domain/shop.dart';
 import '../../map/domain/toy_perks.dart';
+import '../../rooms/domain/room_constants.dart';
+import '../../rooms/domain/room_type.dart';
 import 'home_controller.dart';
 
 /// Opens the shop as a full screen: what the candy buys.
@@ -12,7 +14,7 @@ Future<void> openShop(BuildContext context) =>
     Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (_) => const ShopScreen()));
 
-/// The shop: cat beds, and toys with what each one does. Candy is the only
+/// The shop: rooms, and toys with what each one does. Candy is the only
 /// currency.
 class ShopScreen extends ConsumerWidget {
   const ShopScreen({super.key});
@@ -52,22 +54,24 @@ class ShopScreen extends ConsumerWidget {
           style: muted,
         ),
         const SizedBox(height: 24),
-        Text('Cat beds', style: theme.textTheme.titleMedium),
+        Text('Rooms', style: theme.textTheme.titleMedium),
         const SizedBox(height: 4),
         Text(
-          '${home.cats.length} of ${inventory.beds} '
-          '${inventory.beds == 1 ? 'bed is' : 'beds are'} in use. '
-          'Each bed holds one cat, and the next one costs more.',
+          'Each room holds three cats. Buy a room and a new cat arrives on '
+          'the map tomorrow.',
           style: muted,
         ),
         const SizedBox(height: 12),
-        _BedRow(
-          price: bedPrice(inventory.beds),
-          candy: inventory.candy,
-          freeBeds: home.freeBeds,
-          waiting: home.arrival != null,
-          onBuy: () => ref.read(homeControllerProvider.notifier).buyBed(),
-        ),
+        for (final room in RoomType.values)
+          _RoomRow(
+            room: room,
+            owned: home.rooms.contains(room),
+            price: RoomType.priceForNext(home.rooms.length),
+            candy: inventory.candy,
+            cats: home.cats.where((c) => c.roomId == room).length,
+            onBuy: () =>
+                ref.read(homeControllerProvider.notifier).buyRoom(room),
+          ),
         const SizedBox(height: 28),
         Text('Toys', style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
@@ -95,28 +99,31 @@ class ShopScreen extends ConsumerWidget {
 String _titleCase(String id) =>
     id.isEmpty ? id : id[0].toUpperCase() + id.substring(1);
 
-/// The cat bed for sale: each bed holds one more cat, and costs more than the
-/// last.
-class _BedRow extends StatelessWidget {
-  const _BedRow({
+/// One room in the shop: owned (with its places used), or for sale.
+class _RoomRow extends StatelessWidget {
+  const _RoomRow({
+    required this.room,
+    required this.owned,
     required this.price,
     required this.candy,
-    required this.freeBeds,
-    required this.waiting,
+    required this.cats,
     required this.onBuy,
   });
 
-  /// What the next bed costs.
-  final int price;
+  /// The room.
+  final RoomType room;
+
+  /// Whether the player owns it already.
+  final bool owned;
+
+  /// What the next room costs, or null when every room is owned.
+  final int? price;
 
   /// How much candy the player has.
   final int candy;
 
-  /// Beds with nobody in them.
-  final int freeBeds;
-
-  /// Whether a cat is already waiting on the map.
-  final bool waiting;
+  /// Cats living in this room.
+  final int cats;
 
   /// Called when the player taps Buy.
   final VoidCallback onBuy;
@@ -124,16 +131,9 @@ class _BedRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final String note;
-    if (waiting) {
-      note = 'A cat is waiting for you on the map.';
-    } else if (freeBeds > 0) {
-      note = 'You have an empty bed. Fill it first.';
-    } else {
-      note = 'Buy a bed and a new cat appears on the map tomorrow.';
-    }
-    final canBuy = !waiting && freeBeds == 0 && candy >= price;
+    final canBuy = !owned && price != null && candy >= price!;
     return Container(
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: CatwalkColors.card,
@@ -146,22 +146,24 @@ class _BedRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Cat bed', style: theme.textTheme.bodyLarge),
+                Text(room.label, style: theme.textTheme.bodyLarge),
                 Text(
-                  note,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  owned
+                      ? 'Yours. $cats of ${RoomConstants.placesPerRoom} '
+                            'places used.'
+                      : 'For cats that like '
+                            '${room.baseLike.label.toLowerCase()}.',
+                  style: theme.textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          FilledButton(
-            key: const Key('buy-bed'),
-            onPressed: canBuy ? onBuy : null,
-            child: Text('$price candy'),
-          ),
+          if (!owned)
+            FilledButton(
+              key: Key('buy-room-${room.name}'),
+              onPressed: canBuy ? onBuy : null,
+              child: Text(price == null ? 'Sold out' : '$price candy'),
+            ),
         ],
       ),
     );

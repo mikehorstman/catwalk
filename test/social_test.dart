@@ -40,7 +40,7 @@ PublicProfile profile(
   dailyGoal: 6000,
   cats: const [],
   toys: const [],
-  beds: 1,
+  rooms: 1,
 );
 
 Cat cat() => Cat(
@@ -134,7 +134,8 @@ void main() {
         user: mara,
         friendCode: 'ABCDEF',
         cats: [cat()],
-        inventory: const Inventory(toys: ['ball'], beds: 2),
+        inventory: const Inventory(toys: ['ball']),
+        rooms: 2,
         streak: 3,
         bestStreak: 9,
         totalSteps: 50000,
@@ -145,7 +146,8 @@ void main() {
       expect(built.todayGoalMet, isTrue);
       expect(built.cats.single.name, 'Jip');
       expect(built.toys, ['ball']);
-      expect(built.beds, 2);
+      expect(built.rooms, 2);
+      expect(built.toJson().containsKey('beds'), isFalse);
       final json = built.toJson();
       expect(json.keys, isNot(contains('uid')));
       expect(json.toString(), isNot(contains('id: 1')));
@@ -157,6 +159,7 @@ void main() {
         friendCode: 'ABCDEF',
         cats: [cat()],
         inventory: const Inventory(),
+        rooms: 1,
         streak: 1,
         bestStreak: 2,
         totalSteps: 3,
@@ -176,6 +179,7 @@ void main() {
         friendCode: 'ABCDEF',
         cats: const [],
         inventory: const Inventory(),
+        rooms: 1,
         streak: 0,
         bestStreak: 0,
         totalSteps: 0,
@@ -190,10 +194,10 @@ void main() {
     test('odd or missing values fall back to safe ones', () {
       final back = PublicProfile.fromJson('u', {
         'cats': [{}],
-        'beds': 0,
+        'rooms': 0,
       });
       expect(back.displayName, 'Walker');
-      expect(back.beds, 1);
+      expect(back.rooms, 1);
       expect(back.cats.single.appearance, 'cream');
     });
   });
