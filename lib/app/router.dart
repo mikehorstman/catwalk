@@ -130,6 +130,7 @@ class AppShell extends ConsumerWidget {
               child: const Icon(Icons.pets_outlined),
             ),
             selectedIcon: Badge(
+              key: const Key('cats-gift-dot-selected'),
               isLabelVisible: gifts,
               child: const Icon(Icons.pets),
             ),

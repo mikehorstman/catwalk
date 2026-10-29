@@ -282,8 +282,8 @@ class _CatLayer extends StatelessWidget {
               ),
               if (cat.hasGift)
                 Positioned(
-                  right: 0,
-                  top: 0,
+                  right: size * 0.22,
+                  top: size * 0.05,
                   child: _Badge(
                     key: Key('gift-badge-${cat.id}'),
                     icon: Icons.card_giftcard,
@@ -291,8 +291,8 @@ class _CatLayer extends StatelessWidget {
                 )
               else if (cat.wish != null)
                 Positioned(
-                  right: 0,
-                  top: 0,
+                  right: size * 0.22,
+                  top: size * 0.05,
                   child: _Badge(
                     key: Key('wish-bubble-${cat.id}'),
                     icon: Icons.chat_bubble_outline,
@@ -300,8 +300,8 @@ class _CatLayer extends StatelessWidget {
                 ),
               if (cat.comfort.hearts > 0)
                 Positioned(
-                  left: 0,
-                  top: 0,
+                  left: size * 0.22,
+                  top: size * 0.05,
                   child: Row(
                     key: Key('hearts-${cat.id}'),
                     mainAxisSize: MainAxisSize.min,
