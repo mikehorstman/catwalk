@@ -66,6 +66,21 @@ class SlotSheet extends ConsumerWidget {
                 candy: candy,
                 standing: standing?.id == item.id,
               ),
+            if (standing != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: const Key('item-remove'),
+                  onPressed: () async {
+                    await ref
+                        .read(homeControllerProvider.notifier)
+                        .removeItem(room, slot);
+                    if (context.mounted) Navigator.of(context).pop();
+                  },
+                  icon: const Icon(Icons.remove_circle_outline),
+                  label: Text('Take ${standing.name.toLowerCase()} away'),
+                ),
+              ),
           ],
         ),
       ),

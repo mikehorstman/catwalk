@@ -24,6 +24,8 @@ class HomeState {
     this.bonusCats = const {},
     this.wishes = const {},
     this.walkWishDoneOn,
+    this.removed = const {},
+    this.toyRooms = const {},
   });
 
   /// Reads a state from JSON. Missing or odd values fall back to the
@@ -95,6 +97,18 @@ class HomeState {
           for (final c in json['bonusCats'] as List)
             if (c is String) c,
       },
+      removed: {
+        if (json['removed'] is List)
+          for (final k in json['removed'] as List)
+            if (k is String) k,
+      },
+      toyRooms: {
+        if (json['toyRooms'] is Map)
+          for (final e in (json['toyRooms'] as Map).entries)
+            if (e.key is String &&
+                RoomType.byNameOrNull(e.value as String?) != null)
+              e.key as String: RoomType.byNameOrNull(e.value as String?)!,
+      },
       walkWishDoneOn: json['walkWishDoneOn'] is String
           ? _parseDate(json['walkWishDoneOn'] as String)
           : null,
@@ -158,14 +172,33 @@ class HomeState {
   /// The last day a walk wish was reached; one a day at most.
   final CalendarDate? walkWishDoneOn;
 
+  /// Slots (`room:slot`) the player emptied on purpose, so the starter item
+  /// does not come back by itself.
+  final Set<String> removed;
+
+  /// The room each toy lies in, by toy id. A toy not listed is in the living
+  /// room.
+  final Map<String, RoomType> toyRooms;
+
+  /// The room a toy lies in.
+  RoomType roomOfToy(String toyId) => toyRooms[toyId] ?? RoomType.living;
+
+  /// The toys, out of [toys], that lie in [room].
+  List<String> toysIn(RoomType room, Iterable<String> toys) => [
+    for (final id in toys)
+      if (roomOfToy(id) == room) id,
+  ];
+
   /// The key of a slot in [placed].
   static String placeKey(RoomType room, Slot slot) =>
       '${room.name}:${slot.name}';
 
   /// The item standing in [slot] of [room], or null when it is empty.
   ItemSpec? itemAt(RoomType room, Slot slot) {
-    final id = placed[placeKey(room, slot)];
-    return id == null ? starterFor(room, slot) : itemById(id);
+    final key = placeKey(room, slot);
+    final id = placed[key];
+    if (id != null) return itemById(id);
+    return removed.contains(key) ? null : starterFor(room, slot);
   }
 
   /// Every item standing in [room].
@@ -205,6 +238,8 @@ class HomeState {
     Set<String>? bonusCats,
     Map<String, WishRecord>? wishes,
     CalendarDate? walkWishDoneOn,
+    Set<String>? removed,
+    Map<String, RoomType>? toyRooms,
   }) => HomeState(
     rooms: rooms ?? this.rooms,
     arrivalCredits: arrivalCredits ?? this.arrivalCredits,
@@ -221,6 +256,8 @@ class HomeState {
     bonusCats: bonusCats ?? this.bonusCats,
     wishes: wishes ?? this.wishes,
     walkWishDoneOn: walkWishDoneOn ?? this.walkWishDoneOn,
+    removed: removed ?? this.removed,
+    toyRooms: toyRooms ?? this.toyRooms,
   );
 
   /// The state as JSON.
@@ -242,6 +279,8 @@ class HomeState {
     'bonusCats': bonusCats.toList()..sort(),
     'wishes': {for (final e in wishes.entries) e.key: e.value.toJson()},
     'walkWishDoneOn': ?walkWishDoneOn?.toIsoDate(),
+    'removed': removed.toList()..sort(),
+    'toyRooms': {for (final e in toyRooms.entries) e.key: e.value.name},
   };
 }
 

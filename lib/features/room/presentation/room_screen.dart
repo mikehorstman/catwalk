@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
+import '../../rooms/domain/home_state.dart' as rh;
 import '../../rooms/domain/placement.dart';
 import '../../rooms/domain/room_constants.dart';
 import '../../rooms/domain/room_type.dart';
@@ -519,7 +520,11 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
             left: 12,
             right: 12,
             bottom: 12,
-            child: _EditBar(toys: home?.inventory.toys ?? const []),
+            child: _EditBar(
+              room: room,
+              toys: home?.inventory.toys ?? const [],
+              house: home?.house,
+            ),
           ),
         Positioned(
           left: 0,
@@ -673,13 +678,15 @@ class _EditButton extends StatelessWidget {
 }
 
 /// Shown while editing: what to do, the toys you own and a way to get more.
-class _EditBar extends StatelessWidget {
-  const _EditBar({required this.toys});
+class _EditBar extends ConsumerWidget {
+  const _EditBar({required this.room, required this.toys, required this.house});
 
+  final RoomType room;
   final List<String> toys;
+  final rh.HomeState? house;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return DecoratedBox(
       key: const Key('edit-bar'),
@@ -694,21 +701,40 @@ class _EditBar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tap a round button to change what stands there.',
+              'Tap a round button to change or take away what stands there.',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    toys.isEmpty
-                        ? 'No toys yet.'
-                        : 'Toys: ${toys.map((t) => '${t[0].toUpperCase()}${t.substring(1)}').join(', ')}',
-                    key: const Key('edit-toys'),
-                    style: theme.textTheme.labelLarge,
-                  ),
+                  child: toys.isEmpty
+                      ? Text(
+                          'No toys yet. Find them on the map or in the Shop.',
+                          key: const Key('edit-toys'),
+                          style: theme.textTheme.labelLarge,
+                        )
+                      : Wrap(
+                          key: const Key('edit-toys'),
+                          spacing: 6,
+                          children: [
+                            for (final id in toys)
+                              ChoiceChip(
+                                key: Key('toy-chip-$id'),
+                                label: Text(
+                                  '${id[0].toUpperCase()}${id.substring(1)}',
+                                ),
+                                selected:
+                                    (house?.roomOfToy(id) ?? RoomType.living) ==
+                                    room,
+                                onSelected: (_) => ref
+                                    .read(homeControllerProvider.notifier)
+                                    .moveToy(id, room),
+                              ),
+                          ],
+                        ),
                 ),
+                const SizedBox(width: 8),
                 OutlinedButton.icon(
                   key: const Key('edit-shop'),
                   onPressed: () => openShop(context),
@@ -717,6 +743,14 @@ class _EditBar extends StatelessWidget {
                 ),
               ],
             ),
+            if (toys.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Tap a toy to lay it in this room.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
           ],
         ),
       ),

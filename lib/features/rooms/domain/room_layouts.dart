@@ -26,5 +26,5 @@ RoomLayout layoutForRoom(
         ),
     ],
   );
-  return room == RoomType.living ? layout.withToys(toys) : layout;
+  return layout.withToys(home.toysIn(room, toys));
 }

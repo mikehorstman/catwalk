@@ -664,6 +664,28 @@ class HomeController extends AsyncNotifier<HomeState> {
     return true;
   }
 
+  /// Empties a slot. The item stays yours. Returns false when it was empty.
+  Future<bool> removeItem(RoomType room, Slot slot) async {
+    final homes = ref.read(homeStateRepositoryProvider);
+    final next = decorations.removeItem(await homes.read(), room, slot);
+    if (next == null) return false;
+    await homes.write(next);
+    ref.invalidate(homeStateProvider);
+    await refreshSilently();
+    return true;
+  }
+
+  /// Lays a toy you own in [room]. Returns false when the room is not yours.
+  Future<bool> moveToy(String toyId, RoomType room) async {
+    final homes = ref.read(homeStateRepositoryProvider);
+    final next = decorations.moveToy(await homes.read(), toyId, room);
+    if (next == null) return false;
+    await homes.write(next);
+    ref.invalidate(homeStateProvider);
+    await refreshSilently();
+    return true;
+  }
+
   /// Sets the goal from a suggestion or a raise, and answers the card.
   /// Sets the daily goal to [goal] steps (rounded to a valid goal) and
   /// reloads.

@@ -1,3 +1,4 @@
+import 'room_type.dart';
 import '../../map/domain/inventory.dart';
 import 'decoration_catalogue.dart';
 import 'home_state.dart';
@@ -55,9 +56,28 @@ ItemPurchase? buyItem({
 /// when the player does not own it or does not own its room.
 HomeState? placeItem(HomeState home, ItemSpec item) {
   if (!home.owns(item.room) || !home.hasItem(item)) return null;
+  final key = HomeState.placeKey(item.room, item.slot);
   return home.copyWith(
-    placed: {...home.placed, HomeState.placeKey(item.room, item.slot): item.id},
+    placed: {...home.placed, key: item.id},
+    removed: {...home.removed}..remove(key),
   );
+}
+
+/// Empties [slot] of [room]. The item stays owned and can be placed again.
+/// Returns null when the slot is empty already.
+HomeState? removeItem(HomeState home, RoomType room, Slot slot) {
+  if (home.itemAt(room, slot) == null) return null;
+  final key = HomeState.placeKey(room, slot);
+  return home.copyWith(
+    placed: {...home.placed}..remove(key),
+    removed: {...home.removed, key},
+  );
+}
+
+/// Lays [toyId] in [room]. Returns null when the room is not owned.
+HomeState? moveToy(HomeState home, String toyId, RoomType room) {
+  if (!home.owns(room)) return null;
+  return home.copyWith(toyRooms: {...home.toyRooms, toyId: room});
 }
 
 /// Makes [item] buyable. Does nothing for an item of a room the player does

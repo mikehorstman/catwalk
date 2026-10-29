@@ -3,10 +3,10 @@ import 'home_state.dart';
 import 'like.dart';
 import 'room_type.dart';
 
-/// What [room] gives its cats: its own base like, and the toys when it is the
-/// living room and the player owns any.
+/// What [room] gives its cats: its own base like, and the toys when one of
+/// the player's toys lies in it.
 Set<Like> tagsOf(RoomType room, HomeState home, Inventory inventory) => {
   room.baseLike,
   for (final item in home.itemsIn(room)) ...item.tags,
-  if (room == RoomType.living && inventory.toys.isNotEmpty) Like.toys,
+  if (home.toysIn(room, inventory.toys).isNotEmpty) Like.toys,
 };
