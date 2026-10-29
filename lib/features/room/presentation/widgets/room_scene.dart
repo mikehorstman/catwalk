@@ -358,7 +358,7 @@ List<Widget> _looks(String room, double w, double h, double floorTop) {
         Positioned(
           key: const Key('look-attic'),
           left: 0.38 * w,
-          top: 0.10 * h,
+          top: 0.17 * h,
           width: 0.24 * w,
           height: 0.24 * w,
           child: const DecoratedBox(

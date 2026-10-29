@@ -197,6 +197,16 @@ const List<TestGuideItem> testGuideItems = [
         'one reached per day.',
   ),
   TestGuideItem(
+    feature: 'All four rooms and friends',
+    how:
+        'Buy the garden, attic and veranda in the Shop, fill a room with '
+        'items, then open a friend\'s room from the leaderboard.',
+    check:
+        'Each room has its own look. A room with all 5 places filled gets '
+        'fairy lights. A friend\'s page lists the items in each of their '
+        'rooms. Needs two Google accounts; not testable on one phone.',
+  ),
+  TestGuideItem(
     feature: 'Me tab',
     how: 'Open Me after a day or two.',
     check:

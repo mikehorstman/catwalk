@@ -30,7 +30,7 @@ void main() {
         .write(const Inventory(candy: 200, toys: ['ball']));
     await HomeStateRepository(store).write(
       const HomeState(
-        rooms: [RoomType.living, RoomType.garden],
+        rooms: RoomType.values,
         owned: {'living-cat-tree', 'garden-grass-patch', 'garden-water-bowl'},
         unlocked: {'living-cat-tree'},
         placed: {
@@ -53,16 +53,13 @@ void main() {
     await binding.convertFlutterSurfaceToImage();
     await tester.pump();
     await binding.takeScreenshot('room_1');
-    await tester.tap(find.byKey(const Key('slot-sleep')));
-    await settle(tester, 6);
-    await binding.takeScreenshot('room_2');
-    Navigator.of(tester.element(find.byType(Scaffold).last)).pop();
-    await settle(tester, 6);
-    await tester.drag(
-      find.byKey(const Key('room-pager')),
-      const Offset(-700, 0),
-    );
-    await settle(tester);
-    await binding.takeScreenshot('room_3');
+    for (var n = 2; n <= 4; n++) {
+      await tester.drag(
+        find.byKey(const Key('room-pager')),
+        const Offset(-700, 0),
+      );
+      await settle(tester);
+      await binding.takeScreenshot('room_$n');
+    }
   });
 }
