@@ -51,6 +51,15 @@ test('rooms must be a whole number from 1 to 4, and the old beds key is gone', a
   await assertFails(setDoc(doc(db, 'users', 'a'), profile({ beds: 2 })));
 });
 
+test('placed items are a small map', async () => {
+  const db = google('a');
+  await assertSucceeds(setDoc(doc(db, 'users', 'a'), profile({ placed: { 'living:floor': 'living-rug' } })));
+  const many = {};
+  for (let i = 0; i < 21; i++) many[`r${i}:s`] = 'x';
+  await assertFails(setDoc(doc(db, 'users', 'a'), profile({ placed: many })));
+  await assertFails(setDoc(doc(db, 'users', 'a'), profile({ placed: ['living-rug'] })));
+});
+
 test('only the owner and friends can read a profile', async () => {
   await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'users', 'a'), profile()));
   await assertSucceeds(getDoc(doc(google('a'), 'users', 'a')));

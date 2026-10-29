@@ -34,6 +34,7 @@ Future<PublicProfile> buildMyProfile({
     cats: home.cats,
     inventory: home.inventory,
     rooms: home.rooms.length,
+    placed: home.house.placed,
     streak: home.currentStreak,
     bestStreak: best > home.currentStreak ? best : home.currentStreak,
     totalSteps: home.totalSteps,

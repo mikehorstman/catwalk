@@ -529,4 +529,14 @@ void main() {
       },
     );
   });
+
+  test('placed items travel with the profile and bad entries are dropped', () {
+    final back = PublicProfile.fromJson('u', {
+      'displayName': 'A',
+      'friendCode': 'ABC234',
+      'placed': {'living:floor': 'living-rug', 'x': 3},
+    });
+    expect(back.placed, {'living:floor': 'living-rug'});
+    expect(back.toJson()['placed'], {'living:floor': 'living-rug'});
+  });
 }

@@ -6,6 +6,8 @@ import '../../cat/domain/cat_appearance.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
 import '../../map/domain/toy_perks.dart';
+import '../../rooms/domain/decoration_catalogue.dart';
+import '../../rooms/domain/room_type.dart';
 import '../application/social_controller.dart';
 import '../domain/social_models.dart';
 
@@ -97,6 +99,20 @@ class FriendRoomScreen extends ConsumerWidget {
               '${profile.rooms} ${profile.rooms == 1 ? 'room' : 'rooms'}.',
               style: muted,
             ),
+            if (profile.placed.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text('Their rooms', style: theme.textTheme.titleMedium),
+              for (final room in RoomType.values)
+                if (_itemNames(profile, room).isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      '${room.label}: ${_itemNames(profile, room).join(', ')}',
+                      key: Key('friend-room-${room.name}'),
+                      style: muted,
+                    ),
+                  ),
+            ],
             if (profile.toys.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text('Toys', style: theme.textTheme.titleMedium),
@@ -137,3 +153,10 @@ class FriendRoomScreen extends ConsumerWidget {
     );
   }
 }
+
+/// The names of the items standing in one of a friend's rooms.
+List<String> _itemNames(PublicProfile profile, RoomType room) => [
+  for (final slot in Slot.values)
+    if (profile.placed['${room.name}:${slot.name}'] case final id?)
+      if (itemById(id) case final item?) item.name,
+];

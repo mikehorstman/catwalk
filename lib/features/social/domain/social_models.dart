@@ -78,6 +78,7 @@ class PublicProfile {
     required this.cats,
     required this.toys,
     required this.rooms,
+    this.placed = const {},
     this.photoUrl,
   });
 
@@ -105,6 +106,12 @@ class PublicProfile {
           item.toString(),
       ],
       rooms: number('rooms') == 0 ? 1 : number('rooms').clamp(1, 4),
+      placed: {
+        if (json['placed'] is Map)
+          for (final e in (json['placed'] as Map).entries)
+            if (e.key is String && e.value is String)
+              e.key as String: e.value as String,
+      },
     );
   }
 
@@ -150,6 +157,9 @@ class PublicProfile {
   /// The rooms owned, from 1 to 4.
   final int rooms;
 
+  /// What stands where: `room:slot` to item id, at most 20 entries.
+  final Map<String, String> placed;
+
   /// Plain-JSON form for Firestore. The uid is the document id, so it is not
   /// stored again.
   Map<String, Object> toJson() => {
@@ -166,6 +176,7 @@ class PublicProfile {
     'cats': [for (final cat in cats) cat.toJson()],
     'toys': toys,
     'rooms': rooms,
+    'placed': placed,
   };
 }
 
@@ -176,6 +187,7 @@ PublicProfile buildPublicProfile({
   required List<Cat> cats,
   required Inventory inventory,
   required int rooms,
+  Map<String, String> placed = const {},
   required int streak,
   required int bestStreak,
   required int totalSteps,
@@ -201,6 +213,7 @@ PublicProfile buildPublicProfile({
     cats: [for (final cat in cats) PublicCat.of(cat)],
     toys: inventory.toys,
     rooms: rooms,
+    placed: placed,
   );
 }
 
