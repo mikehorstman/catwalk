@@ -9,6 +9,7 @@ import '../../rooms/domain/placement.dart';
 import '../../rooms/domain/room_constants.dart';
 import '../../rooms/domain/room_type.dart';
 import '../../steps/presentation/home_controller.dart';
+import '../../steps/presentation/shop_screen.dart';
 import '../data/room_cats_provider.dart';
 import '../domain/cat_action.dart';
 import '../domain/room_cat.dart';
@@ -162,22 +163,23 @@ class _RoomPageState extends ConsumerState<RoomPage>
                 ),
               ),
               // One small button per slot, to see what stands there and change it.
-              for (final slot in Slot.values)
-                Positioned(
-                  left: slot.position.dx * size.width - 16,
-                  top:
-                      (slot.position.dy + (slot.isHigh ? 0.07 : -0.12)) *
-                          size.height -
-                      16,
-                  child: _SlotButton(
-                    key: Key('slot-${slot.name}'),
-                    filled: ref
-                        .watch(roomLayoutForProvider(widget.room))
-                        .items
-                        .any((i) => i.slot == slot.name),
-                    onTap: () => SlotSheet.show(context, widget.room, slot),
+              if (ref.watch(roomEditModeProvider))
+                for (final slot in Slot.values)
+                  Positioned(
+                    left: slot.position.dx * size.width - 16,
+                    top:
+                        (slot.position.dy + (slot.isHigh ? 0.07 : -0.12)) *
+                            size.height -
+                        16,
+                    child: _SlotButton(
+                      key: Key('slot-${slot.name}'),
+                      filled: ref
+                          .watch(roomLayoutForProvider(widget.room))
+                          .items
+                          .any((i) => i.slot == slot.name),
+                      onTap: () => SlotSheet.show(context, widget.room, slot),
+                    ),
                   ),
-                ),
               if (runAway)
                 const Center(child: EmptyCushion(size: 200))
               else
@@ -401,6 +403,21 @@ class _NoCats extends StatelessWidget {
   }
 }
 
+/// True while the Cats tab is in edit mode: the slot buttons show and items
+/// can be bought, placed and swapped. Off by default so the room stays clean.
+final roomEditModeProvider = NotifierProvider<RoomEditMode, bool>(
+  RoomEditMode.new,
+);
+
+/// Holds whether the room is being edited.
+class RoomEditMode extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Starts or ends editing.
+  void toggle() => state = !state;
+}
+
 /// Debug-only button in the corner that opens the [AnimationLabSheet].
 class _LabButton extends StatelessWidget {
   const _LabButton();
@@ -481,6 +498,29 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
                 ),
           ],
         ),
+        if (owned.contains(room))
+          Positioned(
+            right: 12,
+            top: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: _EditButton(
+                  editing: ref.watch(roomEditModeProvider),
+                  onPressed: () =>
+                      ref.read(roomEditModeProvider.notifier).toggle(),
+                ),
+              ),
+            ),
+          ),
+        if (owned.contains(room) && ref.watch(roomEditModeProvider))
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
+            child: _EditBar(toys: home?.inventory.toys ?? const []),
+          ),
         Positioned(
           left: 0,
           right: 0,
@@ -610,6 +650,76 @@ class _LockedRoom extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The button in the top right corner that starts and ends editing.
+class _EditButton extends StatelessWidget {
+  const _EditButton({required this.editing, required this.onPressed});
+
+  final bool editing;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton.filledTonal(
+      key: const Key('edit-room'),
+      tooltip: editing ? 'Done' : 'Edit room',
+      onPressed: onPressed,
+      icon: Icon(editing ? Icons.check : Icons.edit_outlined),
+    );
+  }
+}
+
+/// Shown while editing: what to do, the toys you own and a way to get more.
+class _EditBar extends StatelessWidget {
+  const _EditBar({required this.toys});
+
+  final List<String> toys;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      key: const Key('edit-bar'),
+      decoration: BoxDecoration(
+        color: CatwalkColors.card.withAlpha(235),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tap a round button to change what stands there.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    toys.isEmpty
+                        ? 'No toys yet.'
+                        : 'Toys: ${toys.map((t) => '${t[0].toUpperCase()}${t.substring(1)}').join(', ')}',
+                    key: const Key('edit-toys'),
+                    style: theme.textTheme.labelLarge,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  key: const Key('edit-shop'),
+                  onPressed: () => openShop(context),
+                  icon: const Icon(Icons.storefront_outlined),
+                  label: const Text('Shop'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

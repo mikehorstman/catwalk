@@ -18,18 +18,28 @@ Future<void> frames(WidgetTester tester, [int n = 20]) async {
 Future<void> openClimbSheet(WidgetTester tester) async {
   await tester.tap(find.text('Cats'));
   await frames(tester);
+  await tester.tap(find.byKey(const Key('edit-room')));
+  await frames(tester);
   await tester.tap(find.byKey(const Key('slot-climb')));
   await frames(tester);
 }
 
 void main() {
   testWidgets(
-    'every slot has a button, and the empty climb slot shows a plus',
+    'slot buttons only show while editing, and the empty climb slot shows a plus',
     (tester) async {
       final store = await newPlayer();
       await open(tester, store, 1000);
       await tester.tap(find.text('Cats'));
       await frames(tester);
+      for (final slot in Slot.values) {
+        expect(find.byKey(Key('slot-${slot.name}')), findsNothing);
+      }
+      expect(find.byKey(const Key('edit-bar')), findsNothing);
+      await tester.tap(find.byKey(const Key('edit-room')));
+      await frames(tester);
+      expect(find.byKey(const Key('edit-bar')), findsOneWidget);
+      expect(find.byKey(const Key('edit-toys')), findsOneWidget);
       for (final slot in Slot.values) {
         expect(find.byKey(Key('slot-${slot.name}')), findsOneWidget);
       }
@@ -112,5 +122,19 @@ void main() {
       ).read()).hasItem(itemById('living-cat-tree')!),
       isTrue,
     );
+  });
+
+  testWidgets('Done hides the buttons again', (tester) async {
+    final store = await newPlayer();
+    await open(tester, store, 1000);
+    await tester.tap(find.text('Cats'));
+    await frames(tester);
+    await tester.tap(find.byKey(const Key('edit-room')));
+    await frames(tester);
+    expect(find.byKey(const Key('slot-floor')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('edit-room')));
+    await frames(tester);
+    expect(find.byKey(const Key('slot-floor')), findsNothing);
+    expect(find.byKey(const Key('edit-bar')), findsNothing);
   });
 }
