@@ -15,7 +15,7 @@
 - A wish can also be **"walk to place X"**: the cat wants you to walk somewhere, which gives a direct reason to go out.
 - Unlocks also come from gifts.
 
-**Reverses earlier decisions (on purpose):** D21 "the shop stays small: toys and beds, no decorations". D18 "bed prices are the cap on cats". Both are replaced below as D25 to D36.
+**Reverses earlier decisions (on purpose):** D21 "the shop stays small: toys and beds, no decorations". D18 "bed prices are the cap on cats". Both are replaced below as D25 to D37.
 
 ---
 
@@ -357,7 +357,7 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 | A wish item is bought, but placed in another room | The wish stays open until it is in the cat's room. A hint says where. |
 | You move a cat away from the item it wished for | The wish stays open. |
 | A cat gets a wish for an item you already own and placed in another room | It counts as unmet. Place or buy another. |
-| Every item unlocked and every like met | No more item wishes. Walk wishes can still come, as long as the cat has a free spot to wish for nothing else. Extra gifts hold candy only (+3 fallback). |
+| Every item unlocked and every like met | No more item wishes. Walk wishes can still come. Extra gifts hold candy only (+3 fallback). |
 | A walk wish place is on private ground or unreachable | The router only picks places that are on a walkable street. If none is found, the wish waits and an item wish is given instead. |
 | You are abroad or travel far from the place | After 5 km the place moves near you. |
 | Two cats have a walk wish | One is open at a time. The other waits. |
