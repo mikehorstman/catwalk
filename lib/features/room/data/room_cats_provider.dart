@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../cat/domain/cat.dart';
+import '../../map/domain/inventory.dart';
 import '../../rooms/data/home_state_repository.dart';
 import '../../rooms/domain/comfort.dart';
 import '../../rooms/domain/home_state.dart' as rooms;
@@ -23,7 +25,7 @@ final roomCatsProvider = Provider<List<RoomCat>>((ref) {
   );
 });
 
-RoomCat _roomCat(cat, rooms.HomeState home, inventory) {
+RoomCat _roomCat(Cat cat, rooms.HomeState home, Inventory? inventory) {
   if (inventory == null) return RoomCat(cat);
   final tags = tagsOf(cat.roomId, home, inventory);
   final comfort = comfortOf(cat, tags);
