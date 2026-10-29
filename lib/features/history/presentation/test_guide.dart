@@ -177,6 +177,16 @@ const List<TestGuideItem> testGuideItems = [
         'the toys like for its cats.',
   ),
   TestGuideItem(
+    feature: 'Watch or phone steps',
+    how:
+        'Settings, Step access. Read "Where today comes from". If two apps '
+        'wrote steps, open Health Connect, Data and access, App priority and '
+        'put your watch app first, then tap Check again.',
+    check:
+        'The card lists each app with its steps and says which source '
+        'counts. After the priority change the total matches the watch.',
+  ),
+  TestGuideItem(
     feature: 'Developer mode',
     how:
         'Settings, switch on Developer mode. Type in steps for today or a '

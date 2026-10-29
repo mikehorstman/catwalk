@@ -1,3 +1,4 @@
+import 'step_source_card.dart';
 import '../../dev/dev_section.dart';
 
 import 'package:flutter/material.dart';
@@ -238,6 +239,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: const Text('Allow step access'),
                 ),
               ),
+              const SizedBox(height: 12),
+              const StepSourceCard(),
               const SizedBox(height: 32),
               const DevSection(),
               const SizedBox(height: 32),

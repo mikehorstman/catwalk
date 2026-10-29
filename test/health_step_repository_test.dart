@@ -30,6 +30,10 @@ class _FakeClient implements HealthClient {
   Future<List<int>?> hourlyBetween(DateTime start, DateTime end) async => null;
 
   @override
+  Future<Map<String, int>?> stepsBySource(DateTime start, DateTime end) async =>
+      null;
+
+  @override
   Future<int?> stepsBetween(DateTime start, DateTime end) async {
     lastStart = start;
     lastEnd = end;
