@@ -9,6 +9,8 @@ import '../features/onboarding/presentation/onboarding_controller.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/room/presentation/room_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
+import '../features/steps/presentation/home_controller.dart'
+    show homeControllerProvider;
 import '../features/steps/presentation/home_screen.dart';
 
 /// Navigator above the tab bar, so screens like Settings cover it fully.
@@ -100,28 +102,37 @@ class _RouterRefresh extends ChangeNotifier {
 }
 
 /// Frame around the four tabs: the bottom navigation bar plus the current tab.
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({required this.navigationShell, super.key});
 
   /// Router-owned state that knows the current tab and can switch tabs.
   final StatefulNavigationShell navigationShell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gifts =
+        ref.watch(homeControllerProvider).value?.giftCatIds.isNotEmpty ?? false;
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: navigationShell.goBranch,
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.pets_outlined),
-            selectedIcon: Icon(Icons.pets),
+            icon: Badge(
+              key: const Key('cats-gift-dot'),
+              isLabelVisible: gifts,
+              child: const Icon(Icons.pets_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: gifts,
+              child: const Icon(Icons.pets),
+            ),
             label: 'Cats',
           ),
           NavigationDestination(

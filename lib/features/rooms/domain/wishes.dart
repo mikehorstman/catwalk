@@ -102,11 +102,11 @@ class Wish {
   Map<String, Object> toJson() => {
     'kind': kind.name,
     'createdOn': createdOn.toIsoDate(),
-    if (itemId != null) 'itemId': itemId!,
+    'itemId': ?itemId,
     if (like != null) 'like': like!.name,
-    if (lat != null) 'lat': lat!,
-    if (lon != null) 'lon': lon!,
-    if (routeMeters != null) 'routeMeters': routeMeters!,
+    'lat': ?lat,
+    'lon': ?lon,
+    'routeMeters': ?routeMeters,
   };
 }
 
@@ -150,7 +150,7 @@ class WishRecord {
   Map<String, Object> toJson() => {
     if (open != null) 'open': open!.toJson(),
     'granted': granted,
-    if (nextAfter != null) 'nextAfter': nextAfter!.toIsoDate(),
+    'nextAfter': ?nextAfter?.toIsoDate(),
   };
 }
 

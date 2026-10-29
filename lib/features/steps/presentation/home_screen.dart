@@ -11,7 +11,6 @@ import '../../daily_goal/domain/progress_milestones.dart';
 import '../../cat/presentation/cat_voice.dart';
 import '../../cat/presentation/widgets/cat_art.dart';
 import 'home_controller.dart';
-import '../../reminders/application/reminder_scheduler.dart';
 import 'shop_screen.dart';
 import 'step_auto_refresh.dart';
 
@@ -161,11 +160,6 @@ class _HomeBody extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 20),
-        _GiftButton(
-          goalReached: today.goalCompleted,
-          waiting: state.giftsWaiting,
-          onOpen: () => _openGift(context, ref),
-        ),
         if (next != null) ...[
           const SizedBox(height: 4),
           _NextLine(reward: next, onTap: () => _showMore(context, state, next)),
@@ -553,65 +547,6 @@ class _GoalNudge extends StatelessWidget {
   }
 }
 
-/// Opens the waiting gift and shows what was inside.
-Future<void> _openGift(BuildContext context, WidgetRef ref) async {
-  final lines = await ref.read(homeControllerProvider.notifier).claimGift();
-  if (lines.isEmpty || !context.mounted) return;
-  await showDialog<void>(
-    context: context,
-    builder: (context) => _GiftReveal(lines: lines),
-  );
-  // The first gift is a good moment to offer reminders, once.
-  final state = ref.read(homeControllerProvider).value;
-  if (state != null) {
-    await ref.read(reminderSchedulerProvider).askOnce(state);
-  }
-}
-
-/// The one button for today's reward: greyed out until the goal is reached,
-/// then a gift to open. Hidden once everything earned has been opened.
-class _GiftButton extends StatelessWidget {
-  const _GiftButton({
-    required this.goalReached,
-    required this.waiting,
-    required this.onOpen,
-  });
-
-  /// Whether today's goal is reached.
-  final bool goalReached;
-
-  /// How many gifts are waiting to be opened.
-  final int waiting;
-
-  /// Called when the player taps to open a gift.
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    if (waiting > 0) {
-      return Center(
-        child: FilledButton.icon(
-          key: const Key('open-gift'),
-          onPressed: onOpen,
-          icon: const Icon(Icons.card_giftcard),
-          label: Text(
-            waiting > 1 ? 'Open a gift ($waiting)' : 'Open your gift',
-          ),
-        ),
-      );
-    }
-    if (goalReached) return const SizedBox.shrink();
-    return Center(
-      child: FilledButton.icon(
-        key: const Key('gift-locked'),
-        onPressed: null,
-        icon: const Icon(Icons.card_giftcard),
-        label: const Text("Reach your goal to open today's gift"),
-      ),
-    );
-  }
-}
-
 /// A quiet line naming the next streak prize or step milestone. Tapping it
 /// opens the details.
 class _NextLine extends StatelessWidget {
@@ -634,54 +569,6 @@ class _NextLine extends StatelessWidget {
         ),
         child: Text('Next: ${reward.title} · ${reward.detail}'),
       ),
-    );
-  }
-}
-
-/// The reveal after tapping the gift: what was inside, one line each.
-class _GiftReveal extends StatelessWidget {
-  const _GiftReveal({required this.lines});
-
-  /// What the gift held, one line per thing.
-  final List<String> lines;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AlertDialog(
-      icon: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.4, end: 1),
-        duration: const Duration(milliseconds: 450),
-        curve: Curves.elasticOut,
-        builder: (context, scale, child) =>
-            Transform.scale(scale: scale, child: child),
-        child: const Icon(
-          Icons.card_giftcard,
-          size: 48,
-          color: CatwalkColors.teal,
-        ),
-      ),
-      title: const Text('Your gift'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final line in lines)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Text(
-                line,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Nice'),
-        ),
-      ],
     );
   }
 }

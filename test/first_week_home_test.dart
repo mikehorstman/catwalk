@@ -73,53 +73,68 @@ void main() {
     );
   });
 
-  testWidgets('reaching the goal waits in a gift that pays once opened', (
-    tester,
-  ) async {
-    final store = await newPlayer();
-    await open(tester, store, 3000);
+  Finder giftBadge() => find.byWidgetPredicate(
+    (w) => w.key is Key && '${w.key}'.contains('gift-badge-'),
+  );
 
-    // The goal's own candy is paid; the gift is still shut.
-    await tester.scrollUntilVisible(find.byKey(const Key('open-gift')), 200);
-    expect(find.byKey(const Key('open-gift')), findsOneWidget);
-    expect(find.textContaining('Daily draw'), findsNothing);
-    final before = await InventoryRepository(store).read();
-    expect(before.candy, 3);
-    expect(before.toys, isEmpty);
-
-    await tester.tap(find.byKey(const Key('open-gift')));
-    for (var i = 0; i < 20; i++) {
+  Future<void> frames(WidgetTester tester, [int n = 20]) async {
+    for (var i = 0; i < n; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    expect(find.text('Your gift'), findsOneWidget);
-    expect(find.textContaining('First goal'), findsWidgets);
-    expect(find.textContaining('Daily draw'), findsOneWidget);
+  }
 
-    await tester.tap(find.text('Nice'));
-    for (var i = 0; i < 12; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    expect(find.byKey(const Key('open-gift')), findsNothing);
-    final opened = await InventoryRepository(store).read();
-    expect(opened.toys, isNotEmpty);
-    expect(opened.freezes, greaterThan(0));
+  testWidgets(
+    'reaching the goal gives a gift to a cat, which pays once opened',
+    (tester) async {
+      final store = await newPlayer();
+      await open(tester, store, 3000);
 
-    // Closing and reopening the app pays nothing more and offers no new gift.
-    await tester.pumpWidget(const SizedBox());
-    await open(tester, store, 3000);
-    expect(find.byKey(const Key('open-gift')), findsNothing);
-    final again = await InventoryRepository(store).read();
-    expect(again.toJson(), opened.toJson());
-  });
+      // Home has no gift button any more.
+      expect(find.byKey(const Key('open-gift')), findsNothing);
+      expect(find.byKey(const Key('gift-locked')), findsNothing);
 
-  testWidgets('before the goal the gift button is greyed out', (tester) async {
+      // The goal's own candy is paid; the gift waits on a cat.
+      final before = await InventoryRepository(store).read();
+      expect(before.candy, 3);
+      expect(before.toys, isEmpty);
+      expect(find.byKey(const Key('cats-gift-dot')), findsOneWidget);
+
+      await tester.tap(find.text('Cats'));
+      await frames(tester);
+      expect(giftBadge(), findsOneWidget);
+      await tester.tap(giftBadge());
+      await frames(tester);
+      await tester.tap(find.byKey(const Key('open-gift')));
+      await frames(tester);
+      expect(find.text('Your gift'), findsOneWidget);
+      expect(find.textContaining('First goal'), findsWidgets);
+      expect(find.textContaining('Daily draw'), findsOneWidget);
+
+      await tester.tap(find.text('Nice'));
+      await frames(tester, 12);
+      expect(giftBadge(), findsNothing);
+      final opened = await InventoryRepository(store).read();
+      expect(opened.toys, isNotEmpty);
+      expect(opened.freezes, greaterThan(0));
+
+      // Closing and reopening the app pays nothing more and offers no new gift.
+      await tester.pumpWidget(const SizedBox());
+      await open(tester, store, 3000);
+      await tester.tap(find.text('Cats'));
+      await frames(tester);
+      expect(giftBadge(), findsNothing);
+      final again = await InventoryRepository(store).read();
+      expect(again.toJson(), opened.toJson());
+    },
+  );
+
+  testWidgets('before the goal no cat holds a gift', (tester) async {
     final store = await newPlayer();
     await open(tester, store, 500);
-
-    final button = find.byKey(const Key('gift-locked'));
-    await tester.scrollUntilVisible(button, 200);
-    expect(tester.widget<ButtonStyleButton>(button).onPressed, isNull);
     expect(find.byKey(const Key('open-gift')), findsNothing);
+    await tester.tap(find.text('Cats'));
+    await frames(tester);
+    expect(giftBadge(), findsNothing);
     expect(find.text('Your gift'), findsNothing);
   });
 }

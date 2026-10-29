@@ -5,7 +5,11 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../rooms/data/home_state_repository.dart';
+import '../../rooms/domain/cat_gifts.dart';
+import '../../rooms/domain/comfort.dart';
 import '../../rooms/domain/decoration_catalogue.dart';
+import '../../rooms/domain/home_state.dart' as rh;
+import '../../rooms/domain/settle_home.dart';
 import '../../rooms/domain/decorations.dart' as decorations;
 import '../../rooms/domain/decorations.dart' show ItemRefusal, itemRefusal;
 import '../../rooms/domain/placement.dart';
@@ -78,6 +82,7 @@ class HomeState {
     this.cats = const [],
     this.freePlaces = 0,
     this.rooms = const [RoomType.living],
+    this.house = const rh.HomeState(),
     this.arrival,
     this.goalsMet = 0,
     this.suggestedGoal,
@@ -146,6 +151,15 @@ class HomeState {
 
   /// The rooms the player owns.
   final List<RoomType> rooms;
+
+  /// The home: decorations, gifts, wishes.
+  final rh.HomeState house;
+
+  /// The cats holding a gift to hand over.
+  Set<String> get giftCatIds => {
+    if (giftsWaiting > 0 && house.giftCarrier != null) house.giftCarrier!,
+    for (final gift in house.extraGifts) gift.catId,
+  };
 
   /// The cat waiting on the map, if any.
   final Arrival? arrival;
@@ -413,6 +427,23 @@ class HomeController extends AsyncNotifier<HomeState> {
       }
     }
 
+    // Gifts the cats hold, and the wishes that came true or are due.
+    final settled = settleHome(
+      home: home,
+      cats: allCats,
+      inventory: weekly.inventory,
+      today: todayDate,
+      goalCompleted: snapshot.today.goalCompleted,
+      pendingMainGifts: ledger.pending.length,
+    );
+    if (jsonEncode(settled.home.toJson()) != jsonEncode(home.toJson())) {
+      home = settled.home;
+      await homes.write(home);
+    }
+    for (var i = 0; i < settled.grantedWishes.length; i++) {
+      await ref.read(analyticsProvider).log('wish_granted');
+    }
+
     // A goal that suits the person. The card shows once, and never in the same
     // open as a raise: one hint at a time.
     final stepDays = {for (final day in allDays) day.date: day.steps};
@@ -457,6 +488,7 @@ class HomeController extends AsyncNotifier<HomeState> {
       promotedName: promotedName,
       cats: [snapshot.cat, ...others],
       rooms: home.rooms,
+      house: home,
       freePlaces: placesLeft(
         home: home,
         cats: allCats,
@@ -493,6 +525,69 @@ class HomeController extends AsyncNotifier<HomeState> {
     await ref.read(analyticsProvider).log('gift_opened');
     await refreshSilently();
     return opened.lines;
+  }
+
+  /// Opens the gift [catId] holds: the daily gift if it carries it, or a small
+  /// one. Returns one line for each thing inside, or nothing when it holds
+  /// no gift.
+  Future<List<String>> openCatGift(String catId) async {
+    final homes = ref.read(homeStateRepositoryProvider);
+    final inventories = ref.read(inventoryRepositoryProvider);
+    final today = CalendarDate.today();
+    var home = await homes.read();
+    final cats = state.value?.cats ?? const [];
+    final cat = cats.where((c) => c.id == catId).firstOrNull;
+    if (cat == null) return const [];
+    final inventory = await inventories.read();
+    final comfort = comfortOfAll(cats, home, inventory)[catId] ?? Comfort.meh;
+    final lines = <String>[];
+    if (home.giftCarrier == catId && (state.value?.giftsWaiting ?? 0) > 0) {
+      lines.addAll(await claimGift());
+      home = await homes.read();
+      final rolled = rollUnlock(
+        cat: cat,
+        home: home,
+        comfort: comfort,
+        today: today,
+      );
+      home = rolled.home.copyWith(
+        clearGiftCarrier: true,
+        bonusCats: {...rolled.home.bonusCats}..remove(catId),
+      );
+      final item = rolled.item;
+      if (item != null) {
+        lines.add(
+          '${cat.name} found a new idea: ${item.name.toLowerCase()} is '
+          'in the shop.',
+        );
+      }
+      await homes.write(home);
+    } else {
+      final held = home.extraGifts.where((g) => g.catId == catId).toList();
+      if (held.isEmpty) return const [];
+      final result = openExtraGift(
+        cat: cat,
+        home: home,
+        comfort: comfort,
+        today: today,
+      );
+      await inventories.write(
+        inventory.copyWith(candy: inventory.candy + result.candy),
+      );
+      await homes.write(
+        result.home.copyWith(
+          extraGifts: [
+            for (final g in result.home.extraGifts)
+              if (g.catId != catId) g,
+          ],
+        ),
+      );
+      await ref.read(analyticsProvider).log('gift_opened');
+      lines.add(result.line);
+    }
+    ref.invalidate(homeStateProvider);
+    await refreshSilently();
+    return lines;
   }
 
   /// Buys the toy [toyId] with candy and reloads. Returns why it was refused,
@@ -565,6 +660,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     if (next == null) return false;
     await homes.write(next);
     ref.invalidate(homeStateProvider);
+    await refreshSilently();
     return true;
   }
 

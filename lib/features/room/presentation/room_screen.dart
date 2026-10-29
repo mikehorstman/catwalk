@@ -266,16 +266,56 @@ class _CatLayer extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          child: animations.frame(
-            context,
-            appearance: cat.cat.appearance,
-            action: state.action,
-            mood: cat.mood,
-            facing: state.facing,
-            elapsed: Duration(
-              milliseconds: (state.actionElapsed * 1000).round(),
-            ),
-            size: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              animations.frame(
+                context,
+                appearance: cat.cat.appearance,
+                action: state.action,
+                mood: cat.mood,
+                facing: state.facing,
+                elapsed: Duration(
+                  milliseconds: (state.actionElapsed * 1000).round(),
+                ),
+                size: size,
+              ),
+              if (cat.hasGift)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: _Badge(
+                    key: Key('gift-badge-${cat.id}'),
+                    icon: Icons.card_giftcard,
+                  ),
+                )
+              else if (cat.wish != null)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: _Badge(
+                    key: Key('wish-bubble-${cat.id}'),
+                    icon: Icons.chat_bubble_outline,
+                  ),
+                ),
+              if (cat.comfort.hearts > 0)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: Row(
+                    key: Key('hearts-${cat.id}'),
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < cat.comfort.hearts; i++)
+                        const Icon(
+                          Icons.favorite,
+                          size: 12,
+                          color: CatwalkColors.teal,
+                        ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
       ),
@@ -292,6 +332,27 @@ class _CatLayer extends StatelessWidget {
 }
 
 /// Centred "No cats yet." message for an empty room.
+class _Badge extends StatelessWidget {
+  const _Badge({required this.icon, super.key});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: CatwalkColors.teal),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Icon(icon, size: 16, color: CatwalkColors.teal),
+      ),
+    );
+  }
+}
+
 class _SlotButton extends StatelessWidget {
   const _SlotButton({required this.filled, required this.onTap, super.key});
 

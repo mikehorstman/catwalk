@@ -3,6 +3,7 @@ import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
 import '../../rooms/domain/comfort.dart';
 import '../../rooms/domain/like.dart';
+import '../../rooms/domain/wishes.dart';
 
 /// A cat as the room sees it: its real data, how comfortable it is where it
 /// lives, and the mood to show.
@@ -14,6 +15,9 @@ class RoomCat {
     this.likesMet = const {},
     CatMood? shownMood,
     CatStatus? shownStatus,
+    this.hasGift = false,
+    this.wish,
+    this.wishesGranted = 0,
   }) : _mood = shownMood,
        _status = shownStatus;
 
@@ -25,6 +29,15 @@ class RoomCat {
 
   /// Which of its likes the room gives.
   final Set<Like> likesMet;
+
+  /// True when the cat holds a gift for the player.
+  final bool hasGift;
+
+  /// The wish the cat has open, or null.
+  final Wish? wish;
+
+  /// How many wishes of this cat came true.
+  final int wishesGranted;
 
   final CatMood? _mood;
   final CatStatus? _status;

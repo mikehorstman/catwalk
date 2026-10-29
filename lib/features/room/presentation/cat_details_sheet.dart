@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../rooms/domain/decorations.dart' show ItemRefusal;
+import '../../rooms/domain/wishes.dart';
+import '../../rooms/presentation/gift_reveal.dart';
 import '../../rooms/presentation/like_icons.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +30,7 @@ class CatDetailsSheet extends ConsumerWidget {
       context: context,
       backgroundColor: CatwalkColors.card,
       showDragHandle: true,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -45,7 +49,7 @@ class CatDetailsSheet extends ConsumerWidget {
     ];
     return SafeArea(
       top: false,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -124,6 +128,31 @@ class CatDetailsSheet extends ConsumerWidget {
                 ),
               ],
             ),
+            if (cat.hasGift) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const Key('open-gift'),
+                onPressed: () async {
+                  await openGiftOf(context, ref, cat.id);
+                  if (context.mounted) Navigator.of(context).pop();
+                },
+                icon: const Icon(Icons.card_giftcard),
+                label: Text('Open ${cat.name}\'s gift'),
+              ),
+            ],
+            if (cat.wish case final wish?) ...[
+              const SizedBox(height: 12),
+              _WishCard(cat: cat, wish: wish),
+            ],
+            if (cat.wishesGranted > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Wishes granted: ${cat.wishesGranted}',
+                  key: const Key('wishes-granted'),
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
             if (moves.isNotEmpty) ...[
               const SizedBox(height: 12),
               Wrap(
@@ -200,4 +229,93 @@ String likesLine(RoomCat cat) {
   if (met.isEmpty) return 'Likes $liked. The $room has none of it.';
   if (met.length == likes.length) return 'Likes $liked. The $room has both.';
   return 'Likes $liked. The $room has ${met.first}.';
+}
+
+/// The cat's open wish, with what the player can do about it.
+class _WishCard extends ConsumerWidget {
+  const _WishCard({required this.cat, required this.wish});
+
+  final RoomCat cat;
+  final Wish wish;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final item = wish.item;
+    final house = ref.watch(homeControllerProvider).value?.house;
+    final candy = ref.watch(homeControllerProvider).value?.inventory.candy ?? 0;
+    Widget? action;
+    if (item != null && house != null) {
+      final inRoom = cat.cat.roomId == item.room;
+      if (!house.owns(item.room)) {
+        action = Text(
+          'Needs the ${item.room.label.toLowerCase()}.',
+          style: theme.textTheme.bodySmall,
+        );
+      } else if (house.hasItem(item)) {
+        action = OutlinedButton(
+          key: const Key('wish-place'),
+          onPressed: () async {
+            await ref.read(homeControllerProvider.notifier).placeItem(item);
+          },
+          child: Text(
+            inRoom
+                ? 'Place it'
+                : 'Place it in the ${item.room.label.toLowerCase()}',
+          ),
+        );
+      } else {
+        action = FilledButton(
+          key: const Key('wish-buy'),
+          onPressed: candy < item.price
+              ? null
+              : () async {
+                  final why = await ref
+                      .read(homeControllerProvider.notifier)
+                      .buyItem(item);
+                  if (why == ItemRefusal.notEnoughCandy && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Not enough candy yet.')),
+                    );
+                  }
+                },
+          child: Text('Buy and place · ${item.price} candy'),
+        );
+      }
+    } else if (wish.kind == WishKind.walk) {
+      action = Text(
+        wish.hasPlace
+            ? 'Look for the star on the map.'
+            : 'Open the map to see where.',
+        key: const Key('walk-wish-hint'),
+        style: theme.textTheme.bodySmall,
+      );
+    }
+    return DecoratedBox(
+      key: const Key('wish-card'),
+      decoration: BoxDecoration(
+        color: CatwalkColors.orangeSoft,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '“${wishText(cat.cat, wish)}”',
+              key: const Key('wish-text'),
+              style: theme.textTheme.titleSmall,
+            ),
+            if (item != null)
+              Text(
+                'In the ${item.room.label.toLowerCase()}: ${item.name}',
+                style: theme.textTheme.bodySmall,
+              ),
+            ?action,
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -83,8 +83,7 @@ class HomeState {
         if (json['lastGiftOn'] is Map)
           for (final e in (json['lastGiftOn'] as Map).entries)
             if (e.key is String && e.value is String)
-              if (_parseDate(e.value as String) case final d?)
-                e.key as String: d,
+              e.key as String: ?_parseDate(e.value as String),
       },
       giftsSincePity: ((json['giftsSincePity'] as num?)?.toInt() ?? 0).clamp(
         0,
@@ -219,13 +218,13 @@ class HomeState {
   Map<String, Object> toJson() => {
     'rooms': [for (final room in rooms) room.name],
     'arrivalCredits': arrivalCredits,
-    if (creditsFrom != null) 'creditsFrom': creditsFrom!.toIsoDate(),
-    if (lastWelcomeOn != null) 'lastWelcomeOn': lastWelcomeOn!.toIsoDate(),
+    'creditsFrom': ?creditsFrom?.toIsoDate(),
+    'lastWelcomeOn': ?lastWelcomeOn?.toIsoDate(),
     'owned': owned.toList()..sort(),
     'unlocked': unlocked.toList()..sort(),
     'placed': placed,
-    if (giftsDay != null) 'giftsDay': giftsDay!.toIsoDate(),
-    if (giftCarrier != null) 'giftCarrier': giftCarrier!,
+    'giftsDay': ?giftsDay?.toIsoDate(),
+    'giftCarrier': ?giftCarrier,
     'extraGifts': [for (final g in extraGifts) g.toJson()],
     'lastGiftOn': {
       for (final e in lastGiftOn.entries) e.key: e.value.toIsoDate(),

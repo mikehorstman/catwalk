@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../cat/domain/cat.dart';
 import '../../map/domain/inventory.dart';
-import '../../rooms/data/home_state_repository.dart';
 import '../../rooms/domain/comfort.dart';
 import '../../rooms/domain/home_state.dart' as rooms;
 import '../../rooms/domain/room_tags.dart';
@@ -15,17 +14,23 @@ import 'room_layout_provider.dart';
 /// changed: only what the room shows.
 final roomCatsProvider = Provider<List<RoomCat>>((ref) {
   final home = ref.watch(homeControllerProvider);
-  final placed = ref.watch(homeStateProvider).value ?? const rooms.HomeState();
   final inventory = ref.watch(inventoryProvider).value;
   return home.maybeWhen(
     data: (state) => [
-      for (final cat in state.cats) _roomCat(cat, placed, inventory),
+      for (final cat in state.cats)
+        _roomCat(cat, state.house, inventory, state.giftCatIds),
     ],
     orElse: () => const <RoomCat>[],
   );
 });
 
-RoomCat _roomCat(Cat cat, rooms.HomeState home, Inventory? inventory) {
+RoomCat _roomCat(
+  Cat cat,
+  rooms.HomeState home,
+  Inventory? inventory,
+  Set<String> gifts,
+) {
+  final record = home.wishes[cat.id];
   if (inventory == null) return RoomCat(cat);
   final tags = tagsOf(cat.roomId, home, inventory);
   final comfort = comfortOf(cat, tags);
@@ -36,5 +41,8 @@ RoomCat _roomCat(Cat cat, rooms.HomeState home, Inventory? inventory) {
     likesMet: likesMet(cat, tags),
     shownMood: shown.mood,
     shownStatus: shown.status,
+    hasGift: gifts.contains(cat.id),
+    wish: record?.open,
+    wishesGranted: record?.granted ?? 0,
   );
 }
