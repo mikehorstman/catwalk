@@ -25,13 +25,17 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly([
           'displayName', 'photoUrl', 'friendCode', 'streak', 'bestStreak',
           'totalSteps', 'weekSteps', 'todaySteps', 'todayGoalMet', 'dailyGoal',
-          'cats', 'toys', 'beds', 'updatedAt'])
+          'cats', 'toys', 'rooms', 'updatedAt'])
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() <= 40
         && request.resource.data.friendCode is string
         && request.resource.data.friendCode.size() == 6
         && request.resource.data.cats is list
-        && request.resource.data.cats.size() <= 12;
+        && request.resource.data.cats.size() <= 12
+        && (!('rooms' in request.resource.data)
+            || (request.resource.data.rooms is int
+                && request.resource.data.rooms >= 1
+                && request.resource.data.rooms <= 4));
       allow delete: if isOwner(uid);
 
       // Private to the owner: settings, push tokens, backups.

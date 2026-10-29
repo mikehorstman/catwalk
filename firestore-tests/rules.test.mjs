@@ -18,7 +18,7 @@ const google = (uid) => env.authenticatedContext(uid, { firebase: { sign_in_prov
 const anon = (uid) => env.authenticatedContext(uid, { firebase: { sign_in_provider: 'anonymous' } }).firestore();
 const profile = (extra = {}) => ({
   displayName: 'Mara', friendCode: 'ABCDEF', streak: 1, bestStreak: 2, totalSteps: 3, weekSteps: 4,
-  todaySteps: 5, todayGoalMet: false, dailyGoal: 6000, cats: [], toys: [], beds: 1, ...extra,
+  todaySteps: 5, todayGoalMet: false, dailyGoal: 6000, cats: [], toys: [], rooms: 1, ...extra,
 });
 const befriend = (a, b) => env.withSecurityRulesDisabled((ctx) =>
   setDoc(doc(ctx.firestore(), 'friendships', a < b ? `${a}_${b}` : `${b}_${a}`), { members: [a, b] }));
@@ -38,6 +38,17 @@ test('a profile with extra fields, a long name or a bad code is refused', async 
   await assertFails(setDoc(doc(db, 'users', 'a'), profile({ displayName: 'x'.repeat(41) })));
   await assertFails(setDoc(doc(db, 'users', 'a'), profile({ friendCode: 'AB' })));
   await assertFails(setDoc(doc(db, 'users', 'a'), profile({ cats: new Array(13).fill({}) })));
+});
+
+test('rooms must be a whole number from 1 to 4, and the old beds key is gone', async () => {
+  const db = google('a');
+  for (const rooms of [1, 2, 3, 4]) {
+    await assertSucceeds(setDoc(doc(db, 'users', 'a'), profile({ rooms })));
+  }
+  for (const rooms of [0, 5, -1, 2.5, '2']) {
+    await assertFails(setDoc(doc(db, 'users', 'a'), profile({ rooms })));
+  }
+  await assertFails(setDoc(doc(db, 'users', 'a'), profile({ beds: 2 })));
 });
 
 test('only the owner and friends can read a profile', async () => {

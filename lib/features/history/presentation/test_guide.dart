@@ -162,14 +162,16 @@ const List<TestGuideItem> testGuideItems = [
         'and every saved day. The total should match the sum of your days.',
   ),
   TestGuideItem(
-    feature: 'Shop and cat beds',
+    feature: 'Rooms',
     how:
-        'Tap the shop icon at the top right of Home. Buy a bed when you have '
-        'the candy (the second bed costs 40).',
+        'On the Cats tab, swipe sideways between the four rooms. The garden, '
+        'attic and veranda are dim until you buy them (Shop or the room '
+        'page). The garden costs 300 candy, then 700, then 1,200.',
     check:
-        'Candy drops, a bed is added, and the next morning a cat waits on '
-        'the Map. Walk to it (within 30 m) and it joins your room. Only one '
-        'bed can be waiting at a time.',
+        'Candy drops, the room opens, and the next morning a cat waits on '
+        'the Map. Walk to it (within 30 m) and it joins the best room for it. '
+        'Each room holds 3 cats. Tap a cat and use Move to... to change '
+        'its room.',
   ),
   TestGuideItem(
     feature: 'Toy perks',
