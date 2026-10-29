@@ -166,6 +166,26 @@ const List<TestGuideItem> testGuideItems = [
         'arrives on the map about every 10 days.',
   ),
   TestGuideItem(
+    feature: 'Take items away, lay toys',
+    how:
+        'In edit mode open a round button and tap "Take ... away". Tap a toy '
+        'chip in the bar at the bottom.',
+    check:
+        'The slot empties and shows a plus; the item stays yours and can be '
+        'placed again, and a starter does not come back by itself. A toy '
+        'moves into the room you are looking at, and that room then counts '
+        'the toys like for its cats.',
+  ),
+  TestGuideItem(
+    feature: 'Help and info',
+    how:
+        'On the Cats tab tap the question mark. Open a cat and tap the (i) '
+        'next to its hearts or its wish.',
+    check:
+        'The guide explains rooms, editing, tiers, likes, mood, gifts and '
+        'wishes, and has a close button. Each (i) explains its own part.',
+  ),
+  TestGuideItem(
     feature: 'Likes and hearts',
     how: 'On the Cats tab tap a cat.',
     check:

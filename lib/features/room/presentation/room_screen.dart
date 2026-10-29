@@ -547,7 +547,8 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
             bottom: false,
             child: IgnorePointer(
               child: Padding(
-                padding: const EdgeInsets.only(top: 10),
+                // Below the round buttons in the corners.
+                padding: const EdgeInsets.only(top: 58),
                 child: Column(
                   children: [
                     Container(

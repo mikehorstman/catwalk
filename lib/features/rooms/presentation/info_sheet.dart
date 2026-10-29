@@ -119,7 +119,22 @@ class HouseGuide extends StatelessWidget {
           key: const Key('house-guide'),
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('How the house works', style: theme.textTheme.titleLarge),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'How the house works',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                ),
+                IconButton(
+                  key: const Key('guide-close'),
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
             for (final (title, body) in parts) ...[
               const SizedBox(height: 16),
               Text(title, style: theme.textTheme.titleMedium),
