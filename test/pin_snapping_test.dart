@@ -210,7 +210,10 @@ void main() {
 
     test('puts every pin on the street the router found', () async {
       final router = FakeRouteService(
-        handler: (from, to) async => routeEndingAt(north(to, 12), meters: 450),
+        handler: (from, to) async => routeEndingAt(
+          north(to, 12),
+          meters: distanceMeters(from, to) * 1.2,
+        ),
       );
       final (container, _) = await start(router);
       final pins = pinsOf(container);
@@ -232,8 +235,9 @@ void main() {
       () async {
         var n = 0;
         final router = FakeRouteService(
-          handler: (from, to) async =>
-              n++ == 0 ? null : routeEndingAt(to, meters: 450),
+          handler: (from, to) async => n++ == 0
+              ? null
+              : routeEndingAt(to, meters: distanceMeters(from, to) * 1.2),
         );
         final (container, _) = await start(router);
         final pins = pinsOf(container);
@@ -274,14 +278,18 @@ void main() {
 
     test('the answers are kept: a second start asks nothing', () async {
       final first = FakeRouteService(
-        handler: (from, to) async => routeEndingAt(north(to, 12), meters: 450),
+        handler: (from, to) async => routeEndingAt(
+          north(to, 12),
+          meters: distanceMeters(from, to) * 1.2,
+        ),
       );
       final (c1, holder) = await start(first);
       final before = pinsOf(c1).map((p) => p.point).toList();
       c1.dispose();
 
       final second = FakeRouteService(
-        handler: (from, to) async => routeEndingAt(to, meters: 450),
+        handler: (from, to) async =>
+            routeEndingAt(to, meters: distanceMeters(from, to) * 1.2),
       );
       final (c2, _) = await start(second, holder: holder);
       expect(second.calls, isEmpty);

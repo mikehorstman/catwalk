@@ -480,7 +480,7 @@ class HomeController extends AsyncNotifier<HomeState> {
     final bought = result.inventory;
     if (bought == null) return result.refusal;
     await inventories.write(bought);
-    await ref.read(analyticsProvider).log('bed_bought');
+    await ref.read(analyticsProvider).log('toy_bought');
     await refreshSilently();
     return null;
   }

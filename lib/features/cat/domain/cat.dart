@@ -2,6 +2,9 @@ import '../../../core/utils/calendar_date.dart';
 import 'cat_appearance.dart';
 import 'cat_mood.dart';
 import 'cat_status.dart';
+import '../../rooms/domain/like.dart';
+import 'cat_likes.dart';
+import '../../rooms/domain/room_type.dart';
 
 /// One cat and everything the game remembers about it.
 class Cat {
@@ -14,7 +17,10 @@ class Cat {
     required this.consecutiveMissedDays,
     required this.createdAt,
     this.ranAwayOn,
-  });
+    List<Like> likes = const [],
+    this.roomId = RoomType.living,
+    // ignore: prefer_initializing_formals
+  }) : _likes = likes;
 
   /// Unique id, never changes.
   final String id;
@@ -41,6 +47,14 @@ class Cat {
   /// cat is home.
   final CalendarDate? ranAwayOn;
 
+  final List<Like> _likes;
+
+  /// The two things this cat likes. Stable for a cat saved without likes.
+  List<Like> get likes => _likes.isEmpty ? likesForId(id) : _likes;
+
+  /// The room this cat lives in.
+  final RoomType roomId;
+
   /// A copy with the given fields changed. [clearRanAwayOn] sets
   /// `ranAwayOn` back to null (cat is home again), since passing null alone
   /// means "keep the old value". Id, appearance and createdAt never change.
@@ -51,6 +65,7 @@ class Cat {
     int? consecutiveMissedDays,
     CalendarDate? ranAwayOn,
     bool clearRanAwayOn = false,
+    RoomType? roomId,
   }) {
     return Cat(
       id: id,
@@ -62,6 +77,8 @@ class Cat {
           consecutiveMissedDays ?? this.consecutiveMissedDays,
       createdAt: createdAt,
       ranAwayOn: clearRanAwayOn ? null : (ranAwayOn ?? this.ranAwayOn),
+      likes: _likes,
+      roomId: roomId ?? this.roomId,
     );
   }
 }

@@ -3,6 +3,8 @@ import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_appearance.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
+import '../../rooms/domain/like.dart';
+import '../../rooms/domain/room_type.dart';
 import '../../settings/domain/user_profile.dart';
 
 /// Turns a [profile] into JSON-ready data for saving.
@@ -42,6 +44,8 @@ Map<String, Object> catToJson(Cat cat) {
     'consecutiveMissedDays': cat.consecutiveMissedDays,
     'createdAt': cat.createdAt.toIso8601String(),
     if (cat.ranAwayOn != null) 'ranAwayOn': cat.ranAwayOn!.toIsoDate(),
+    'likes': [for (final like in cat.likes) like.name],
+    'room': cat.roomId.name,
   };
 }
 
@@ -59,5 +63,11 @@ Cat catFromJson(Map<String, dynamic> json) {
     ranAwayOn: json['ranAwayOn'] is String
         ? CalendarDate.parse(json['ranAwayOn'] as String)
         : null,
+    likes: [
+      if (json['likes'] is List)
+        for (final item in json['likes'] as List)
+          ?Like.byNameOrNull(item is String ? item : null),
+    ],
+    roomId: RoomType.byNameOrNull(json['room'] as String?) ?? RoomType.living,
   );
 }
