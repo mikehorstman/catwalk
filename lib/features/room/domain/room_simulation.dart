@@ -3,6 +3,7 @@ import 'dart:ui' show Offset;
 
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
+import '../../rooms/domain/like.dart';
 import 'cat_action.dart';
 import 'room_cat.dart';
 import 'room_layout.dart';
@@ -154,7 +155,8 @@ class RoomSimulation {
     this.reducedMotion = false,
     this.minActionSeconds = 3,
     this.maxActionSeconds = 9,
-  }) : _random = math.Random(seed) {
+  }) : _random = math.Random(seed),
+       _likes = {for (final cat in cats) cat.id: cat.likes} {
     final home = [
       for (final cat in cats)
         if (cat.isHome) cat,
@@ -179,6 +181,9 @@ class RoomSimulation {
   /// The only source of randomness, seeded, which keeps the room repeatable in
   /// tests.
   final math.Random _random;
+
+  /// What each cat likes, by cat id.
+  final Map<String, Set<Like>> _likes;
 
   /// Spot id to the ids of cats on it or heading there. This is what enforces
   /// [RoomSpot.capacity].
@@ -424,7 +429,18 @@ class RoomSimulation {
         if (spot.allows.any(actions.contains) && _hasRoomFor(spot, catId)) spot,
     ];
     if (open.isEmpty) return null;
-    return open[_random.nextInt(open.length)];
+    final likes = _likes[catId] ?? const <Like>{};
+    final liked = [
+      for (final spot in open)
+        if (spot.likes.any(likes.contains)) spot,
+    ];
+    // Without a liked spot the dice roll as before, so a room stays the same.
+    if (liked.isEmpty || liked.length == open.length) {
+      return open[_random.nextInt(open.length)];
+    }
+    // A spot that gives what the cat likes is chosen twice as often.
+    final roll = _random.nextInt(open.length + liked.length);
+    return roll < open.length ? open[roll] : liked[roll - open.length];
   }
 
   /// A random point on the walk line, as a fraction of the room's width.

@@ -166,6 +166,16 @@ const List<TestGuideItem> testGuideItems = [
         'arrives on the map about every 10 days.',
   ),
   TestGuideItem(
+    feature: 'Likes and hearts',
+    how: 'On the Cats tab tap a cat.',
+    check:
+        'Two like chips (a lit chip means its room has it), 0 to 2 hearts '
+        'and a sentence. A cat with 2 hearts looks one step milder after a '
+        'missed day. Steps still decide the real mood, and a cat still runs '
+        'away after 3 missed days. Cats sit more often on spots that give '
+        'what they like.',
+  ),
+  TestGuideItem(
     feature: 'Me tab',
     how: 'Open Me after a day or two.',
     check:

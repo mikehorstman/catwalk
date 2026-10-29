@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../rooms/presentation/like_icons.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme.dart';
@@ -78,6 +81,49 @@ class CatDetailsSheet extends ConsumerWidget {
                 value: '${cat.cat.consecutiveMissedDays}',
               ),
             _Row(label: 'Lives in', value: cat.cat.roomId.label),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final like in cat.cat.likes)
+                  Chip(
+                    key: Key('like-${like.name}'),
+                    avatar: Icon(
+                      iconOfLike(like),
+                      size: 18,
+                      color: cat.likesMet.contains(like)
+                          ? CatwalkColors.teal
+                          : theme.disabledColor,
+                    ),
+                    label: Text(like.label),
+                    backgroundColor: cat.likesMet.contains(like)
+                        ? CatwalkColors.orangeSoft
+                        : null,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              key: const Key('comfort-hearts'),
+              children: [
+                for (var i = 0; i < 2; i++)
+                  Icon(
+                    i < cat.comfort.hearts
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    size: 18,
+                    color: CatwalkColors.teal,
+                  ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    likesLine(cat),
+                    key: const Key('likes-line'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
             if (moves.isNotEmpty) ...[
               const SizedBox(height: 12),
               Wrap(
@@ -139,4 +185,19 @@ class _Row extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One sentence on what the cat likes and whether its room gives it.
+String likesLine(RoomCat cat) {
+  final room = cat.cat.roomId.label.toLowerCase();
+  final likes = cat.cat.likes.map((l) => l.label.toLowerCase()).toList();
+  if (likes.isEmpty) return '';
+  final liked = likes.length == 1 ? likes.first : '${likes[0]} and ${likes[1]}';
+  final met = [
+    for (final l in cat.cat.likes)
+      if (cat.likesMet.contains(l)) l.label.toLowerCase(),
+  ];
+  if (met.isEmpty) return 'Likes $liked. The $room has none of it.';
+  if (met.length == likes.length) return 'Likes $liked. The $room has both.';
+  return 'Likes $liked. The $room has ${met.first}.';
 }

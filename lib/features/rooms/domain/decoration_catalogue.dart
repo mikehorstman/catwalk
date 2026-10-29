@@ -43,13 +43,14 @@ enum Slot {
   int get capacity => this == Slot.floor ? 2 : 1;
 
   /// The cat spot this slot makes, named after what stands there.
-  RoomSpot spot(String itemName) => RoomSpot(
+  RoomSpot spot(String itemName, [Set<Like> likes = const {}]) => RoomSpot(
     id: spotId,
     position: position,
     allows: allows,
     capacity: capacity,
     isHigh: isHigh,
     label: '$label, ${itemName.toLowerCase()}',
+    likes: likes,
   );
 }
 

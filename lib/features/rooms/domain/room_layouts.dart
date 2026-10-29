@@ -12,7 +12,7 @@ RoomLayout layoutForRoom(
 }) {
   final items = home.itemsIn(room);
   final layout = RoomLayout(
-    spots: [for (final item in items) item.slot.spot(item.name)],
+    spots: [for (final item in items) item.slot.spot(item.name, item.tags)],
     roomId: room.name,
     items: [
       for (final item in items)

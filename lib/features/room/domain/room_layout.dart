@@ -1,5 +1,6 @@
 import 'dart:ui' show Offset;
 
+import '../../rooms/domain/like.dart';
 import 'cat_action.dart';
 
 /// Somewhere in the room a cat can be.
@@ -16,6 +17,7 @@ class RoomSpot {
     required this.label,
     this.capacity = 1,
     this.isHigh = false,
+    this.likes = const {},
   }) : assert(capacity > 0, 'A spot that fits nobody is not a spot');
 
   /// Unique within a layout, e.g. `rug`, `tree`, `toy_ball`. The scene finds
@@ -36,6 +38,9 @@ class RoomSpot {
 
   /// Where the cat is, in words: "on the rug".
   final String label;
+
+  /// What a cat gets here: the likes of the decoration standing on this spot.
+  final Set<Like> likes;
 
   /// True when a cat may do [action] at this spot.
   bool allowsAction(CatAction action) => allows.contains(action);
