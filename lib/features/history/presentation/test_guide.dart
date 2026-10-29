@@ -176,6 +176,27 @@ const List<TestGuideItem> testGuideItems = [
         'what they like.',
   ),
   TestGuideItem(
+    feature: 'Gifts from cats',
+    how: 'Reach the daily goal, then open the Cats tab.',
+    check:
+        'Home has no gift button. A dot shows on the Cats tab and a gift '
+        'badge on up to 3 cats. Tap a cat, then Open its gift. The big gift '
+        'pays what it always did; small gifts pay 1 to 3 candy and vanish '
+        'after a day. Now and then a gift unlocks a tier 2 or 3 item.',
+  ),
+  TestGuideItem(
+    feature: 'Wishes',
+    how:
+        'Wait 3 days after a cat arrives, then look for a speech bubble on '
+        'it on the Cats tab. Tap the cat.',
+    check:
+        'An item wish offers Buy and place; placing it makes the bubble go '
+        'away and the next gift of that cat may unlock an item. A walk wish '
+        'shows a star on the map in the cat\'s colour 500 to 1,500 m away. '
+        'Walk within 30 m of it for 5 to 12 candy. One walk wish at a time, '
+        'one reached per day.',
+  ),
+  TestGuideItem(
     feature: 'Me tab',
     how: 'Open Me after a day or two.',
     check:
