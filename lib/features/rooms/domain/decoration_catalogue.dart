@@ -109,8 +109,7 @@ ItemSpec _i(
   starter: starter,
 );
 
-/// All 30 decorations of the living room and the garden. The attic and the
-/// veranda come in a later slice.
+/// All 60 decorations: 15 for each of the four rooms.
 final List<ItemSpec> catalogue = [
   // Living room (base like: company).
   _i(RoomType.living, Slot.floor, 1, 'Rug', {Like.company}, starter: true),
@@ -144,6 +143,47 @@ final List<ItemSpec> catalogue = [
   _i(RoomType.garden, Slot.corner, 1, 'Stick pile', {Like.toys}),
   _i(RoomType.garden, Slot.corner, 2, 'Butterfly bush', {Like.toys, Like.sun}),
   _i(RoomType.garden, Slot.corner, 3, 'Tire swing', {Like.toys, Like.heights}),
+  // Attic.
+  _i(RoomType.attic, Slot.floor, 1, 'Old rug', {Like.quiet}),
+  _i(RoomType.attic, Slot.floor, 2, 'Trunk', {Like.quiet}),
+  _i(RoomType.attic, Slot.floor, 3, 'Armchair', {Like.quiet, Like.company}),
+  _i(RoomType.attic, Slot.sleep, 1, 'Blanket nest', {Like.quiet}),
+  _i(RoomType.attic, Slot.sleep, 2, 'Hat box bed', {Like.quiet}),
+  _i(RoomType.attic, Slot.sleep, 3, 'Four-poster basket', {
+    Like.quiet,
+    Like.company,
+  }),
+  _i(RoomType.attic, Slot.climb, 1, 'Beam shelf', {Like.heights}),
+  _i(RoomType.attic, Slot.climb, 2, 'Rafter ladder', {Like.heights}),
+  _i(RoomType.attic, Slot.climb, 3, "Crow's nest", {Like.heights, Like.sun}),
+  _i(RoomType.attic, Slot.view, 1, 'Round sill', {Like.sun}),
+  _i(RoomType.attic, Slot.view, 2, 'Skylight', {Like.sun}),
+  _i(RoomType.attic, Slot.view, 3, 'Telescope nook', {Like.sun, Like.quiet}),
+  _i(RoomType.attic, Slot.corner, 1, 'Wool ball', {Like.toys}),
+  _i(RoomType.attic, Slot.corner, 2, 'Dust feather', {Like.toys}),
+  _i(RoomType.attic, Slot.corner, 3, 'Puppet theatre', {
+    Like.toys,
+    Like.company,
+  }),
+  // Veranda.
+  _i(RoomType.veranda, Slot.floor, 1, 'Doormat', {Like.company}),
+  _i(RoomType.veranda, Slot.floor, 2, 'Tiled mat', {Like.company}),
+  _i(RoomType.veranda, Slot.floor, 3, 'Wicker set', {Like.company, Like.quiet}),
+  _i(RoomType.veranda, Slot.sleep, 1, 'Cushion crate', {Like.quiet}),
+  _i(RoomType.veranda, Slot.sleep, 2, 'Wicker bed', {Like.quiet}),
+  _i(RoomType.veranda, Slot.sleep, 3, 'Hanging chair', {Like.quiet, Like.sun}),
+  _i(RoomType.veranda, Slot.climb, 1, 'Plant shelf', {Like.heights}),
+  _i(RoomType.veranda, Slot.climb, 2, 'Stairs', {Like.heights}),
+  _i(RoomType.veranda, Slot.climb, 3, 'Balcony rail', {Like.heights, Like.sun}),
+  _i(RoomType.veranda, Slot.view, 1, 'Glass sill', {Like.sun}),
+  _i(RoomType.veranda, Slot.view, 2, 'Bench by the glass', {
+    Like.sun,
+    Like.company,
+  }),
+  _i(RoomType.veranda, Slot.view, 3, 'Window seat', {Like.sun, Like.food}),
+  _i(RoomType.veranda, Slot.corner, 1, 'Milk saucer', {Like.food}),
+  _i(RoomType.veranda, Slot.corner, 2, 'Fish bowl', {Like.food, Like.toys}),
+  _i(RoomType.veranda, Slot.corner, 3, 'Tea table', {Like.food, Like.company}),
 ];
 
 /// The item with this [id], or null.

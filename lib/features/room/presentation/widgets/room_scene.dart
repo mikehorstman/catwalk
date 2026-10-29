@@ -62,6 +62,12 @@ class RoomScene extends StatelessWidget {
               child: ColoredBox(color: floorColor),
             ),
 
+            // What makes this room look like itself.
+            ..._looks(layout.roomId, w, h, floorTop),
+
+            // Every place has something: a little extra to show for it.
+            if (layout.items.length >= 5) ..._filledExtra(w, h),
+
             // Window, with the sill the cat perches on.
             if (sill != null) ...[
               Positioned(
@@ -332,3 +338,107 @@ class _Toy extends StatelessWidget {
     );
   }
 }
+
+/// Placeholder backgrounds for the rooms other than the living room.
+List<Widget> _looks(String room, double w, double h, double floorTop) {
+  Widget bar(double left, double top, double width, double height) =>
+      Positioned(
+        left: left,
+        top: top,
+        width: width,
+        height: height,
+        child: const ColoredBox(color: Color(0xFFB08A5A)),
+      );
+  switch (room) {
+    case 'attic':
+      return [
+        bar(0, 0.03 * h, w, 0.025 * h),
+        bar(0.30 * w, 0, 0.03 * w, floorTop),
+        bar(0.70 * w, 0, 0.03 * w, floorTop),
+        Positioned(
+          key: const Key('look-attic'),
+          left: 0.38 * w,
+          top: 0.10 * h,
+          width: 0.24 * w,
+          height: 0.24 * w,
+          child: const DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFFDFF1F0),
+              shape: BoxShape.circle,
+              border: Border.fromBorderSide(
+                BorderSide(color: Color(0xFFB08A5A), width: 6),
+              ),
+            ),
+          ),
+        ),
+      ];
+    case 'veranda':
+      return [
+        Positioned(
+          key: const Key('look-veranda'),
+          left: 0,
+          top: 0.04 * h,
+          width: 0.14 * w,
+          height: floorTop - 0.04 * h,
+          child: const DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0x66DFF1F0),
+              border: Border.fromBorderSide(
+                BorderSide(color: CatwalkColors.line, width: 4),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: floorTop,
+          height: 0.012 * h,
+          child: const ColoredBox(color: Color(0xFFD8C7A8)),
+        ),
+      ];
+    case 'garden':
+      return [
+        Positioned(
+          key: const Key('look-garden'),
+          right: 0.08 * w,
+          top: 0.05 * h,
+          width: 0.14 * w,
+          height: 0.14 * w,
+          child: const DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color(0xFFFFE08A),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: floorTop - 0.01 * h,
+          height: 0.02 * h,
+          child: const ColoredBox(color: Color(0xFF8DBF74)),
+        ),
+      ];
+    default:
+      return const [];
+  }
+}
+
+/// Fairy lights along the top, shown when every place in the room has an item.
+List<Widget> _filledExtra(double w, double h) => [
+  for (var i = 0; i < 9; i++)
+    Positioned(
+      key: i == 0 ? const Key('room-lights') : null,
+      left: (0.06 + i * 0.105) * w,
+      top: (0.012 + (i.isEven ? 0.012 : 0.0)) * h,
+      width: 0.03 * w,
+      height: 0.03 * w,
+      child: const DecoratedBox(
+        decoration: BoxDecoration(
+          color: Color(0xFFFFE08A),
+          shape: BoxShape.circle,
+        ),
+      ),
+    ),
+];
