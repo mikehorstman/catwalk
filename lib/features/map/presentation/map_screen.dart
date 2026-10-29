@@ -257,7 +257,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       return _Target(
         '${spot.cat.name} has a wish',
         spot.point,
-        detail: '${wishText(spot.cat, spot.wish)} Pays ${spot.candy} candy.',
+        detail:
+            '${wishText(spot.cat, spot.wish)} Walk within '
+            '${reachRadiusMeters.round()} m of the star to make the wish come '
+            'true. Pays ${spot.candy} candy.',
       );
     }
     for (final pin in view.pins) {

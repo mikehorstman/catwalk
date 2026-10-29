@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../rooms/domain/decorations.dart' show ItemRefusal;
 import '../../rooms/domain/wishes.dart';
 import '../../rooms/presentation/gift_reveal.dart';
+import '../../rooms/presentation/info_sheet.dart';
 import '../../rooms/presentation/like_icons.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -125,6 +126,17 @@ class CatDetailsSheet extends ConsumerWidget {
                     key: const Key('likes-line'),
                     style: theme.textTheme.bodySmall,
                   ),
+                ),
+                const InfoButton(
+                  key: Key('comfort-info'),
+                  title: 'Likes and hearts',
+                  body:
+                      'Each cat likes two things. The hearts show how many of '
+                      'them this room has: none, one or both. A cat with two '
+                      'hearts looks one step milder after a missed day, and '
+                      'sits more at places it likes. Your steps still decide '
+                      'how the cat really feels. Move the cat to another '
+                      'room, or add items, to change its hearts.',
                 ),
               ],
             ),
@@ -302,10 +314,26 @@ class _WishCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '“${wishText(cat.cat, wish)}”',
-              key: const Key('wish-text'),
-              style: theme.textTheme.titleSmall,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '“${wishText(cat.cat, wish)}”',
+                    key: const Key('wish-text'),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                ),
+                const InfoButton(
+                  key: Key('wish-info'),
+                  title: 'Wishes',
+                  body:
+                      'A cat can have one wish at a time. It never runs out '
+                      'and nothing bad happens if you wait. Give the cat what '
+                      'it asks for, or walk to its star on the map, and it '
+                      'pays candy. Its next gift is then more likely to '
+                      'unlock a new item.',
+                ),
+              ],
             ),
             if (item != null)
               Text(

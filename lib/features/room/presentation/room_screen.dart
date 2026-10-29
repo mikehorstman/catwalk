@@ -16,6 +16,7 @@ import '../domain/cat_action.dart';
 import '../domain/room_cat.dart';
 import '../data/room_layout_provider.dart';
 import '../../rooms/domain/decoration_catalogue.dart';
+import '../../rooms/presentation/info_sheet.dart';
 import '../../rooms/presentation/slot_sheet.dart';
 import '../domain/room_layout.dart';
 import '../domain/room_simulation.dart';
@@ -507,10 +508,22 @@ class _RoomScreenState extends ConsumerState<RoomScreen> {
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: _EditButton(
-                  editing: ref.watch(roomEditModeProvider),
-                  onPressed: () =>
-                      ref.read(roomEditModeProvider.notifier).toggle(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton.filledTonal(
+                      key: const Key('house-guide-button'),
+                      tooltip: 'How the house works',
+                      onPressed: () => HouseGuide.show(context),
+                      icon: const Icon(Icons.help_outline),
+                    ),
+                    const SizedBox(width: 6),
+                    _EditButton(
+                      editing: ref.watch(roomEditModeProvider),
+                      onPressed: () =>
+                          ref.read(roomEditModeProvider.notifier).toggle(),
+                    ),
+                  ],
                 ),
               ),
             ),

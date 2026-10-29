@@ -58,7 +58,15 @@ class SlotSheet extends ConsumerWidget {
               standing == null ? 'Nothing here yet.' : 'Now: ${standing.name}.',
               style: theme.textTheme.bodyMedium,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 4),
+            Text(
+              'The cheapest item is always for sale. The nicer two come from '
+              'gifts and wishes. What you own is yours for good; swapping is '
+              'free.',
+              key: const Key('slot-help'),
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
             for (final item in itemsForSlot(room, slot))
               _ItemRow(
                 item: item,
