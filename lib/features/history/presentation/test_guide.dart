@@ -155,6 +155,17 @@ const List<TestGuideItem> testGuideItems = [
         'once.',
   ),
   TestGuideItem(
+    feature: 'Decorations',
+    how:
+        'On the Cats tab tap a round button in a room (+ is empty, the '
+        'pencil is filled). Buy a tier 1 item with candy (12) and it '
+        'stands in the room at once.',
+    check:
+        'Tier 2 and 3 say Locked. A bought item can be swapped back for '
+        'free with Place. After 3 bought items are placed, a stray cat '
+        'arrives on the map about every 10 days.',
+  ),
+  TestGuideItem(
     feature: 'Me tab',
     how: 'Open Me after a day or two.',
     check:

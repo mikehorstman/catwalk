@@ -13,6 +13,8 @@ import '../data/room_cats_provider.dart';
 import '../domain/cat_action.dart';
 import '../domain/room_cat.dart';
 import '../data/room_layout_provider.dart';
+import '../../rooms/domain/decoration_catalogue.dart';
+import '../../rooms/presentation/slot_sheet.dart';
 import '../domain/room_layout.dart';
 import '../domain/room_simulation.dart';
 import 'animation_lab.dart';
@@ -132,7 +134,8 @@ class _RoomPageState extends ConsumerState<RoomPage>
     ];
     // Reduce Motion is a device setting, and it can change while the app runs.
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
-    final RoomLayout layout = widget.layout ?? ref.watch(roomLayoutProvider);
+    final RoomLayout layout =
+        widget.layout ?? ref.watch(roomLayoutForProvider(widget.room));
     if (_signatureOf(cats, layout) != _signature ||
         reducedMotion != _reducedMotion) {
       _syncRoom(cats, layout, reducedMotion);
@@ -158,6 +161,23 @@ class _RoomPageState extends ConsumerState<RoomPage>
                   child: ColoredBox(color: roomTint(widget.room)),
                 ),
               ),
+              // One small button per slot, to see what stands there and change it.
+              for (final slot in Slot.values)
+                Positioned(
+                  left: slot.position.dx * size.width - 16,
+                  top:
+                      (slot.position.dy + (slot.isHigh ? 0.07 : -0.12)) *
+                          size.height -
+                      16,
+                  child: _SlotButton(
+                    key: Key('slot-${slot.name}'),
+                    filled: ref
+                        .watch(roomLayoutForProvider(widget.room))
+                        .items
+                        .any((i) => i.slot == slot.name),
+                    onTap: () => SlotSheet.show(context, widget.room, slot),
+                  ),
+                ),
               if (runAway)
                 const Center(child: EmptyCushion(size: 200))
               else
@@ -272,6 +292,34 @@ class _CatLayer extends StatelessWidget {
 }
 
 /// Centred "No cats yet." message for an empty room.
+class _SlotButton extends StatelessWidget {
+  const _SlotButton({required this.filled, required this.onTap, super.key});
+
+  final bool filled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white70,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 32,
+          height: 32,
+          child: Icon(
+            filled ? Icons.edit_outlined : Icons.add,
+            size: 18,
+            color: CatwalkColors.line,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NoCats extends StatelessWidget {
   const _NoCats();
 

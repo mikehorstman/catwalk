@@ -5,7 +5,9 @@ import '../../cat/data/cat_codec.dart';
 import '../../cat/domain/cat.dart';
 import '../../cat/domain/cat_mood.dart';
 import '../../cat/domain/cat_status.dart';
+import '../../rooms/domain/decoration_catalogue.dart';
 import '../../rooms/domain/home_state.dart';
+import '../../rooms/domain/room_constants.dart';
 import '../../rooms/domain/placement.dart';
 import '../../cat/domain/new_cat.dart';
 import 'geo.dart';
@@ -14,8 +16,11 @@ import 'map_pin.dart';
 
 /// Why a cat is waiting on the map.
 enum ArrivalKind {
-  /// A cat found because the player bought a bed.
+  /// A cat that came with a new room.
   bought,
+
+  /// A stray that wandered in because the home looks lived in.
+  welcome,
 
   /// A lost cat that has come back after its 7 to 30 days away.
   returning,
@@ -173,5 +178,31 @@ ArrivalPlan nextArrival({
       home.copyWith(arrivalCredits: left, clearCreditsFrom: left == 0),
     );
   }
+  if (_welcomeDue(home, today)) {
+    return ArrivalPlan(
+      Arrival(
+        cat: newCat(seed: 'welcome-${today.toIsoDate()}', on: today),
+        kind: ArrivalKind.welcome,
+        appearsOn: today,
+      ),
+      home.copyWith(lastWelcomeOn: today),
+    );
+  }
   return ArrivalPlan(null, home);
+}
+
+/// True when a stray should wander in: the last welcome was long enough ago,
+/// and the home has enough decorations the player placed.
+bool _welcomeDue(HomeState home, CalendarDate today) {
+  final last = home.lastWelcomeOn;
+  if (last != null &&
+      last.daysUntil(today) < RoomConstants.welcomeCallEveryDays) {
+    return false;
+  }
+  var bought = 0;
+  for (final id in home.placed.values) {
+    final item = itemById(id);
+    if (item != null && !item.starter) bought++;
+  }
+  return bought >= RoomConstants.welcomeCallMinItems;
 }

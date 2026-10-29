@@ -22,22 +22,34 @@ class RoomScene extends StatelessWidget {
         Offset at(double x, double y) => Offset(x * w, y * h);
 
         final floorTop = layout.walkY * h - 0.10 * h;
-        final sill = layout.spot('sill')!;
-        final rug = layout.spot('rug')!;
-        final basket = layout.spot('basket')!;
-        final tree = layout.spot('tree')!;
+        final living = layout.roomId == 'living';
+        final sill = living ? layout.spot('sill') : null;
+        final rug = living ? layout.spot('rug') : null;
+        final basket = living ? layout.spot('basket') : null;
+        final tree = living ? layout.spot('tree') : null;
+        final floorColor = switch (layout.roomId) {
+          'garden' => const Color(0xFFB7D8A0),
+          'attic' => const Color(0xFFD9C3A5),
+          'veranda' => const Color(0xFFE6D2B5),
+          _ => const Color(0xFFEAC9A3),
+        };
+        final wallColors = switch (layout.roomId) {
+          'garden' => const [Color(0xFFCFE8F2), CatwalkColors.cream],
+          'attic' => const [Color(0xFFE4D3EA), CatwalkColors.cream],
+          _ => const [CatwalkColors.orangeSoft, CatwalkColors.cream],
+        };
 
         return Stack(
           children: [
             // Wall and floor.
-            const Positioned.fill(
+            Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [CatwalkColors.orangeSoft, CatwalkColors.cream],
-                    stops: [0.0, 0.75],
+                    colors: wallColors,
+                    stops: const [0.0, 0.75],
                   ),
                 ),
               ),
@@ -47,45 +59,51 @@ class RoomScene extends StatelessWidget {
               right: 0,
               top: floorTop,
               bottom: 0,
-              child: const ColoredBox(color: Color(0xFFEAC9A3)),
+              child: ColoredBox(color: floorColor),
             ),
 
             // Window, with the sill the cat perches on.
-            Positioned(
-              left: (sill.position.dx - 0.20) * w,
-              top: 0.06 * h,
-              width: 0.40 * w,
-              height: sill.position.dy * h - 0.06 * h,
-              child: const DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Color(0xFFDFF1F0),
-                  border: Border.fromBorderSide(
-                    BorderSide(color: CatwalkColors.line, width: 6),
+            if (sill != null) ...[
+              Positioned(
+                left: (sill.position.dx - 0.20) * w,
+                top: 0.06 * h,
+                width: 0.40 * w,
+                height: sill.position.dy * h - 0.06 * h,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Color(0xFFDFF1F0),
+                    border: Border.fromBorderSide(
+                      BorderSide(color: CatwalkColors.line, width: 6),
+                    ),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(18),
+                    ),
                   ),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
                 ),
               ),
-            ),
-            _Board(
-              center: at(sill.position.dx, sill.position.dy),
-              width: 0.44 * w,
-              height: 0.018 * h,
-            ),
+              _Board(
+                center: at(sill.position.dx, sill.position.dy),
+                width: 0.44 * w,
+                height: 0.018 * h,
+              ),
+            ],
 
             // Rug.
-            _Board(
-              center: at(rug.position.dx, rug.position.dy),
-              width: 0.40 * w,
-              height: 0.030 * h,
-              color: CatwalkColors.teal,
-            ),
+            if (rug != null)
+              _Board(
+                center: at(rug.position.dx, rug.position.dy),
+                width: 0.40 * w,
+                height: 0.030 * h,
+                color: CatwalkColors.teal,
+              ),
 
             // Basket.
-            _Basket(
-              center: at(basket.position.dx, basket.position.dy),
-              w: w,
-              h: h,
-            ),
+            if (basket != null)
+              _Basket(
+                center: at(basket.position.dx, basket.position.dy),
+                w: w,
+                h: h,
+              ),
 
             // Toys you have found, lying on the floor.
             for (final spot in layout.toySpotsHere)
@@ -96,19 +114,33 @@ class RoomScene extends StatelessWidget {
               ),
 
             // Cat tree: a post with a platform on top.
-            Positioned(
-              left: tree.position.dx * w - 0.045 * w,
-              top: tree.position.dy * h,
-              width: 0.09 * w,
-              height: (layout.walkY - tree.position.dy) * h,
-              child: const ColoredBox(color: Color(0xFFC79A6B)),
-            ),
-            _Board(
-              center: at(tree.position.dx, tree.position.dy),
-              width: 0.20 * w,
-              height: 0.022 * h,
-              color: const Color(0xFFB07C4A),
-            ),
+            if (tree != null) ...[
+              Positioned(
+                left: tree.position.dx * w - 0.045 * w,
+                top: tree.position.dy * h,
+                width: 0.09 * w,
+                height: (layout.walkY - tree.position.dy) * h,
+                child: const ColoredBox(color: Color(0xFFC79A6B)),
+              ),
+              _Board(
+                center: at(tree.position.dx, tree.position.dy),
+                width: 0.20 * w,
+                height: 0.022 * h,
+                color: const Color(0xFFB07C4A),
+              ),
+            ],
+
+            // Decorations without hand-drawn art yet: a neutral placeholder.
+            // The art for each item replaces `_ItemTile` later.
+            for (final item in layout.items)
+              if (!living || !item.starter)
+                _ItemTile(
+                  item: item,
+                  center: at(item.position.dx, item.position.dy),
+                  w: w,
+                  h: h,
+                  chip: living,
+                ),
           ],
         );
       },
@@ -116,7 +148,64 @@ class RoomScene extends StatelessWidget {
   }
 }
 
-/// A flat board: a rug, a shelf, a platform. Feet land on its middle.
+/// A placeholder for one decoration: a soft tile with its name. In the living
+/// room, where the classic furniture is drawn already, it is a small tag.
+class _ItemTile extends StatelessWidget {
+  const _ItemTile({
+    required this.item,
+    required this.center,
+    required this.w,
+    required this.h,
+    required this.chip,
+  });
+
+  final PlacedItem item;
+  final Offset center;
+  final double w;
+  final double h;
+  final bool chip;
+
+  @override
+  Widget build(BuildContext context) {
+    final width = (chip ? 0.22 : 0.20) * w;
+    final height = (chip ? 0.04 : 0.10) * h;
+    final tint = [
+      const Color(0xFFF3E3C8),
+      const Color(0xFFE9D4A8),
+      const Color(0xFFDDBF86),
+    ][(item.tier - 1).clamp(0, 2)];
+    return Positioned(
+      left: center.dx - width / 2,
+      top: chip ? center.dy + 0.03 * h : center.dy - height * 0.4,
+      width: width,
+      height: height,
+      child: Semantics(
+        label: item.name,
+        child: DecoratedBox(
+          key: Key('item-${item.id}'),
+          decoration: BoxDecoration(
+            color: tint,
+            borderRadius: BorderRadius.circular(chip ? 10 : 14),
+            border: Border.all(color: CatwalkColors.line),
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  item.name,
+                  style: const TextStyle(fontSize: 11, color: Colors.black87),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Board extends StatelessWidget {
   const _Board({
     required this.center,

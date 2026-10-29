@@ -5,6 +5,9 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../rooms/data/home_state_repository.dart';
+import '../../rooms/domain/decoration_catalogue.dart';
+import '../../rooms/domain/decorations.dart' as decorations;
+import '../../rooms/domain/decorations.dart' show ItemRefusal, itemRefusal;
 import '../../rooms/domain/placement.dart';
 import '../../rooms/domain/room_type.dart';
 
@@ -527,6 +530,42 @@ class HomeController extends AsyncNotifier<HomeState> {
     ref.invalidate(homeStateProvider);
     await refreshSilently();
     return null;
+  }
+
+  /// Buys [item] and puts it in its slot. Returns why it was refused, or null
+  /// when it was bought.
+  Future<ItemRefusal?> buyItem(ItemSpec item) async {
+    final inventories = ref.read(inventoryRepositoryProvider);
+    final homes = ref.read(homeStateRepositoryProvider);
+    final inventory = await inventories.read();
+    final home = await homes.read();
+    final purchase = decorations.buyItem(
+      inventory: inventory,
+      home: home,
+      item: item,
+    );
+    if (purchase == null) {
+      return itemRefusal(inventory: inventory, home: home, item: item);
+    }
+    await inventories.write(purchase.inventory);
+    await homes.write(
+      decorations.placeItem(purchase.home, item) ?? purchase.home,
+    );
+    await ref.read(analyticsProvider).log('item_bought');
+    ref.invalidate(homeStateProvider);
+    await refreshSilently();
+    return null;
+  }
+
+  /// Puts an item you own in its slot. Free. Returns false when you do not
+  /// own it.
+  Future<bool> placeItem(ItemSpec item) async {
+    final homes = ref.read(homeStateRepositoryProvider);
+    final next = decorations.placeItem(await homes.read(), item);
+    if (next == null) return false;
+    await homes.write(next);
+    ref.invalidate(homeStateProvider);
+    return true;
   }
 
   /// Sets the goal from a suggestion or a raise, and answers the card.
