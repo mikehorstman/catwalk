@@ -1,3 +1,4 @@
+import 'package:catwalk/services/health/dev_step_repository.dart';
 import 'package:catwalk/services/health/composite_step_repository.dart';
 import 'package:catwalk/services/health/mock_step_repository.dart';
 import 'package:catwalk/services/health/step_repository_provider.dart';
@@ -24,7 +25,10 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final repository = container.read(stepRepositoryProvider);
+    // Developer mode wraps the real source; look at what it wraps.
+    final wrapper = container.read(stepRepositoryProvider);
+    expect(wrapper, isA<DevStepRepository>());
+    final repository = (wrapper as DevStepRepository).inner;
     if (productBuild) {
       expect(repository, isA<CompositeStepRepository>());
     } else {

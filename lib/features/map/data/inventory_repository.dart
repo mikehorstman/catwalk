@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../services/storage/local_store.dart';
 import '../../../services/storage/local_store_provider.dart';
+import '../../dev/dev_settings.dart';
 import '../domain/inventory.dart';
 
 /// The app-wide [InventoryRepository], built on the local store.
@@ -23,6 +24,16 @@ class InventoryRepository {
 
   /// The saved inventory, or an empty one if nothing is saved or it is unreadable.
   Future<Inventory> read() async {
+    final inventory = await _readSaved();
+    // Developer mode can make candy endless.
+    final dev = await DevSettings.read(_store);
+    if (dev.enabled && dev.unlimitedCandy) {
+      return inventory.copyWith(candy: DevSettings.unlimitedAmount);
+    }
+    return inventory;
+  }
+
+  Future<Inventory> _readSaved() async {
     final raw = await _store.read(key);
     if (raw == null) return const Inventory();
     try {

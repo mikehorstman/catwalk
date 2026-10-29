@@ -177,6 +177,17 @@ const List<TestGuideItem> testGuideItems = [
         'the toys like for its cats.',
   ),
   TestGuideItem(
+    feature: 'Developer mode',
+    how:
+        'Settings, switch on Developer mode. Type in steps for today or a '
+        'past day, turn on unlimited candy, unlock rooms and items, add '
+        'cats, give gifts, wishes and a walk wish.',
+    check:
+        'Home, the Cats tab and the Map change at once. Typed steps replace '
+        'the real count only while the mode is on; "Use real steps" or '
+        'switching it off puts the real count back.',
+  ),
+  TestGuideItem(
     feature: 'Help and info',
     how:
         'On the Cats tab tap the question mark. Open a cat and tap the (i) '

@@ -1,3 +1,5 @@
+import '../../dev/dev_section.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -236,7 +238,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   child: const Text('Allow step access'),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
+              const DevSection(),
+              const SizedBox(height: 32),
               Text('Start over', style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/calendar_date.dart';
 import '../storage/local_store_provider.dart';
 import 'composite_step_repository.dart';
+import 'dev_step_repository.dart';
 import 'health_step_repository.dart';
 import 'mock_step_repository.dart';
 import 'sensor_step_repository.dart';
@@ -53,4 +54,9 @@ StepRepository createStepRepository(Ref ref) {
 }
 
 /// Riverpod provider for the app's one [StepRepository].
-final stepRepositoryProvider = Provider<StepRepository>(createStepRepository);
+final stepRepositoryProvider = Provider<StepRepository>(
+  (ref) => DevStepRepository(
+    createStepRepository(ref),
+    ref.watch(localStoreProvider),
+  ),
+);
