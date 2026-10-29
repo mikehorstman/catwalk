@@ -12,6 +12,7 @@
 - Cats' comfort depends on the room and what is in it.
 - A **happy cat can have a gift**: tap the cat, get candy or an unlocked decoration.
 - Cats have **wishes** ("Mees wants a plant"). The user finds wishes fun.
+- A wish can also be **"walk to place X"**: the cat wants you to walk somewhere, which gives a direct reason to go out.
 - Unlocks also come from gifts.
 
 **Reverses earlier decisions (on purpose):** D21 "the shop stays small: toys and beds, no decorations". D18 "bed prices are the cap on cats". Both are replaced below as D25 to D36.
@@ -63,7 +64,8 @@
 | **Tag** | A like that a room or item gives. A cat's like is met when its room has the tag. |
 | **Comfort** | How many of a cat's 2 likes its room meets: 0 meh, 1 comfy, 2 very comfy. |
 | **Gift** | What a happy cat hands over when tapped. |
-| **Wish** | One specific item a cat asks for. |
+| **Wish** | What a cat asks for. Either an **item wish** (one specific item) or a **walk wish** (walk to a place). |
+| **Wish place** | The spot on the map a cat wants you to walk to, on a walkable street. |
 | **Unlock** | An item becomes available to buy. It does not make the item free. |
 
 ---
@@ -213,19 +215,54 @@ An unlock appears as "Now in the shop: Cat tree" and goes straight to the decora
 
 **Not in gifts:** toys and freezes (they stay in the daily draw as now).
 
-### 3.7 Wishes (D33)
+### 3.7 Wishes (D33, D37)
 
+**Two kinds of wish.** Both count as "a wish granted" and both make the cat happier.
+
+| | Item wish | Walk wish |
+|---|---|---|
+| Example | "Mees wants a Cat tree" | "Mees wants to go to the park" |
+| What you do | Buy and place the item | Walk to the place on the map |
+| Costs | candy (12 to 60) | steps (you were going to walk anyway) |
+| Gives | joy, a better next gift | joy, a better next gift, **and candy** |
+
+**Common rules**
 - **A cat has at most one open wish.** The first wish comes **3 days after a cat arrives**. After a wish is granted, the next one comes **3 days later**.
-- **Choosing the wish** (seeded by cat and count):
-  1. Items whose tags include a like of this cat that is **not yet met** in its room.
-  2. Only items from rooms you own, and only for the spot types that exist in the cat's current room.
-  3. Tier 1 and 2 only, until the cat has had **3 wishes granted**; then tier 3 too.
-  4. If every like is met and no spot is open: the cat has no wish ("Nothing more to wish for").
-- **The wish unlocks its item** the moment it appears, so you can always buy it.
-- **There is no timer, no expiry and no penalty** for ignoring it. A wish waits.
-- **A wish is granted** when the wished item is placed in the room where the cat lives (or the cat is moved into a room that has it).
+- **There is no timer, no expiry and no penalty** for ignoring a wish. It waits.
 - **What granting does:** a joy moment (hearts, a happy animation), a message, and the cat's next gift is first in the queue with a 50% unlock chance. The cat card counts "wishes granted".
-- **Where you see it:** a small speech bubble with the item above the cat. The cat card says "Mees wants a Cat tree. 30 candy." with a **Buy and place** button.
+- **Which kind comes:** seeded by cat and count. About **1 wish in 3 is a walk wish**, and only when no walk wish is open yet (see below). A cat with no free spot and every like met gets neither ("Nothing more to wish for").
+
+**Item wish**
+1. Items whose tags include a like of this cat that is **not yet met** in its room.
+2. Only items from rooms you own, and only for spot types that exist in the cat's room.
+3. Tier 1 and 2 only, until the cat has had **3 wishes granted**; then tier 3 too.
+4. The wish **unlocks its item** the moment it appears, so you can always buy it.
+5. It is granted when the item is placed in the room where the cat lives, or the cat is moved into a room that has it.
+6. Where you see it: a small speech bubble with the item above the cat. The cat card says "Mees wants a Cat tree. 30 candy." with a **Buy and place** button.
+
+**Walk wish (new)**
+- **The place.** A point on a walkable street, **500 to 1,500 m of walking** from where you are (checked with the router, the same way as map pickups). It is fixed when the wish appears and shown on the map as a **star in the cat's coat colour** with the cat's head. You can tap it for the same route and walking time card as a pickup.
+- **What the cat says** depends on its likes, so it feels like the cat and not a random pin:
+
+| Cat like | The cat wants… |
+|---|---|
+| Sun | "to lie in the sun somewhere new" (a spot out in the open) |
+| Heights | "to see from up high" (the far side of a bridge, a hill) |
+| Toys | "to find something to play with" |
+| Quiet | "a quiet corner away from the crowd" |
+| Company | "to be where people are" |
+| Food | "to smell something nice" |
+
+  Version 1 picks a plain walkable point and uses this text. A later version can pick a matching real place (park, market, bakery, viewpoint) from OpenStreetMap, if you want that (open question 11).
+- **Reaching it.** Walk within **30 m** with GPS accuracy of 50 m or better (the same reach rule as pickups; a mocked location counts only in debug builds). It is granted at once.
+- **Reward.** The usual wish rewards, plus **candy by distance walked to it**: 1 candy per 100 m of the route, at least 5 and at most 12.
+- **Limits that keep it fair and simple:**
+  - **One walk wish is open at a time**, across all cats. Another cat's walk wish waits in line, and that cat gets an item wish meanwhile.
+  - **At most one walk wish granted per day.**
+  - **No expiry.** If you travel more than 5 km from the place, it moves near you (the same rule as a waiting cat), and the cat is told nothing.
+  - **It does not need the goal** and does not change the goal. Walking there counts as normal steps.
+  - **If the router is unreachable**, the walk wish simply waits and an item wish is given in its place.
+- **Why it matters:** an item wish is a reason to *save candy*. A walk wish is a reason to *go outside today*, which is what the game is for.
 
 ### 3.8 The candy economy (D34)
 
@@ -237,8 +274,9 @@ An unlock appears as "Now in the shop: Cat tree" and goes straight to the decora
 | Daily draw | about 2 | +1 with the feather |
 | Map pickups | about 7 | 5 a day at 2 to 4, about half collected on a typical day |
 | Ball | +1 | on goal days |
+| Walk wishes | about 3 | one every 2 to 3 days at 5 to 12 candy |
 | Extra cat gifts | 0 to 5 | none with one cat, more with more cats and more comfort |
-| **Typical** | **16 to 22** | about 480 to 650 a month |
+| **Typical** | **19 to 25** | about 570 to 750 a month |
 
 Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add roughly 300 to 400 over the first six months.
 
@@ -251,9 +289,9 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 | Rooms | 300 + 700 + 1,200 = 2,200 |
 | **Everything** | **about 4,300** |
 
-**Pace:** roughly **6 to 8 months** to finish all four rooms at a normal pace. A higher goal is faster. Skipping days is slower, and the stake covers the rest.
+**Pace:** roughly **5 to 7 months** to finish all four rooms at a normal pace. A higher goal is faster. Skipping days is slower, and the stake covers the rest.
 
-**Knobs if it feels wrong:** room prices, tier prices, the unlock chances, the 3 gifts a day, welcome call days. All in `room_constants.dart`.
+**Knobs if it feels wrong:** room prices, tier prices, the unlock chances, the 3 gifts a day, welcome call days, the walk wish share (1 in 3), its distance range and candy. All in `room_constants.dart`.
 
 ### 3.9 What does NOT change
 
@@ -261,7 +299,7 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 - Goal candy, map pickups (collected within 30 m, up to 5 a day, 6 with the mouse), the daily draw and its pity rule, streak prizes, step milestones, freezes.
 - Runaway: only the home cat runs away, at 3 missed days. Recovery by step target in 7 days, then find it on the map. A lost cat returns 7 to 30 days later.
 - Street cats: 3 photos, then **Invite to join** into a free place.
-- Map, routes, pins on walkable streets.
+- Map, routes, pins on walkable streets. (A walk wish is a new kind of map marker next to pickups, using the same router and the same reach rule.)
 - Reminders (max 3 a day, none after the goal), analytics opt-out, accounts and friends.
 - No money stakes, no second scoreboard, no XP or levels, no timers.
 
@@ -277,7 +315,8 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 | **During the day** | Walk. Collect pickups (within 30 m). Photograph a street cat. Fetch a waiting cat. Place decorations. Open gifts from earlier days. Reminders nudge at your usual walking time (max 3, none after the goal). |
 | **The moment the goal is reached** | Goal candy is paid at once. Cats turn happy. The **main gift** and up to 2 **extra gifts** are created. The Cats tab shows a dot. Gift badges show above the cats. |
 | **Opening a gift** | Candy is added and any unlock is shown. The badge goes away. |
-| **A wish is granted** | At the moment you place the item. Joy animation. Tomorrow's gift for that cat is first in line. |
+| **An item wish is granted** | At the moment you place the item. Joy animation. Tomorrow's gift for that cat is first in line. |
+| **A walk wish is granted** | At the moment you reach the star on the map. Candy (5 to 12) is paid, with a joy moment. Tomorrow's gift for that cat is first in line. |
 | **Evening** | Streak warning at 20:30 for streaks of 3 or more (as now). |
 
 ### 4.2 One week
@@ -296,6 +335,7 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 | 1 | Onboarding. One cat, the living room with Rug, Basket and Sill. 3,000 goal (first-week ramp). Goal reached: 3 candy, the main gift (the home cat holds it). First pickups. |
 | 1 to 3 | Buy tier 1 decorations: Scratch post (12, Heights) and Toy basket (12, Toys). The cat uses them. |
 | 3 | The home cat's **first wish** appears: "Moka wants a Cat tree" (if it likes Heights). The Cat tree (30) is unlocked. |
+| 4 | A second wish type: after the Cat tree is granted, the next wish comes on day 7 or later. |
 | 4 to 7 | Save 30 candy, buy and place the Cat tree. The wish is granted. Joy animation. Tomorrow the cat's gift has a 50% unlock chance. Streak of 7 pays 15 candy and a toy. |
 | 5 to 10 | A street cat stands on the map. Three photos over a few days. It is ready and joins the 2nd place of the living room. |
 | 10 | The welcome call (3 non-starter items placed and a free place): a stray waits on the map the next morning. It joins the 3rd place. The living room is full. |
@@ -317,7 +357,12 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 | A wish item is bought, but placed in another room | The wish stays open until it is in the cat's room. A hint says where. |
 | You move a cat away from the item it wished for | The wish stays open. |
 | A cat gets a wish for an item you already own and placed in another room | It counts as unmet. Place or buy another. |
-| Every item unlocked and every like met | No more wishes. Extra gifts hold candy only (+3 fallback). |
+| Every item unlocked and every like met | No more item wishes. Walk wishes can still come, as long as the cat has a free spot to wish for nothing else. Extra gifts hold candy only (+3 fallback). |
+| A walk wish place is on private ground or unreachable | The router only picks places that are on a walkable street. If none is found, the wish waits and an item wish is given instead. |
+| You are abroad or travel far from the place | After 5 km the place moves near you. |
+| Two cats have a walk wish | One is open at a time. The other waits. |
+| You walk to the place before the wish exists | Nothing. The star is only set when the wish appears. |
+| You are in a car | The reach rule needs you to be within 30 m, and a fast-moving fix (over about 10 m/s for a few seconds) does not count for a wish place. Walking is the point. |
 | You buy a room while a cat is already waiting on the map | Allowed. The arrival credit waits until that cat is fetched. |
 | Place full everywhere and a credit is due | The credit waits. A hint says "No free place. Buy a room". |
 | You already own an item that a gift would unlock | Gifts only unlock items that are still locked. |
@@ -341,11 +386,13 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 | `comfort.dart` | `comfortOf(cat, home)` and `displayMood(shared, comfort)` |
 | `placement.dart` | Where a new or returning cat goes, moving a cat, free places |
 | `cat_gifts.dart` | Choosing gift cats, gift contents, the unlock draw and pity, expiry |
-| `wishes.dart` | When a wish appears, which item, granting |
+| `wishes.dart` | When a wish appears, which kind (item or walk), which item, granting |
+| `walk_wish.dart` | The wish place, text by like, reward by distance, one open at a time, moving it near you |
 
 **Changed:**
 - `lib/features/map/domain/inventory.dart`: `beds` is replaced by the rooms you own. Candy, freezes and toys stay.
 - `lib/features/daily_goal/domain/shop.dart` and `lib/core/constants/app_constants.dart`: `bedPrice`, `buyBed` and `bedPrices` are replaced by rooms (`buyRoom`, `roomPrice`).
+- `lib/features/map/presentation/map_controller.dart`, `map_screen.dart` and `pin_snapping.dart`: the walk wish place is chosen with the router like pins, drawn as a star, reachable by the same rule, with the route card.
 - `lib/features/map/domain/arrival.dart`: `freeBeds` becomes `freePlaces`. The arrival credits come from `home_state.dart`.
 - `lib/features/cat/domain/cat.dart`: a cat gets `likes` (2), `roomId` and a wish record.
 - `lib/features/cat/domain/shared_mood.dart`: unchanged, but display mood uses `comfort.dart`.
@@ -368,7 +415,7 @@ Streak prizes (5, 15, 30, 60, 200) and step milestones (10, 40, 120, 300) add ro
 | **Cat sheet** (exists as `cat_details_sheet.dart`) | Name, 2 likes with met or not, comfort hearts, the wish with **Buy and place**, **Open gift**, **Move to…**, wishes granted. |
 | **Shop** | Toys and **Rooms** (price, "owned", or the next price). Decorations are bought in the room, not here. |
 | **Home** | The gift button is removed. Nothing is added. A dot on the Cats tab when a gift waits. |
-| **Map** | Unchanged. The street cat card says "Needs a free place" when every place is full. |
+| **Map** | A **star** with the wishing cat's head shows the walk wish place. Tap it for the cat's text, the route and walking time, and the candy it pays. The street cat card says "Needs a free place" when every place is full. |
 | **Me** | The test guide gets entries for rooms, decorations, gifts and wishes. "Street cats" stays. |
 | **Friends** | A friend's room view shows their rooms and decorations (read only). |
 
@@ -434,12 +481,13 @@ Each slice ends with analyze clean, all tests green, a simulator check (screensh
 2. Attach the existing daily gift (streak prize, milestones, draw) to a cat in `daily_gift.dart` and `reward_ledger.dart`. Tests prove the amounts are unchanged.
 3. `wishes.dart` and tests: first wish on day 3, 3 days between wishes, choosing the item, unlocking it, granting by placement or move, the 50% rule after a grant.
 4. Gift badge, wish bubble, **Open gift** and **Buy and place** in the room and cat sheet. A dot on the Cats tab.
+   - **Walk wishes:** `walk_wish.dart` and tests (the place is 500 to 1,500 m by the router, one open at a time, at most one granted a day, candy by route length with the 5 to 12 limits, moving it near you after 5 km, router unavailable falls back to an item wish, the fast-moving fix is refused). Store the open walk wish in `home_state`. Draw the star in `map_screen.dart`, reuse the route card. Grant it from `map_controller.dart` through the existing reach rule. Test guide entry.
 5. Remove the Home gift button, its sheet and the matching tests (`shop_home_test.dart` and others), keeping the goal-reached feedback.
 6. Reminders: no new ones. Analytics: `room_bought`, `wish_granted`.
 7. Test guide, plan, skill.
 
-**Done when:** after reaching the goal, the top cat shows a gift badge, tapping opens the old daily gift, extra cats hold small gifts, a wish appears on day 3 and granting it works, and Home has no gift button.
-**Commit:** `feat: cats hand over gifts and have wishes - the Home gift button is gone`
+**Done when:** after reaching the goal, the top cat shows a gift badge, tapping opens the old daily gift, extra cats hold small gifts, a wish appears on day 3 and granting it works, a walk wish shows a star on the map that pays candy when you walk to it, and Home has no gift button.
+**Commit:** `feat: cats hand over gifts and have wishes, including walk wishes - the Home gift button is gone`
 
 ### Slice F5. The other rooms, friends, and polish
 
@@ -465,7 +513,7 @@ Each slice ends with analyze clean, all tests green, a simulator check (screensh
 | Items, living room and garden | 30 |
 | Items, attic and veranda | 30 |
 | 6 like icons | 6 |
-| Gift badge, wish bubble, hearts | 3 |
+| Gift badge, wish bubble, hearts, the walk wish star | 4 |
 | Cat mood art | as before |
 
 The code never waits for art. One folder per room (`assets/rooms/<room>/<item>.png`) and the placeholder is used when a file is missing.
@@ -481,6 +529,7 @@ The code never waits for art. One folder per room (`assets/rooms/<room>/<item>.p
 | **Economy runs away** | More cats mean more gifts | 3 gifts a day cap. Extra gifts are small. Tune in one file. |
 | **Art load** | 60 items is a lot | Start with 2 rooms (30). Placeholders until then. |
 | **Scope** | 5 slices is the biggest change so far | F1 and F2 give a playable loop alone. F3 to F5 can wait. |
+| **Walk wishes need GPS and the router** | Both are untested on a phone, and the public router has a fair-use limit | One request per new wish place. If it fails, an item wish is given instead. |
 | **Real phone untested** | Steps, camera and sign-in have never run on a phone | Test the current 1.10.0 on a phone before F4, so problems are found before more is added. |
 
 ---
@@ -497,7 +546,9 @@ The code never waits for art. One folder per room (`assets/rooms/<room>/<item>.p
 8. **Welcome call every 10 days** needs a free place and 3 non-starter items placed.
 9. **Wishes never expire** and have no penalty.
 10. **Rooms and decorations are never lost.**
+11. **Walk wishes use a plain walkable point** with text from the cat's like (version 1). Real places (park, market, bakery, viewpoint) from OpenStreetMap are a later option and need a second free service.
+12. **1 wish in 3 is a walk wish**, one open at a time, one granted a day at most, 5 to 12 candy by distance.
 
 ## 12. Out of scope here
 
-Moving toys between rooms, selling or refunding items, seasonal or holiday items, room visits with live cats for friends, trading, extra room types beyond four, a second currency, timers of any kind, real money, push notifications for gifts and wishes (needs Cloud Functions and a paid Firebase plan).
+Moving toys between rooms, real places for walk wishes, selling or refunding items, seasonal or holiday items, room visits with live cats for friends, trading, extra room types beyond four, a second currency, timers of any kind, real money, push notifications for gifts and wishes (needs Cloud Functions and a paid Firebase plan).
