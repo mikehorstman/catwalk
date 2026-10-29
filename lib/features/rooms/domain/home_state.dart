@@ -23,6 +23,7 @@ class HomeState {
     this.giftsSincePity = 0,
     this.bonusCats = const {},
     this.wishes = const {},
+    this.walkWishDoneOn,
   });
 
   /// Reads a state from JSON. Missing or odd values fall back to the
@@ -94,6 +95,9 @@ class HomeState {
           for (final c in json['bonusCats'] as List)
             if (c is String) c,
       },
+      walkWishDoneOn: json['walkWishDoneOn'] is String
+          ? _parseDate(json['walkWishDoneOn'] as String)
+          : null,
       wishes: {
         if (json['wishes'] is Map)
           for (final e in (json['wishes'] as Map).entries)
@@ -151,6 +155,9 @@ class HomeState {
   /// Each cat's wishes.
   final Map<String, WishRecord> wishes;
 
+  /// The last day a walk wish was reached; one a day at most.
+  final CalendarDate? walkWishDoneOn;
+
   /// The key of a slot in [placed].
   static String placeKey(RoomType room, Slot slot) =>
       '${room.name}:${slot.name}';
@@ -197,6 +204,7 @@ class HomeState {
     int? giftsSincePity,
     Set<String>? bonusCats,
     Map<String, WishRecord>? wishes,
+    CalendarDate? walkWishDoneOn,
   }) => HomeState(
     rooms: rooms ?? this.rooms,
     arrivalCredits: arrivalCredits ?? this.arrivalCredits,
@@ -212,6 +220,7 @@ class HomeState {
     giftsSincePity: giftsSincePity ?? this.giftsSincePity,
     bonusCats: bonusCats ?? this.bonusCats,
     wishes: wishes ?? this.wishes,
+    walkWishDoneOn: walkWishDoneOn ?? this.walkWishDoneOn,
   );
 
   /// The state as JSON.
@@ -232,6 +241,7 @@ class HomeState {
     'giftsSincePity': giftsSincePity,
     'bonusCats': bonusCats.toList()..sort(),
     'wishes': {for (final e in wishes.entries) e.key: e.value.toJson()},
+    'walkWishDoneOn': ?walkWishDoneOn?.toIsoDate(),
   };
 }
 

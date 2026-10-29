@@ -177,6 +177,7 @@ Wish? newWish({
   required Inventory inventory,
   required int granted,
   required CalendarDate today,
+  bool allowWalk = true,
 }) {
   final tags = tagsOf(cat.roomId, home, inventory);
   final unmet = [
@@ -184,7 +185,7 @@ Wish? newWish({
       if (!tags.contains(like)) like,
   ];
   if (unmet.isEmpty) return null;
-  if (shouldBeWalkWish(cat, granted)) {
+  if (allowWalk && shouldBeWalkWish(cat, granted)) {
     return Wish(kind: WishKind.walk, createdOn: today, like: unmet.first);
   }
   return newItemWish(

@@ -1,3 +1,5 @@
+import '../../rooms/domain/wishes.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -248,6 +250,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
         detail: spot.cat.ready
             ? '${spot.cat.name} is ready to join you'
             : 'Photos so far: ${spot.cat.sightings} of $sightingsToJoin',
+      );
+    }
+    if (id == 'walk-wish' && view.walkWish != null) {
+      final spot = view.walkWish!;
+      return _Target(
+        '${spot.cat.name} has a wish',
+        spot.point,
+        detail: '${wishText(spot.cat, spot.wish)} Pays ${spot.candy} candy.',
       );
     }
     for (final pin in view.pins) {
@@ -543,6 +553,21 @@ class _MapScreenState extends ConsumerState<MapScreen>
                       child: _StreetCatMarker(
                         key: const Key('street-cat'),
                         coat: spot.cat.appearance.color,
+                      ),
+                    ),
+                  ),
+                if (view.walkWish case final wish?)
+                  Marker(
+                    point: _ll(wish.point),
+                    width: 64,
+                    height: 64,
+                    rotate: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _select('walk-wish'),
+                      child: _WishStarMarker(
+                        key: const Key('walk-wish'),
+                        coat: wish.cat.appearance.color,
                       ),
                     ),
                   ),
@@ -1176,6 +1201,11 @@ class _EventSheet extends StatelessWidget {
                     'in the Shop, then invite them.',
           Icons.photo_camera,
         ),
+      WalkWishDone(:final catName, :final candy) => (
+        '$catName got its wish',
+        'You walked all the way there. $catName gives you $candy candy.',
+        Icons.star,
+      ),
       PinCollected(:final result) => _describe(result),
     };
     return SafeArea(
@@ -1243,6 +1273,30 @@ class _EventSheet extends StatelessWidget {
             : ('A $toyId', 'It is in the room now.', Icons.toys);
     }
   }
+}
+
+/// A walk wish on the map: a star in the coat colour of the cat that wishes.
+class _WishStarMarker extends StatelessWidget {
+  const _WishStarMarker({super.key, required this.coat});
+
+  /// The cat's coat.
+  final Color coat;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'A cat wishes to walk here',
+    child: Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: coat,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: const [BoxShadow(color: Color(0x44000000), blurRadius: 6)],
+      ),
+      child: const Icon(Icons.star, color: Colors.white, size: 28),
+    ),
+  );
 }
 
 /// A street cat on the map: its coat colour in a ring, a cat head and a small

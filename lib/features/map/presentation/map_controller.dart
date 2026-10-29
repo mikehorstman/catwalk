@@ -1,3 +1,7 @@
+import '../../rooms/domain/wishes.dart';
+import '../../rooms/domain/room_constants.dart';
+
+import 'dart:math' as math;
 import 'dart:async';
 import 'dart:convert';
 
@@ -72,6 +76,36 @@ class CatJoined extends MapNotice {
   final bool returning;
 }
 
+/// A cat's walk wish came true.
+class WalkWishDone extends MapNotice {
+  /// Creates the notice.
+  const WalkWishDone({required this.catName, required this.candy});
+
+  /// The cat that wished.
+  final String catName;
+
+  /// Candy it paid.
+  final int candy;
+}
+
+/// A cat's walk wish, with its place on the map.
+class WalkWishSpot {
+  /// Creates the spot.
+  const WalkWishSpot({required this.cat, required this.wish});
+
+  /// The cat that wished.
+  final Cat cat;
+
+  /// The wish; it has a place.
+  final Wish wish;
+
+  /// Where to walk.
+  GeoPoint get point => wish.place!;
+
+  /// What it pays.
+  int get candy => walkWishCandy(wish.routeMeters ?? 0);
+}
+
 /// A street cat was photographed.
 class StreetCatPhotographed extends MapNotice {
   const StreetCatPhotographed({
@@ -128,6 +162,7 @@ class MapViewState {
     this.event,
     this.streetCat,
     this.freePlaces = 0,
+    this.walkWish,
   });
 
   /// Whether location is allowed. Anything but granted shows the access card.
@@ -172,6 +207,9 @@ class MapViewState {
   /// Beds with no cat in them.
   final int freePlaces;
 
+  /// The walk wish on the map, if a cat has one with a place.
+  final WalkWishSpot? walkWish;
+
   /// True when location is allowed and a position is known.
   bool get hasLocation => access == LocationAccess.granted && fix != null;
 
@@ -195,6 +233,8 @@ class MapViewState {
     StreetCatSpot? streetCat,
     bool clearStreetCat = false,
     int? freePlaces,
+    WalkWishSpot? walkWish,
+    bool clearWalkWish = false,
   }) => MapViewState(
     access: access ?? this.access,
     fix: fix ?? this.fix,
@@ -210,6 +250,7 @@ class MapViewState {
     event: clearEvent ? null : (event ?? this.event),
     streetCat: clearStreetCat ? null : (streetCat ?? this.streetCat),
     freePlaces: freePlaces ?? this.freePlaces,
+    walkWish: clearWalkWish ? null : (walkWish ?? this.walkWish),
   );
 }
 
@@ -430,7 +471,14 @@ class CatMapController extends AsyncNotifier<MapViewState> {
     _snapSoon(cell, today, pinCount, fix, mapState.snaps, streetCat?.id);
     final cats = await ref.read(catRepositoryProvider).readAll();
 
+    // A cat that wishes for a walk: a place on a street, reached on foot.
+    final walk = await _walkWish(fix, today, next);
+    if (walk.event != null) event = walk.event;
+    if (walk.inventory != null) next = next.copyWith(inventory: walk.inventory);
+
     return next.copyWith(
+      walkWish: walk.spot,
+      clearWalkWish: walk.spot == null,
       arrival: arrival,
       clearArrival: arrival == null,
       streetCat: spot,
@@ -468,6 +516,134 @@ class CatMapController extends AsyncNotifier<MapViewState> {
   );
 
   bool _snapping = false;
+
+  /// Cats whose walk wish place was tried today, so the router is not asked
+  /// again on every position update.
+  final Set<String> _walkTried = {};
+
+  /// Finds the open walk wish, gives it a place when it has none, and grants
+  /// it when the player stands on it.
+  Future<({WalkWishSpot? spot, MapNotice? event, Inventory? inventory})>
+  _walkWish(GeoFix fix, CalendarDate today, MapViewState view) async {
+    const none = (spot: null, event: null, inventory: null);
+    final homes = ref.read(homeStateRepositoryProvider);
+    var home = await homes.read();
+    final ids = home.wishes.keys.toList()..sort();
+    String? catId;
+    for (final id in ids) {
+      if (home.wishes[id]!.open?.kind == WishKind.walk) {
+        catId = id;
+        break;
+      }
+    }
+    if (catId == null) return none;
+    final cats = await ref.read(catRepositoryProvider).readAll();
+    final cat = cats.where((c) => c.id == catId).firstOrNull;
+    if (cat == null || cat.status == CatStatus.runaway) return none;
+    var record = home.wishes[catId]!;
+    var wish = record.open!;
+
+    // Choose, or move, the place.
+    if (!wish.hasPlace || walkWishTooFar(wish, fix.point)) {
+      final key = '$catId:${today.toIsoDate()}:${wish.hasPlace}';
+      if (!_walkTried.add(key)) return none;
+      final chosen = await _chooseWalkPlace(cat, record.granted, today, fix);
+      if (chosen == null) {
+        // No router or no street: the cat wishes for a thing instead.
+        final tags = {for (final like in cat.likes) like};
+        final item = newItemWish(
+          cat: cat,
+          home: home,
+          unmet: cat.likes.toList(),
+          granted: record.granted,
+          today: today,
+        );
+        if (item == null || tags.isEmpty) return none;
+        home = home.copyWith(
+          wishes: {
+            ...home.wishes,
+            catId: record.copyWith(open: item),
+          },
+        );
+        await homes.write(home);
+        ref.invalidate(homeStateProvider);
+        return none;
+      }
+      wish = wish.withPlace(chosen.$1, chosen.$2);
+      record = record.copyWith(open: wish);
+      home = home.copyWith(wishes: {...home.wishes, catId: record});
+      await homes.write(home);
+      ref.invalidate(homeStateProvider);
+    }
+
+    final spot = WalkWishSpot(cat: cat, wish: wish);
+    final doneToday = home.walkWishDoneOn == today;
+    if (!doneToday &&
+        reached(fix: fix, target: spot.point, allowMocked: allowMocked)) {
+      final inventories = ref.read(inventoryRepositoryProvider);
+      final inventory = await inventories.read();
+      final paid = inventory.copyWith(candy: inventory.candy + spot.candy);
+      await inventories.write(paid);
+      await homes.write(
+        home.copyWith(
+          walkWishDoneOn: today,
+          bonusCats: {...home.bonusCats, catId},
+          wishes: {
+            ...home.wishes,
+            catId: record.copyWith(
+              clearOpen: true,
+              granted: record.granted + 1,
+              nextAfter: today.addDays(RoomConstants.wishGapDays),
+            ),
+          },
+        ),
+      );
+      ref.invalidate(homeStateProvider);
+      await ref.read(analyticsProvider).log('wish_granted');
+      unawaited(ref.read(homeControllerProvider.notifier).refreshSilently());
+      return (
+        spot: null,
+        event: WalkWishDone(catName: cat.name, candy: spot.candy),
+        inventory: paid,
+      );
+    }
+    return (spot: spot, event: null, inventory: null);
+  }
+
+  /// Up to 3 places 500 to 1,500 m away; the first the router can walk to in
+  /// that distance. Returns its point on the street and the walking metres.
+  Future<(GeoPoint, double)?> _chooseWalkPlace(
+    Cat cat,
+    int granted,
+    CalendarDate today,
+    GeoFix fix,
+  ) async {
+    final router = ref.read(routeServiceProvider);
+    final random = math.Random(
+      stableSeed('walkwish:${cat.id}:$granted:${today.toIsoDate()}'),
+    );
+    for (var i = 0; i < 3; i++) {
+      final candidate = pointInBand(
+        fix.point,
+        random,
+        minMeters: RoomConstants.walkWishMinMeters * 0.7,
+        maxMeters: RoomConstants.walkWishMaxMeters * 0.8,
+      );
+      try {
+        final route = await router.walk(fix.point, candidate);
+        if (route == null || route.points.isEmpty) continue;
+        if (route.meters < RoomConstants.walkWishMinMeters ||
+            route.meters > RoomConstants.walkWishMaxMeters) {
+          continue;
+        }
+        return (route.points.last, route.meters);
+      } on RouteUnavailable {
+        return null;
+      }
+    }
+    return null;
+  }
+
   DateTime? _snapTriedAt;
 
   /// How long to wait before asking the router again after it was unreachable.

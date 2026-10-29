@@ -65,7 +65,9 @@ void main() {
     );
     await open(tester, store, 1000);
     expect(
-      tester.widget<Badge>(find.byKey(const Key('cats-gift-dot'))).isLabelVisible,
+      tester
+          .widget<Badge>(find.byKey(const Key('cats-gift-dot')))
+          .isLabelVisible,
       isFalse,
     );
     await openCats(tester);

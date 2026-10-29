@@ -100,6 +100,7 @@ HomeSettlement settleHome({
 
   // Wishes.
   final wishes = {...next.wishes};
+  var walkOpen = wishes.values.any((r) => r.open?.kind == WishKind.walk);
   final granted = <String>[];
   for (final cat in cats) {
     if (cat.status == CatStatus.runaway) continue;
@@ -129,8 +130,10 @@ HomeSettlement settleHome({
         inventory: inventory,
         granted: record.granted,
         today: today,
+        allowWalk: !walkOpen,
       );
       if (wish != null) {
+        if (wish.kind == WishKind.walk) walkOpen = true;
         record = record.copyWith(open: wish);
         final item = wish.item;
         if (item != null) next = unlockItem(next, item);
