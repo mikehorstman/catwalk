@@ -1,5 +1,9 @@
 # Rooms, decorations, cat gifts and wishes: Plan
 
+> **Status (2026-10-29): built.** Slices F1 to F5 are in the app (version 1.15.1), plus three additions made after the plan: an **edit mode** (the pencil on the Cats tab shows the slot buttons), **taking items away** (the item stays yours), **toys that can lie in any room**, and **info buttons and a guide** that explain the house inside the app. Numbers in this plan are my picks and still need your playtest. Not checked on a real phone: steps, notifications, GPS and the walk-wish star, the camera, Google sign-in, friends with two accounts.
+
+
+
 > **For Hermes:** build slice by slice (F1 to F5) on `main`, one commit per slice, analyze clean and all tests green before the next slice starts. Stay in `~/apps/catwalk`. Run Flutter with `export PATH="$HOME/development/flutter/bin:$PATH" LANG=en_US.UTF-8` and `< /dev/null` for long jobs. Update `tools/make_final_plan.py`, the Me test guide and the `catwalk-dev` skill as each slice lands. **Nothing in this plan is built yet.** All numbers are my picks and live in one file (`room_constants.dart`) so they can be tuned without touching logic.
 
 **Goal:** give people a reason to keep walking after the first weeks. Steps turn into candy, candy builds a home (rooms and decorations), and a better home attracts more cats and makes them happier. The runaway cat stays as the one stake.

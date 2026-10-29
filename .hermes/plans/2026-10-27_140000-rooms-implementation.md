@@ -1,5 +1,9 @@
 # Rooms, decorations, gifts and wishes: Implementation Plan
 
+> **Status (2026-10-29): built.** Slices F1 to F5 are in the app (version 1.15.1), plus three additions made after the plan: an **edit mode** (the pencil on the Cats tab shows the slot buttons), **taking items away** (the item stays yours), **toys that can lie in any room**, and **info buttons and a guide** that explain the house inside the app. Numbers in this plan are my picks and still need your playtest. Not checked on a real phone: steps, notifications, GPS and the walk-wish star, the camera, Google sign-in, friends with two accounts.
+
+
+
 > **For Hermes:** build task by task in the order below, on `main`. One commit per task group (the commit line is given), and one push per slice. Never end a work session in the middle of a task: every task leaves `flutter analyze` clean and `flutter test` green. This plan builds the rules in `.hermes/plans/2026-10-27_103000-rooms-decorations-gifts.md` (the **rules plan**). Where the two disagree, the rules plan wins and this plan gets fixed.
 
 **Goal:** build slices F1 to F5 of the rules plan: rooms replace beds, decorations, likes and comfort, cat gifts and wishes (including walk wishes), the other two rooms, friends seeing your rooms, and a balance pass.
